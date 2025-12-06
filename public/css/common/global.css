@@ -1,0 +1,37 @@
+:root {
+    --primary-color: #3b82f6;
+    --bg-color: #ffffff;
+    --text-color: #1f2937;
+    --border-color: #d1d5db;
+}
+
+/* --- Resets --- */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: var(--text-color);
+}
+
+.app-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.app-header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1.5rem;
+    text-align: center;
+}
+.app-header h1 { margin: 0; font-size: 1.5rem; }

@@ -4,135 +4,111 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Portal - Timetable</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Small helper to match the table borders exactly */
-        td, th { border: 1px solid #e5e7eb; }
-    </style>
+    
+    <link rel="stylesheet" href="{{ asset('css/common/global.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/components/sidebar.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/pages/timetable.css') }}">
 </head>
-<body class="bg-white">
+<body>
 
-    <!-- Reusable Header Component -->
-    <x-header title="Student Portal" />
+    <header class="app-header">
+        <h1>Student Portal</h1>
+    </header>
 
-    <div class="flex">
-        
-        <!-- Reusable Sidebar Component -->
+    <div class="app-container">
+    
         <x-sidebar />
 
-        <!-- Main Content Area -->
-        <main class="flex-1 p-8">
-
-            <div class="flex justify-between items-start mb-6">
-                <!-- Title & Filter -->
+        <main class="main-content">
+            
+            <!-- Reminder Alert -->
+            @if($hasReplacement)
+            <div class="reminder-box">
+                <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
                 <div>
-                    <h2 class="text-2xl font-bold mb-4">My Timetable</h2>
-                    
-                    <div class="inline-block bg-gray-200 px-4 py-2 rounded">
-                        <label class="font-bold mr-2">Date Filter</label>
-                        <!-- Week Filter Dropdown -->
-                        <select class="bg-transparent font-bold outline-none cursor-pointer">
-                            @foreach($weeks as $date => $label)
-                                <option value="{{ $date }}" {{ str_contains($label, 'Current') ? 'selected' : '' }}>
-                                    {{ $label }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <strong>Replacement Class Reminder</strong><br>
+                    <span>You have one replacement class on 2025-12-24 at 1:00pm.</span>
                 </div>
+            </div>
+            @endif
 
-                <!-- Conditional Reminder Text -->
-                @if($hasReplacement)
-                    <div class="text-red-500 text-xl font-medium max-w-lg text-right">
-                        Reminder:<br>
-                        You have one replacement class on 2025-12-24 at 1:00pm.
-                    </div>
-                @endif
+            <!-- Page Title & Filter -->
+            <div class="controls-section">
+                <h2>My Timetable</h2>
+                
+                <form action="{{ route('student.timetable') }}" method="GET" class="filter-wrapper">
+                    <label>Date Filter:</label>
+                    <select name="date" onchange="this.form.submit()" class="filter-select">
+                        @foreach($weeks as $date => $label)
+                            <option value="{{ $date }}" {{ (request('date') == $date || $loop->index == 1) ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </form>
             </div>
 
             <!-- Timetable Grid -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-center text-xs border-collapse">
-                    
-                    <!-- Time Header Row -->
+            <div class="timetable-wrapper">
+                <table class="timetable">
                     <thead>
-                        <tr class="bg-gray-100 text-gray-600">
-                            <th class="p-2 w-24">Day/Time</th>
+                        <tr>
+                            <th>Day/Time</th>
                             @foreach($timeSlots as $time)
-                                <th class="p-2 min-w-[80px]">{{ $time }}</th>
+                                <th>{{ $time }}</th>
                             @endforeach
                         </tr>
                     </thead>
-
-                    <!-- Body -->
                     <tbody>
                         @foreach($days as $day)
                             <tr>
-                                <!-- Day Column -->
-                                <td class="bg-gray-200 p-2 font-bold text-gray-700 h-24">
-                                    {{ $day['name'] }} <br>
-                                    <span class="text-[10px] font-normal">{{ $day['date'] }}</span>
+                                <td class="day-column">
+                                    {{ $day['name'] }}<br>
+                                    <small>{{ $day['date'] }}</small>
                                 </td>
 
-                                <!-- Time Slot Logic -->
                                 @php $skipNext = 0; @endphp
-                                
                                 @foreach($timeSlots as $time)
-                                    
-                                    {{-- If we are currently "under" a colspan from a previous cell, skip rendering --}}
                                     @if($skipNext > 0)
                                         @php $skipNext--; @endphp
                                         @continue
                                     @endif
 
-                                    {{-- Check if there is an event starting at this Day + Time --}}
                                     @if(isset($scheduleData[$day['name']][$time]))
                                         @php 
                                             $event = $scheduleData[$day['name']][$time]; 
-                                            // Set skip counter (Duration - 1)
                                             $skipNext = $event['duration'] - 1; 
-
-                                            // Determine Color based on Type
-                                            $colorClass = match($event['type']) {
-                                                'normal' => 'bg-green-700 hover:bg-green-600 cursor-pointer',
-                                                'replacement' => 'bg-yellow-600 cursor-not-allowed',
-                                                'clash' => 'bg-red-700 cursor-not-allowed',
-                                                default => 'bg-gray-300'
+                                            $typeClass = match($event['type']) {
+                                                'normal' => 'slot-normal',
+                                                'replacement' => 'slot-replace',
+                                                'clash' => 'slot-clash',
+                                                default => ''
                                             };
                                         @endphp
 
-                                        <td colspan="{{ $event['duration'] }}" class="p-1 align-middle">
-                                            
-                                            <!-- Logic: Only 'normal' classes wrap in a link -->
+                                        <td colspan="{{ $event['duration'] }}">
                                             @if($event['type'] === 'normal')
-                                            <a href="{{ route('replacement.appeal', ['class_id' => $event['id']]) }}" class="block w-full h-full p-2 {{ $colorClass }} text-white rounded shadow-sm transition">
+                                            <a href="{{ route('replacement.appeal', ['class_id' => $event['id']]) }}" class="class-slot {{ $typeClass }}">
                                             @else
-                                            <div class="block w-full h-full p-2 {{ $colorClass }} text-white rounded shadow-sm">
+                                            <div class="class-slot {{ $typeClass }}">
                                             @endif
-
-                                                <!-- Class Details -->
-                                                <div class="font-bold">{{ $event['subject'] }}</div>
-                                                <div class="text-[10px]">{{ $event['venue'] }}</div>
-                                                <div class="text-[10px]">{{ $event['lecturer'] }}</div>
-                                                <div class="text-[10px] mt-1">{{ $event['time_str'] }}</div>
-                                                
+                                                <div class="slot-subject">{{ $event['subject'] }}</div>
+                                                <div class="slot-info">{{ $event['venue'] }}</div>
+                                                <div class="slot-info">{{ $event['time_str'] }}</div>
                                                 @if(isset($event['note']))
-                                                    <div class="text-[10px] mt-1 text-red-100 font-bold">{{ $event['note'] }}</div>
+                                                    <div class="slot-info slot-note">{{ $event['note'] }}</div>
                                                 @endif
-
                                             @if($event['type'] === 'normal')
                                             </a>
                                             @else
                                             </div>
                                             @endif
-
                                         </td>
-
                                     @else
-                                        <!-- Empty Cell -->
-                                        <td class="p-2"></td>
+                                        <td></td>
                                     @endif
-
                                 @endforeach
                             </tr>
                         @endforeach
@@ -140,24 +116,16 @@
                 </table>
             </div>
 
-            <!-- Legend -->
-            <div class="mt-8 flex gap-6 text-sm">
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-green-700 rounded"></div>
-                    <span>Normal Class</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-yellow-600 rounded"></div>
-                    <span>Replacement Class</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-red-700 rounded"></div>
-                    <span>Clashed Class / Class on Public Holiday</span>
-                </div>
+            <div class="legend">
+                <div class="legend-item"><div class="legend-color bg-normal"></div><span>Normal Class</span></div>
+                <div class="legend-item"><div class="legend-color bg-replace"></div><span>Replacement Class</span></div>
+                <div class="legend-item"><div class="legend-color bg-clash"></div><span>Canceled Class</span></div>
             </div>
 
         </main>
     </div>
 
+    <!-- Logic for Sidebar -->
+    <script src="{{ asset('js/sidebar.js') }}"></script>
 </body>
 </html>
