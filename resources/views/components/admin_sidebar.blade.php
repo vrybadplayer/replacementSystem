@@ -8,14 +8,17 @@
     </div>
 
     <div class="sidebar-menu">
-        <a href="#" class="menu-item">
+        <a href="{{ route('dashboard') }}" class="menu-item">
             <span class="menu-text">Main Menu</span>
         </a>
         <a href="#" class="menu-item">
             <span class="menu-text">Replacement Application</span>
         </a>
-        <a href="#" class="menu-item">
+        <a href="{{ route('admin.courses') }}" class="menu-item">
             <span class="menu-text">Course Management</span>
+        </a>
+        <a href="{{ route('admin.subjects') }}" class="menu-item">
+            <span class="menu-text">Subject Management</span>
         </a>
         <!-- Active State Styling (Hardcoded for this page) style="background-color: #d1d5db; border-right: 4px solid #3b82f6; -->
         <a href="{{ route('admin.subjectAssignment') }}" class="menu-item">
