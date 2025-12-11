@@ -155,7 +155,7 @@ class TimetableController extends Controller
             ]
         ];
 
-        return view('student.replacement_options', compact('userInfo', 'groupedOptions'));
+        return view('student.timetableModule.replacement_options', compact('userInfo', 'groupedOptions'));
     }
     
 
@@ -227,7 +227,19 @@ class TimetableController extends Controller
             ['name' => 'Sun', 'date' => '2025-12-28'],
         ];
 
-        return view('student.select_timeslot', compact('scheduleData', 'timeSlots', 'days', 'selectedSubject', 'selectedDay'));
+        return view('student.timetableModule.select_timeslot', compact('scheduleData', 'timeSlots', 'days', 'selectedSubject', 'selectedDay'));
+    }
+
+    public function viewSubjectAssignment()
+    {
+        // Returns the Admin View located at resources/views/admin/subject_assignment.blade.php
+        return view('admin.timetableModule.subjectAssignment');
+    }
+
+    public function viewTimeslotManagement()
+    {
+        // Returns the view in your specific folder structure
+        return view('admin.timetableModule.timeslotManagement');
     }
 
 }

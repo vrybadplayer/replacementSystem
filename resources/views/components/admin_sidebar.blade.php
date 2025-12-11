@@ -1,0 +1,31 @@
+<nav id="sidebar" class="app-sidebar">
+    <div class="sidebar-toggle-area">
+        <button onclick="toggleSidebar()" class="sidebar-btn" title="Toggle Menu">
+            <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
+    </div>
+
+    <div class="sidebar-menu">
+        <a href="#" class="menu-item">
+            <span class="menu-text">Main Menu</span>
+        </a>
+        <a href="#" class="menu-item">
+            <span class="menu-text">Replacement Application</span>
+        </a>
+        <a href="#" class="menu-item">
+            <span class="menu-text">Course Management</span>
+        </a>
+        <!-- Active State Styling (Hardcoded for this page) style="background-color: #d1d5db; border-right: 4px solid #3b82f6; -->
+        <a href="{{ route('admin.subjectAssignment') }}" class="menu-item">
+            <span class="menu-text">Subject Assignment</span>
+        </a>
+        <a href="{{ route('admin.timeslotManagement') }}" class="menu-item">
+            <span class="menu-text">Timeslot Management</span>
+        </a>
+        <a href="#" class="menu-item">
+            <span class="menu-text">User Management</span>
+        </a>
+    </div>
+</nav>
