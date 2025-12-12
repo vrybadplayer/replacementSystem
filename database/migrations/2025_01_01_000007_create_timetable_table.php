@@ -15,14 +15,14 @@ return new class extends Migration
             $table->string('timetableId', 10)->primary();
             $table->string('classGroupId', 10);
             $table->string('courseSubjectId', 10);
-            $table->string('classType', 8)->nullable();
-            $table->string('userId', 10);
+            $table->string('classType', 8);
+            $table->string('userId', 10)->nullable();
             $table->string('venueId', 10);
-            $table->string('dayOfWeek', 9)->nullable();
+            $table->string('dayOfWeek', 9);
             $table->time('startTime');
             $table->time('endTime');
             $table->date('classDate');
-            $table->string('classMode', 12)->nullable();
+            $table->string('classMode', 12);
             $table->timestamps();
 
             $table->foreign('classGroupId')->references('classGroupId')->on('classGroup')->onDelete('cascade');
