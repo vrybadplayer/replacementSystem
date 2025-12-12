@@ -15,6 +15,7 @@ class UserFactory extends Factory
      * The current password being used by the factory.
      */
     protected static ?string $password;
+    protected static $counter = 1;
 
     /**
      * Define the model's default state.
@@ -23,8 +24,10 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $nextUserId = 'U' . str_pad(static::$counter++, 4, '0', STR_PAD_LEFT);
+
         return [
-            'userId' => 'U' . str_pad((string) rand(1, 9999), 4, '0', STR_PAD_LEFT),
+            'userId' => $nextUserId,
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
@@ -39,7 +42,7 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'email_verified_at' => null,
         ]);
     }
@@ -47,15 +50,23 @@ class UserFactory extends Factory
     // Create admin user
     public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'role' => 'admin',
+        ]);
+    }
+
+    // Create lecturer user
+    public function lecturer(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'role' => 'lecturer',
         ]);
     }
 
     // Create student user
     public function student(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'role' => 'student',
         ]);
     }
