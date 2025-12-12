@@ -15,42 +15,35 @@ class CourseSeeder extends Seeder
     {
         $courses = [
             [
-                'courseId' => 'CS001',
+                'courseId' => 'C0001',
                 'courseCode' => 'CSIT101',
                 'courseName' => 'Introduction to Computer Science',
                 'faculty' => 'FOCS',
                 'status' => 'active',
             ],
             [
-                'courseId' => 'CS002',
+                'courseId' => 'C0002',
                 'courseCode' => 'CSIT201',
                 'courseName' => 'Data Structures and Algorithms',
                 'faculty' => 'FOCS',
                 'status' => 'active',
             ],
             [
-                'courseId' => 'IT001',
+                'courseId' => 'C0003',
                 'courseCode' => 'BMIT3173',
                 'courseName' => 'Integrative Programming',
                 'faculty' => 'FOIT',
                 'status' => 'active',
             ],
             [
-                'courseId' => 'LANG001',
-                'courseCode' => 'BJEL2013',
-                'courseName' => 'English Language',
-                'faculty' => 'FOL',
-                'status' => 'active',
-            ],
-            [
-                'courseId' => 'RSD',
+                'courseId' => 'C0004',
                 'courseCode' => 'RSD',
                 'courseName' => 'Bachelor of Software Engineering',
                 'faculty' => 'FOCS',
                 'status' => 'active',
             ],
             [
-                'courseId' => 'RIS',
+                'courseId' => 'C0005',
                 'courseCode' => 'RIS',
                 'courseName' => 'Bachelor of Information Systems',
                 'faculty' => 'FOIT',

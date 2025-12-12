@@ -47,33 +47,15 @@ class DatabaseSeeder extends Seeder
         ]);
 
 
-        // 3. Create Courses & Subjects (Inline)
-        // These are required to create CourseSubjects
-        $this->command->info('Seeding Courses and Subjects...');
-        
-        Course::create(['courseId' => 'RSD', 'courseName' => 'Bachelor of Software Engineering']);
-        Course::create(['courseId' => 'RIS', 'courseName' => 'Bachelor of Information Systems']);
+        // 3. Seed Courses, Subjects, and Course Subjects using Facades
+        $this->command->info('Seeding Courses, Subjects, and Course Subjects...');
+        $this->call([
+            CourseSeeder::class,
+            SubjectSeeder::class,
+            CourseSubjectSeeder::class,
+        ]);
 
-        Subject::create(['subjectId' => 'BMIT3173', 'subjectName' => 'Integrative Programming', 'creditHours' => 3]);
-        Subject::create(['subjectId' => 'BJEL2013', 'subjectName' => 'English for Academic Communication', 'creditHours' => 3]);
-        Subject::create(['subjectId' => 'BACS2053', 'subjectName' => 'Database Management', 'creditHours' => 3]);
-        Subject::create(['subjectId' => 'BMCS3413', 'subjectName' => 'Network Security', 'creditHours' => 3]);
-        Subject::create(['subjectId' => 'MPU-3133', 'subjectName' => 'Philosophy', 'creditHours' => 3]);
-        Subject::create(['subjectId' => 'MPU-3302', 'subjectName' => 'Integrity', 'creditHours' => 3]);
-
-
-        // 4. Create Course-Subject Relationships (Inline)
-        // The IDs here MUST match what is in your TimetableSeeder (e.g., BMIT3173, etc)
-        // Note: In your SQL dump, the timetable table used subject codes as courseSubjectId.
-        CourseSubject::create(['courseSubjectId' => 'BMIT3173', 'courseId' => 'RSD', 'subjectId' => 'BMIT3173']);
-        CourseSubject::create(['courseSubjectId' => 'BJEL2013', 'courseId' => 'RSD', 'subjectId' => 'BJEL2013']);
-        CourseSubject::create(['courseSubjectId' => 'BACS2053', 'courseId' => 'RSD', 'subjectId' => 'BACS2053']);
-        CourseSubject::create(['courseSubjectId' => 'BMCS3413', 'courseId' => 'RSD', 'subjectId' => 'BMCS3413']);
-        CourseSubject::create(['courseSubjectId' => 'MPU-3133', 'courseId' => 'RSD', 'subjectId' => 'MPU-3133']);
-        CourseSubject::create(['courseSubjectId' => 'MPU-3302', 'courseId' => 'RSD', 'subjectId' => 'MPU-3302']);
-
-
-        // 5. Call Dependent External Seeder
+        // 4. Call Dependent External Seeder
         // Timetable depends on User, Venue, ClassGroup, and CourseSubject existing first.
         $this->call([
             TimetableSeeder::class,
