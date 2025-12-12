@@ -24,6 +24,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            'userId' => 'U' . str_pad((string) rand(1, 9999), 4, '0', STR_PAD_LEFT),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),

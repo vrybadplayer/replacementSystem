@@ -23,13 +23,14 @@ return new class extends Migration
             $table->enum('status', ['Pending', 'Approved', 'Rejected'])->default('Pending');
             $table->dateTime('submissionDate');
             $table->dateTime('decisionDate')->nullable();
-            $table->unsignedBigInteger('adminId')->nullable();
+            $table->string('adminId', 10)->nullable();
             $table->text('adminRemarks')->nullable();
             $table->timestamps();
 
             $table->foreign('userId')->references('userId')->on('users')->onDelete('cascade');
             $table->foreign('originalClassId')->references('timetableId')->on('timetable')->onDelete('cascade');
             $table->foreign('requestedClassId')->references('timetableId')->on('timetable')->onDelete('cascade');
+            $table->foreign('adminId')->references('userId')->on('users')->onDelete('set null');
         });
     }
 

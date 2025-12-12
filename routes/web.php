@@ -5,6 +5,8 @@ use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\ReplacementController;
+
 
 // Welcome/Landing Page
 Route::get('/welcome', function () {
@@ -40,26 +42,30 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->group(function (
         return view('student_dashboard');
     })->name('student.dashboard');
     
-    // Student-specific routes
+    // Timetable module
     Route::get('/timetable', [TimetableController::class, 'index'])->name('student.timetable');
     Route::get('/replacementOptions', [TimetableController::class, 'viewOptions'])->name('student.replacementOptions');
     Route::get('/selectTimeslot', [TimetableController::class, 'selectTimeslot'])->name('student.selectTimeslot');
+    
+    // Replacement Appeal module
+    Route::get('/replacement/appeal', [ReplacementController::class, 'showAppealForm'])->name('replacement.appeal');
+    Route::post('/replacement/submit', [ReplacementController::class, 'submitAppeal'])->name('replacement.submit');
+    Route::get('/replacement/my-appeals', [ReplacementController::class, 'myAppeals'])->name('replacement.myAppeals');
 });
 
-// Shared authenticated routes
-Route::middleware('auth')->group(function () {
-    Route::get('/replacement/appeal', function () {
-        return "This is the Replacement Appeal Page (Out of Scope for this task)";
-    })->name('replacement.appeal');
+// Admin Replacement Module
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+    Route::get('/replacement/appeals', [ReplacementController::class, 'adminViewAppeals'])->name('admin.replacement.appeals');
+    Route::get('/replacement/appeals/{appealId}', [ReplacementController::class, 'adminViewAppealDetail'])->name('admin.replacement.detail');
+    Route::post('/replacement/appeals/{appealId}/process', [ReplacementController::class, 'adminProcessAppeal'])->name('admin.replacement.process');
 });
 
 // Redirect root to login or appropriate dashboard
 Route::get('/', function () {
-    if (Auth::check()) {
-        if (Auth::user()->isAdmin()) {
-            return redirect()->route('admin.dashboard');
-        }
-        return redirect()->route('student.dashboard');
-    }
-    return redirect()->route('login');
-});
+    return view('admin_dashboard');
+})->name('dashboard');
+
+// Replacement Module (Admin)
+Route::get('/admin/replacement/appeals', [ReplacementController::class, 'adminViewAppeals'])->name('admin.replacement.appeals');
+Route::get('/admin/replacement/appeal/{id}', [ReplacementController::class, 'adminViewAppealDetail'])->name('admin.replacement.detail');
+Route::post('/admin/replacement/appeal/{id}/process', [ReplacementController::class, 'adminProcessAppeal'])->name('admin.replacement.process');

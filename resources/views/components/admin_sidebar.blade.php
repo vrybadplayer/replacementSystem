@@ -11,8 +11,8 @@
         <a href="{{ route('admin.dashboard') }}" class="menu-item">
             <span class="menu-text">Main Menu</span>
         </a>
-        <a href="#" class="menu-item">
-            <span class="menu-text">Replacement Application</span>
+        <a href="{{ route('admin.replacement.appeals') }}" class="menu-item">
+            <span class="menu-text">Replacement Management</span>
         </a>
         <a href="{{ route('admin.courses') }}" class="menu-item">
             <span class="menu-text">Course Management</span>
