@@ -16,8 +16,8 @@ Route::get('/welcome', function () {
 // Auth Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login']);
 });
+Route::post('/login', [LoginController::class, 'login']);
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
@@ -60,10 +60,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/replacement/appeals/{appealId}/process', [ReplacementController::class, 'adminProcessAppeal'])->name('admin.replacement.process');
 });
 
-// Redirect root to login or appropriate dashboard
+// Root route - redirect to login
 Route::get('/', function () {
-    return view('admin_dashboard');
-})->name('dashboard');
+    return redirect('/login');
+})->name('home');
 
 // Replacement Module (Admin)
 Route::get('/admin/replacement/appeals', [ReplacementController::class, 'adminViewAppeals'])->name('admin.replacement.appeals');
