@@ -29,15 +29,23 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@example.com',
         ]);
 
-        // Students (U002 - U010)
+        // Lecturer (U002 - U010)
         for ($i = 2; $i <= 10; $i++) {
             $id = 'U' . str_pad($i, 3, '0', STR_PAD_LEFT); // Generates U002, U003...
+            User::factory()->lecturer()->create([
+                'userId' => $id,
+                'email' => "lecturer{$i}@example.com",
+            ]);
+        }
+
+        // Students (U0011 - U020)
+        for ($i = 11; $i <= 20; $i++) {
+            $id = 'U' . str_pad($i, 3, '0', STR_PAD_LEFT);
             User::factory()->student()->create([
                 'userId' => $id,
                 'email' => "student{$i}@example.com",
             ]);
         }
-
 
         // 2. Call Independent External Seeders
         // Venues and ClassGroups don't depend on anything, so we run them now.
