@@ -1,6 +1,7 @@
+/* Student Sidebar Styles */
 .app-sidebar {
     background-color: #e5e7eb;
-    border-right: 1px solid var(--border-color);
+    border-right: 1px solid #d1d5db;
     width: 260px;
     display: flex;
     flex-direction: column;
@@ -12,45 +13,205 @@
     width: 70px;
 }
 
+/* Toggle Button Area */
 .sidebar-toggle-area {
     display: flex;
     justify-content: flex-end;
     padding: 1rem;
 }
+
 .sidebar-btn {
     background: none;
-    border: none;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
     cursor: pointer;
     padding: 0.5rem;
+    transition: all 0.3s ease;
+    color: #374151;
 }
 
+.sidebar-btn:hover {
+    background: #d1d5db;
+    transform: scale(1.05);
+}
+
+/* Menu Container */
 .sidebar-menu { 
     display: flex; 
     flex-direction: column; 
+    padding: 0.5rem 0;
 }
 
+/* Menu Items */
 .menu-item {
     display: flex;
     align-items: center;
     padding: 1rem 1.5rem;
     text-decoration: none;
-    color: var(--text-color);
-    border-bottom: 1px solid var(--border-color);
+    color: #374151;
+    border-left: 4px solid transparent;
     white-space: nowrap;
     overflow: hidden;
-}
-.menu-item:hover { 
-    background-color: #d1d5db; 
+    transition: all 0.3s ease;
+    position: relative;
 }
 
+.menu-item:hover { 
+    background: #d1d5db;
+    border-left-color: #9ca3af;
+    padding-left: 1.75rem;
+}
+
+/* Active State */
+.menu-item.active {
+    background: #d1d5db;
+    border-left-color: #3b82f6;
+    font-weight: 600;
+}
+
+.menu-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #3b82f6;
+}
+
+/* Menu Icons */
 .menu-icon { 
     width: 24px; 
     height: 24px; 
     margin-right: 1rem; 
-    flex-shrink: 0; 
+    flex-shrink: 0;
+    color: #374151;
+    transition: all 0.3s ease;
+}
+
+.menu-item:hover .menu-icon {
+    transform: scale(1.1);
+}
+
+.menu-item.active .menu-icon {
+    color: #3b82f6;
+}
+
+/* Menu Text */
+.menu-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: opacity 0.3s ease;
 }
 
 .app-sidebar.collapsed .menu-text {
     opacity: 0;
     pointer-events: none;
+}
+
+/* Logout Section */
+.logout-item {
+    margin-top: auto;
+    padding: 0;
+    border-top: 1px solid #d1d5db;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    padding: 1rem 1.5rem;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #374151;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.logout-btn:hover {
+    background: #fca5a5;
+    color: #b91c1c;
+    border-left-color: #dc2626;
+    padding-left: 1.75rem;
+}
+
+.logout-btn .menu-icon {
+    margin-right: 1rem;
+    width: 24px;
+    height: 24px;
+    transition: all 0.3s ease;
+    color: #374151;
+}
+
+.logout-btn:hover .menu-icon {
+    transform: scale(1.1) rotate(-10deg);
+    color: #b91c1c;
+}
+
+.app-sidebar.collapsed .logout-btn .menu-text {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .app-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1000;
+        transform: translateX(-100%);
+    }
+    
+    .app-sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    
+    .app-sidebar.collapsed {
+        width: 260px;
+        transform: translateX(-100%);
+    }
+}
+
+/* Tooltip for collapsed state */
+.app-sidebar.collapsed .menu-item::after,
+.app-sidebar.collapsed .logout-btn::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 70px;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+.app-sidebar.collapsed .menu-item:hover::after,
+.app-sidebar.collapsed .logout-btn:hover::after {
+    opacity: 1;
+}
+
+/* Smooth animations */
+.menu-item,
+.logout-btn {
+    animation: fadeInLeft 0.3s ease;
+}
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }

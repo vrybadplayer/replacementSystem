@@ -23,7 +23,7 @@
     <div class="app-container">
         
         <!-- Reusable Sidebar -->
-        <x-sidebar />
+        <x-student_sidebar />
 
         <main class="main-content">
             

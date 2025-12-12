@@ -8,7 +8,7 @@
     </div>
 
     <div class="sidebar-menu">
-        <a href="{{ route('dashboard') }}" class="menu-item">
+        <a href="{{ route('admin.dashboard') }}" class="menu-item">
             <span class="menu-text">Main Menu</span>
         </a>
         <a href="#" class="menu-item">
@@ -30,5 +30,12 @@
         <a href="#" class="menu-item">
             <span class="menu-text">User Management</span>
         </a>
+        <form method="POST" action="{{ route('logout') }}" class="logout-item">
+            @csrf
+            <button type="submit" class="logout-btn">
+                <i class='bx bx-log-out menu-icon'></i>
+                <span class="menu-text">Log out</span>
+            </button>
+        </form>
     </div>
 </nav>

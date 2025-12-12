@@ -105,7 +105,7 @@ class TimetableController extends Controller
             ['name' => 'Sun', 'date' => '2025-12-28'],
         ];
 
-        return view('student.timetable', compact('weeks', 'hasReplacement', 'scheduleData', 'timeSlots', 'days'));
+        return view('student.timetableModule.timetable', compact('weeks', 'hasReplacement', 'scheduleData', 'timeSlots', 'days'));
     }
 
 
