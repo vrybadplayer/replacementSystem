@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('timetable', function (Blueprint $table) {
             $table->string('timetableId', 10)->primary();
-            $table->string('classGroupId', 10);
+            $table->string('classGroupId', 100);
             $table->string('courseSubjectId', 10);
             $table->string('classType', 8);
             $table->string('userId', 10)->nullable();
@@ -25,7 +25,6 @@ return new class extends Migration
             $table->string('classMode', 12);
             $table->timestamps();
 
-            $table->foreign('classGroupId')->references('classGroupId')->on('classGroup')->onDelete('cascade');
             $table->foreign('venueId')->references('venueId')->on('venue')->onDelete('cascade');
             $table->foreign('courseSubjectId')->references('courseSubjectId')->on('course_subject')->onDelete('cascade');
             $table->foreign('userId')->references('userId')->on('users')->onDelete('cascade');
