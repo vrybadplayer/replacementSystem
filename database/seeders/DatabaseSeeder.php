@@ -44,6 +44,13 @@ class DatabaseSeeder extends Seeder
             'email' => 'student@example.com',
         ]);
 
+        // Create Student User
+        User::factory()->lecturer()->create([
+            'userId' => 'U0004',
+            'name' => 'Lecturer User',
+            'email' => 'lecturer@example.com',
+        ]);
+
         // Create additional students for testing
         User::factory()->student()->count(5)->create();
 

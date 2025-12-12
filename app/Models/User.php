@@ -17,6 +17,10 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
+    protected $primaryKey = 'userId';
+    public $incrementing = false;     // because userId is string (U0001)
+    protected $keyType = 'string';
+    
     protected $fillable = [
         'userId',
         'name',
