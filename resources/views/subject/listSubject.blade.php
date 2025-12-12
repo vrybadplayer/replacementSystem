@@ -26,7 +26,7 @@
                         <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
-                        <input type="text" class="search-input" placeholder="Search subjects by code, name, lecturer, or course...">
+                        <input type="text" class="search-input" placeholder="Search subjects by code, name, or course...">
                     </div>
                 </div>
 
@@ -37,8 +37,7 @@
                             <th>Subject Name</th>
                             <th>Credits</th>
                             <th>Course</th>
-                            <th>Lecturer</th>
-                            <th>Type</th>
+                            <th>Category</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -50,7 +49,6 @@
                             <td>{{ $subject['name'] }}</td>
                             <td>{{ $subject['credits'] }}</td>
                             <td>{{ $subject['course'] }}</td>
-                            <td>{{ $subject['lecturer'] }}</td>
                             <td>
                                 <span class="type-badge">{{ $subject['type'] }}</span>
                             </td>
@@ -68,7 +66,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 2rem; color: #6b7280;">
+                            <td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">
                                 No subjects found.
                             </td>
                         </tr>

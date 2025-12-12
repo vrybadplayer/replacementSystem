@@ -70,8 +70,7 @@ class CourseService
                 'id' => $course->courseId,
                 'code' => $course->courseCode,
                 'name' => $course->courseName,
-                'credits' => null,
-                'department' => $course->faculty,
+                'faculty' => $course->faculty,
                 'status' => $course->status,
             ];
         })->toArray();
