@@ -24,7 +24,7 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
-        $nextUserId = 'U' . str_pad(static::$counter++, 4, '0', STR_PAD_LEFT);
+        $nextUserId = 'U' . str_pad(static::$counter++, 3, '0', STR_PAD_LEFT);
 
         return [
             'userId' => $nextUserId,
