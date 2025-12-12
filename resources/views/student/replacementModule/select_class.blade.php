@@ -104,7 +104,7 @@
     <x-header title="Student Portal" />
 
     <div class="app-container">
-        <x-sidebar />
+        <x-student_sidebar />
 
         <main class="main-content">
             <div class="select-class-container">
