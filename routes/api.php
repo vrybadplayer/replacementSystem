@@ -18,7 +18,14 @@ Route::get('/testing', [StudentTimetableController::class, 'test']);
 // --- Course Management API ---
 Route::get('/courses', [CourseController::class, 'apiIndex']);
 Route::get('/courses2', [CourseController::class, 'apiIndex2']);
-Route::get('/subjects', [SubjectController::class, 'apiIndex']);
+
+// --- Subjects REST API ---
+Route::get('/subjects', [SubjectController::class, 'index']); 
+Route::get('/subjects/{id}', [SubjectController::class, 'show']); 
+Route::post('/subjects', [SubjectController::class, 'store']); 
+Route::put('/subjects/{id}', [SubjectController::class, 'update']);
+Route::patch('/subjects/{id}', [SubjectController::class, 'update']); 
+Route::delete('/subjects/{id}', [SubjectController::class, 'destroy']);
 
 
 // --- User Management API ---

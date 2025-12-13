@@ -8,6 +8,7 @@ use App\Observers\ReplacementAppealObserver;
 use App\Services\CourseService;
 use App\Services\SubjectService;
 use App\Services\CourseSubjectService;
+use App\Services\CourseManagementService;
 use App\Mediator\TimetableMediator;
 use App\Mediator\TimetableMediatorInterface;
 
@@ -38,6 +39,15 @@ class AppServiceProvider extends ServiceProvider
         // Register CourseSubject Service
         $this->app->singleton('courseSubject.service', function ($app) {
             return new CourseSubjectService();
+        });
+
+        // Register unified Course Management Service
+        $this->app->singleton('courseManagement.service', function ($app) {
+            return new CourseManagementService(
+                $app->make('course.service'),
+                $app->make('subject.service'),
+                $app->make('courseSubject.service')
+            );
         });
     }
 

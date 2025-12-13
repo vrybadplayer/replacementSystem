@@ -33,7 +33,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/subjectAssignment', [AdminTimetableController::class, 'viewSubjectAssignment'])->name('admin.subjectAssignment');
     Route::get('/timeslotManagement', [AdminTimetableController::class, 'viewTimeslotManagement'])->name('admin.timeslotManagement');
     Route::get('/courses', [CourseController::class, 'index'])->name('admin.courses');
-    Route::get('/subjects', [SubjectController::class, 'index'])->name('admin.subjects');
+    Route::get('/subjects', [SubjectController::class, 'subjectListView'])->name('admin.subjects');
 });
 
 // Student Routes

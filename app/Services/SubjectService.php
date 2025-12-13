@@ -7,11 +7,11 @@ use App\Models\Subject;
 class SubjectService
 {
     /**
-     * Get all subjects
+     * Get all subjects with courses relationship loaded
      */
     public function getAllSubjects()
     {
-        return Subject::all();
+        return Subject::with(['courses'])->get();
     }
 
     /**
