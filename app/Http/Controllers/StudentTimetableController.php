@@ -2,13 +2,34 @@
 
 namespace App\Http\Controllers;
 
+use App\Mediator\TimetableMediatorInterface; 
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
-class TimetableController extends Controller
+class StudentTimetableController extends Controller
 {
+    protected $mediator;
+
+    public function __construct(TimetableMediatorInterface $mediator)
+    {
+        // Save the injected object into the class property
+        $this->mediator = $mediator;
+    }
+
+    // TEST API
+    public function test()
+    {
+        // 3. USE IT
+        // Now $this->mediator exists!
+        $result = $this->mediator->testApi();
+        
+        dd($result);
+    }
+
+
     public function index()
     {
+        
         // 1. Hardcoded Weeks for the Dropdown
         $weeks = [
             '2025-12-15' => 'Week 1',
@@ -228,18 +249,6 @@ class TimetableController extends Controller
         ];
 
         return view('student.timetableModule.select_timeslot', compact('scheduleData', 'timeSlots', 'days', 'selectedSubject', 'selectedDay'));
-    }
-
-    public function viewSubjectAssignment()
-    {
-        // Returns the Admin View located at resources/views/admin/subject_assignment.blade.php
-        return view('admin.timetableModule.subjectAssignment');
-    }
-
-    public function viewTimeslotManagement()
-    {
-        // Returns the view in your specific folder structure
-        return view('admin.timetableModule.timeslotManagement');
     }
 
 }
