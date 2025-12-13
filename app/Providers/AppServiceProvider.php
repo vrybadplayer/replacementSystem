@@ -8,6 +8,9 @@ use App\Observers\ReplacementAppealObserver;
 use App\Services\CourseService;
 use App\Services\SubjectService;
 use App\Services\CourseSubjectService;
+use App\Mediator\TimetableMediator;
+use App\Mediator\TimetableMediatorInterface;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -16,6 +19,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+
+        $this->app->bind(
+            TimetableMediatorInterface::class, 
+            TimetableMediator::class
+        );
+
         // Register Course Service
         $this->app->singleton('course.service', function ($app) {
             return new CourseService();

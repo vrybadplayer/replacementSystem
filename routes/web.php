@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TimetableController;
+use App\Http\Controllers\StudentTimetableController;
+use App\Http\Controllers\AdminTimetableController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\LoginController;
@@ -29,8 +30,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     })->name('admin.dashboard');
     
     // Admin-specific routes
-    Route::get('/subjectAssignment', [TimetableController::class, 'viewSubjectAssignment'])->name('admin.subjectAssignment');
-    Route::get('/timeslotManagement', [TimetableController::class, 'viewTimeslotManagement'])->name('admin.timeslotManagement');
+    Route::get('/subjectAssignment', [AdminTimetableController::class, 'viewSubjectAssignment'])->name('admin.subjectAssignment');
+    Route::get('/timeslotManagement', [AdminTimetableController::class, 'viewTimeslotManagement'])->name('admin.timeslotManagement');
     Route::get('/courses', [CourseController::class, 'index'])->name('admin.courses');
     Route::get('/subjects', [SubjectController::class, 'index'])->name('admin.subjects');
 });
@@ -43,9 +44,9 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->group(function (
     })->name('student.dashboard');
     
     // Timetable module
-    Route::get('/timetable', [TimetableController::class, 'index'])->name('student.timetable');
-    Route::get('/replacementOptions', [TimetableController::class, 'viewOptions'])->name('student.replacementOptions');
-    Route::get('/selectTimeslot', [TimetableController::class, 'selectTimeslot'])->name('student.selectTimeslot');
+    Route::get('/timetable', [StudentTimetableController::class, 'index'])->name('student.timetable');
+    Route::get('/replacementOptions', [StudentTimetableController::class, 'viewOptions'])->name('student.replacementOptions');
+    Route::get('/selectTimeslot', [StudentTimetableController::class, 'selectTimeslot'])->name('student.selectTimeslot');
     
     // Replacement Appeal module
     Route::get('/replacement/appeal', [ReplacementController::class, 'showAppealForm'])->name('replacement.appeal');

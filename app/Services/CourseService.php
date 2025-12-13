@@ -3,9 +3,52 @@
 namespace App\Services;
 
 use App\Models\Course;
+use Illuminate\Support\Facades\Http;
 
 class CourseService
 {
+
+
+    // ---------------------------- API TEST -----------------------------------------
+    protected $baseUrl = 'http://127.0.0.1:8000/api';
+
+
+    public function fetchCourses()
+    {
+        $response = Http::get("{$this->baseUrl}/courses");
+
+        if ($response->successful()) {
+            return $response->json();
+        }
+
+        return [];
+    }
+
+    public function fetchCourses2()
+    {
+        $response = Http::get("{$this->baseUrl}/courses2");
+
+        if ($response->successful()) {
+            return $response->json();
+        }
+
+        return [];
+    }
+
+    public function fetchSubjects()
+    {
+        $response = Http::get("{$this->baseUrl}/subjects");
+
+        if ($response->successful()) {
+            return $response->json();
+        }
+
+        return [];
+    }
+
+    // -------------------------------------------------------------------------------
+
+
     /**
      * Get all courses
      */
