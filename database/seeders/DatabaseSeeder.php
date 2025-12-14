@@ -39,11 +39,16 @@ class DatabaseSeeder extends Seeder
         }
 
         // Students (U0011 - U020)
+        $groups = ['CG001', 'CG002', 'CG003', 'CG004', 'CG005', 'CG006'];
         for ($i = 11; $i <= 20; $i++) {
             $id = 'U' . str_pad($i, 3, '0', STR_PAD_LEFT);
+            
+            $assignedGroup = $groups[$i % 6]; 
+
             User::factory()->student()->create([
                 'userId' => $id,
                 'email' => "student{$i}@example.com",
+                'classGroupId' => $assignedGroup,
             ]);
         }
 

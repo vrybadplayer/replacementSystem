@@ -23,6 +23,7 @@ class User extends Authenticatable
     
     protected $fillable = [
         'userId',
+        'classGroupId',
         'name',
         'email',
         'password',
@@ -63,4 +64,10 @@ class User extends Authenticatable
     {
         return $this->role === 'student';
     }
+
+    public function classGroup()
+    {
+        return $this->belongsTo(ClassGroup::class, 'classGroupId', 'classGroupId');
+    }
+
 }
