@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Portal - Timetable</title>
     
+    <!-- Using Vite is recommended, but asset() works if you put files in public/ -->
     <link rel="stylesheet" href="{{ asset('css/common/global.css') }}">
     <link rel="stylesheet" href="{{ asset('css/components/sidebar.css') }}">
     <link rel="stylesheet" href="{{ asset('css/pages/timetable.css') }}">
@@ -21,7 +22,7 @@
 
         <main class="main-content">
             
-            <!-- Reminder Alert -->
+            <!-- 1. Replacement Reminder -->
             @if($hasReplacement)
             <div class="reminder-box">
                 <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -29,12 +30,11 @@
                 </svg>
                 <div>
                     <strong>Replacement Class Reminder</strong><br>
-                    <span>You have one replacement class on 2025-12-24 at 1:00pm.</span>
+                    <span>You have replacement classes this week. Check the yellow slots below.</span>
                 </div>
             </div>
             @endif
 
-            <!-- Page Title & Filter -->
             <div class="controls-section">
                 <h2>My Timetable</h2>
                 
@@ -42,7 +42,7 @@
                     <label>Date Filter:</label>
                     <select name="date" onchange="this.form.submit()" class="filter-select">
                         @foreach($weeks as $date => $label)
-                            <option value="{{ $date }}" {{ (request('date') == $date || $loop->index == 1) ? 'selected' : '' }}>
+                            <option value="{{ $date }}" {{ request('date') == $date ? 'selected' : '' }}>
                                 {{ $label }}
                             </option>
                         @endforeach
@@ -56,6 +56,7 @@
                     <thead>
                         <tr>
                             <th>Day/Time</th>
+                            <!-- Dynamic Headers based on Controller Data -->
                             @foreach($timeSlots as $time)
                                 <th>{{ $time }}</th>
                             @endforeach
@@ -64,25 +65,33 @@
                     <tbody>
                         @foreach($days as $day)
                             <tr>
+                                <!-- Day Column -->
                                 <td class="day-column">
                                     {{ $day['name'] }}<br>
                                     <small>{{ $day['date'] }}</small>
                                 </td>
 
                                 @php $skipNext = 0; @endphp
+
                                 @foreach($timeSlots as $time)
+                                    
+                                    {{-- Handle Colspan Skipping --}}
                                     @if($skipNext > 0)
                                         @php $skipNext--; @endphp
                                         @continue
                                     @endif
 
-                                    @if(isset($scheduleData[$day['name']][$time]))
+                                    {{-- Check Data using $timetableData --}}
+                                    @if(isset($timetableData[$day['name']][$time]))
                                         @php 
-                                            $event = $scheduleData[$day['name']][$time]; 
+                                            $event = $timetableData[$day['name']][$time];
                                             $skipNext = $event['duration'] - 1; 
+
+                                            // Determine CSS Class
                                             $typeClass = match($event['type']) {
                                                 'normal' => 'slot-normal',
                                                 'replacement' => 'slot-replace',
+                                                'canceled' => 'slot-clash', // You used 'canceled' in controller
                                                 'clash' => 'slot-clash',
                                                 default => ''
                                             };
@@ -90,25 +99,34 @@
 
                                         <td colspan="{{ $event['duration'] }}">
                                             @if($event['type'] === 'normal')
-                                            <a href="{{ route('replacement.appeal', ['class_id' => $event['id']]) }}" class="class-slot {{ $typeClass }}">
+                                                <!-- Link to Appeal -->
+                                                <a href="{{ route('replacement.appeal', ['class_id' => $event['timetableId']]) }}" 
+                                                   class="class-slot {{ $typeClass }}">
                                             @else
-                                            <div class="class-slot {{ $typeClass }}">
+                                                <!-- Static Div -->
+                                                <div class="class-slot {{ $typeClass }}">
                                             @endif
+
                                                 <div class="slot-subject">{{ $event['subject'] }}</div>
-                                                <div class="slot-info">{{ $event['venue'] }}</div>
+                                                <div class="slot-info">{{ $event['venueId'] }}</div>
                                                 <div class="slot-info">{{ $event['time_str'] }}</div>
-                                                @if(isset($event['note']))
+                                                
+                                                @if(!empty($event['note']))
                                                     <div class="slot-info slot-note">{{ $event['note'] }}</div>
                                                 @endif
+
                                             @if($event['type'] === 'normal')
-                                            </a>
+                                                </a>
                                             @else
-                                            </div>
+                                                </div>
                                             @endif
                                         </td>
+
                                     @else
+                                        <!-- Empty Cell -->
                                         <td></td>
                                     @endif
+
                                 @endforeach
                             </tr>
                         @endforeach
@@ -119,13 +137,11 @@
             <div class="legend">
                 <div class="legend-item"><div class="legend-color bg-normal"></div><span>Normal Class</span></div>
                 <div class="legend-item"><div class="legend-color bg-replace"></div><span>Replacement Class</span></div>
-                <div class="legend-item"><div class="legend-color bg-clash"></div><span>Canceled Class</span></div>
+                <div class="legend-item"><div class="legend-color bg-clash"></div><span>Canceled/Holiday</span></div>
             </div>
 
         </main>
     </div>
 
-    <!-- Logic for Sidebar -->
-    <script src="{{ asset('js/sidebar.js') }}"></script>
 </body>
 </html>

@@ -5,8 +5,9 @@ namespace App\Mediator;
 interface TimetableMediatorInterface {
 
     // For Students
-    public function getStudentSchedule($studentId);
+    public function getCurrentWeekSchedule($studentId, $selectedDate);
     public function getValidReplacementTimeslots($studentId, $subjectId);
+    public function getTransitiveSubjectList();
 
     // For Admin Subject Assignment
     public function populateCourseDropdown();
@@ -18,7 +19,6 @@ interface TimetableMediatorInterface {
     // For API
     public function getClassDetails($timetableId);
     public function createReplacementSlot($originalId, $date, $time);
-    public function testApi();
 }
 
 ?>
