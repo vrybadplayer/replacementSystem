@@ -31,12 +31,16 @@ class AdminUserController extends Controller
             return back()->with('error', 'All fields required');
         }
 
+        if ($role === 'admin') {
+            return back()->with('error', 'Cannot change user role to admin');
+        }
+
         $user->name = $name;
         $user->email = $email;
         $user->role = $role;
         $user->save();
 
-        return back()->with('success', 'User updated successfully');
+        return redirect()->route('admin.user.index')->with('success', 'User updated successfully');
     }
 
     public function delete($userId)

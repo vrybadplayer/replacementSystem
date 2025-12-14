@@ -177,7 +177,6 @@
                         <select id="role" name="role" required>
                             <option value="student" {{ $user->role === 'student' ? 'selected' : '' }}>Student</option>
                             <option value="lecturer" {{ $user->role === 'lecturer' ? 'selected' : '' }}>Lecturer</option>
-                            <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin</option>
                         </select>
                     </div>
                     
