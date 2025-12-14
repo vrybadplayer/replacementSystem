@@ -29,7 +29,7 @@ class CourseManagementService
         $this->subjectService = $subjectService;
         $this->courseSubjectService = $courseSubjectService;
         // API base URL - matches CourseService pattern for XAMPP setup
-        $this->baseUrl = 'http://localhost/replacementSystem/public/api';
+        $this->baseUrl = 'http://127.0.0.1:8001/replacementSystem/public/api';
     }
 
     // ==================== Course Methods ====================

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CourseSubjectService
 {
-    protected $baseUrl = 'http://localhost/replacementSystem/public/api';
+    protected $baseUrl = 'http://127.0.0.1:8001/replacementSystem/public/api';
 
     /**
      * Get all course subjects
