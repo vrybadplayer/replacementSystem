@@ -7,11 +7,11 @@ use App\Models\Subject;
 class SubjectService
 {
     /**
-     * Get all subjects
+     * Get all subjects with courses relationship loaded
      */
     public function getAllSubjects()
     {
-        return Subject::all();
+        return Subject::with(['courses'])->get();
     }
 
     /**
@@ -65,21 +65,24 @@ class SubjectService
      */
     public function getSubjectsForView()
     {
-        return Subject::with(['courses' => function($query) {
-            $query->select('course.courseId', 'course.courseCode');
-        }])->get()->map(function ($subject) {
-            // Get the first course code from the relationship
-            $courseCode = $subject->courses->first() ? $subject->courses->first()->courseCode : 'N/A';
+        return Subject::with(['courses'])->get()->map(function ($subject) {
+            // Get all courses from the course table via the relationship
+            $courses = $subject->courses;
+            
+            // Display course codes, comma-separated if multiple courses
+            $courseCodes = $courses->isNotEmpty() 
+                ? $courses->pluck('courseCode')->join(', ')
+                : 'N/A';
             
             return [
                 'id' => $subject->subjectId,
-                'code' => $subject->subjectCode,
-                'name' => $subject->subjectName,
-                'credits' => $subject->creditHours,
-                'course' => $courseCode,
+                'code' => $subject->subjectCode ?? '',
+                'name' => $subject->subjectName ?? '',
+                'credits' => $subject->creditHours ?? 0,
+                'course' => $courseCodes,
                 'lecturer' => null,
-                'type' => $subject->category,
-                'status' => $subject->status,
+                'type' => $subject->category ?? '',
+                'status' => $subject->status ?? 'active',
             ];
         })->toArray();
     }

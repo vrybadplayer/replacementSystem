@@ -26,7 +26,7 @@
                         <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
-                        <input type="text" class="search-input" placeholder="Search courses by code, name, or department...">
+                        <input type="text" class="search-input" placeholder="Search courses by code, name, or faculty...">
                     </div>
                 </div>
 
@@ -35,8 +35,7 @@
                         <tr>
                             <th>Course Code</th>
                             <th>Course Name</th>
-                            <th>Credits</th>
-                            <th>Department</th>
+                            <th>Faculty</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -46,8 +45,7 @@
                         <tr>
                             <td><strong>{{ $course['code'] }}</strong></td>
                             <td>{{ $course['name'] }}</td>
-                            <td>{{ $course['credits'] }}</td>
-                            <td>{{ $course['department'] }}</td>
+                            <td>{{ $course['faculty'] }}</td>
                             <td>
                                 <span class="status-badge status-{{ $course['status'] }}">
                                     {{ ucfirst($course['status']) }}
@@ -62,7 +60,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">
+                            <td colspan="5" style="text-align: center; padding: 2rem; color: #6b7280;">
                                 No courses found.
                             </td>
                         </tr>

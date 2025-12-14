@@ -3,9 +3,52 @@
 namespace App\Services;
 
 use App\Models\Course;
+use Illuminate\Support\Facades\Http;
 
 class CourseService
 {
+
+
+    // ---------------------------- API TEST -----------------------------------------
+    protected $baseUrl = 'http://localhost/replacementSystem/public/api';
+
+
+    public function fetchCourses()
+    {
+        $response = Http::get("{$this->baseUrl}/courses");
+
+        if ($response->successful()) {
+            return $response->json();
+        }
+
+        return [];
+    }
+
+    public function fetchCourses2()
+    {
+        $response = Http::get("{$this->baseUrl}/courses2");
+
+        if ($response->successful()) {
+            return $response->json();
+        }
+
+        return [];
+    }
+
+    public function fetchSubjects()
+    {
+        $response = Http::get("{$this->baseUrl}/subjects");
+
+        if ($response->successful()) {
+            return $response->json();
+        }
+
+        return [];
+    }
+
+    // -------------------------------------------------------------------------------
+
+
     /**
      * Get all courses
      */
@@ -70,8 +113,7 @@ class CourseService
                 'id' => $course->courseId,
                 'code' => $course->courseCode,
                 'name' => $course->courseName,
-                'credits' => null,
-                'department' => $course->faculty,
+                'faculty' => $course->faculty,
                 'status' => $course->status,
             ];
         })->toArray();
