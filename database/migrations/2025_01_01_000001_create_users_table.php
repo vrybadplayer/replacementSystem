@@ -22,6 +22,9 @@ return new class extends Migration
             $table->string('status', 10)->default('active');
             $table->rememberToken();
             $table->timestamps();
+
+            $table->foreign('classGroupId')->references('classGroupId')->on('classGroup')->onDelete('cascade');
+
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

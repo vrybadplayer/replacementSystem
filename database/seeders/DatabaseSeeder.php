@@ -18,7 +18,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Create Users
+
+        $this->call([
+            VenueSeeder::class,
+            ClassGroupSeeder::class,
+        ]);
+        
+
         // We create U001 - U020 to match the IDs used in your TimetableSeeder
         $this->command->info('Seeding Users...');
         
@@ -52,15 +58,6 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 2. Call Independent External Seeders
-        // Venues and ClassGroups don't depend on anything, so we run them now.
-        $this->call([
-            VenueSeeder::class,
-            ClassGroupSeeder::class,
-        ]);
-
-
-        // 3. Seed Courses, Subjects, and Course Subjects using Facades
         $this->command->info('Seeding Courses, Subjects, and Course Subjects...');
         $this->call([
             CourseSeeder::class,
@@ -68,7 +65,6 @@ class DatabaseSeeder extends Seeder
             CourseSubjectSeeder::class,
         ]);
 
-        // 4. Call Dependent External Seeder
         // Timetable depends on User, Venue, ClassGroup, and CourseSubject existing first.
         $this->call([
             TimetableSeeder::class,

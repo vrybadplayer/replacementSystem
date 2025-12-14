@@ -12,17 +12,32 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('replacement', function (Blueprint $table) {
+            // Primary Key
             $table->string('replacementId', 10)->primary();
-            $table->string('appealId', 10);
-            $table->string('userId', 10);
-            $table->string('classGroupId', 10);
-            $table->date('date');
-            $table->time('timeSlot');
+            
+            // Foreign Key Columns
+            $table->string('appealId', 10)->index();
+            $table->string('userId', 10)->index();
+            $table->string('requestedClassGroupId', 10)->index();
+            $table->string('originalTimetableId', 10)->index();
+            
+            // Date Logic
+            $table->date('originalDate'); 
+            $table->date('requestedDate');
+            
+            // Time Logic
+            $table->time('originalStartTime');
+            $table->time('startTime');
+            $table->time('endTime');
+            
             $table->timestamps();
 
+            // Constraints
             $table->foreign('appealId')->references('appealId')->on('replacementAppeal')->onDelete('cascade');
             $table->foreign('userId')->references('userId')->on('users')->onDelete('cascade');
-            $table->foreign('classGroupId')->references('classGroupId')->on('classGroup')->onDelete('cascade');
+            $table->foreign('requestedClassGroupId')->references('classGroupId')->on('classGroup')->onDelete('cascade');
+            
+            $table->foreign('originalTimetableId')->references('timetableId')->on('timetable')->onDelete('cascade');
         });
     }
 

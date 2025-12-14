@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('replacementAppeal', function (Blueprint $table) {
             $table->string('appealId', 10)->primary();
             $table->string('userId', 10);
-            $table->string('originalClassId', 10);
-            $table->string('requestedClassId', 10);
+            $table->string('originalClassGroupId', 10);
+            $table->string('requestedClassGroupId', 10);
             $table->time('originalTimeslot');
             $table->time('requestedTimeslot');
             $table->text('reason');
@@ -28,8 +28,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('userId')->references('userId')->on('users')->onDelete('cascade');
-            $table->foreign('originalClassId')->references('timetableId')->on('timetable')->onDelete('cascade');
-            $table->foreign('requestedClassId')->references('timetableId')->on('timetable')->onDelete('cascade');
+            $table->foreign('originalClassGroupId')->references('classGroupId')->on('classGroup')->onDelete('cascade');
+            $table->foreign('requestedClassGroupId')->references('classGroupId')->on('classGroup')->onDelete('cascade');
             $table->foreign('adminId')->references('userId')->on('users')->onDelete('set null');
         });
     }
