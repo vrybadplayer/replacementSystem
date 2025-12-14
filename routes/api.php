@@ -23,6 +23,7 @@ Route::get('/auth/user', [LoginController::class, 'apiGetUser'])->middleware('au
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/users', [AdminUserController::class, 'getUsersJson']);
 });
+Route::get('/users/{id}', [UserController::class, 'apiShow']);
 
 // --- Student Profile API ---
 Route::middleware('auth')->group(function () {

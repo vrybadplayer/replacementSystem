@@ -9,6 +9,23 @@ use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
+
+    // ----------- TEMP FUNCTION -----------
+    public function apiShow($id)
+    {
+        // Find user and make sure we get the classGroupId
+        // In your User model, ensure 'classGroupId' is in $fillable or visible
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        return response()->json($user);
+    }
+    // ----------- TEMP FUNCTION -----------
+
+
     public function showProfile()
     {
         $user = Auth::user();
