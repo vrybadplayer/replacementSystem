@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Facades\CourseSubjectFacade;
+use App\Facades\CourseManagementFacade;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -176,7 +176,7 @@ class CourseSubjectSeeder extends Seeder
         ];
 
         foreach ($courseSubjects as $courseSubject) {
-            CourseSubjectFacade::createOrUpdateCourseSubject($courseSubject, $courseSubject['courseSubjectId']);
+            CourseManagementFacade::createOrUpdateCourseSubject($courseSubject, $courseSubject['courseSubjectId']);
         }
     }
 }
