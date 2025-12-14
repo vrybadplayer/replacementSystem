@@ -2,9 +2,6 @@
 
 namespace App\Services;
 
-use App\Services\CourseService;
-use App\Services\SubjectService;
-use App\Services\CourseSubjectService;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -535,4 +532,3 @@ class CourseManagementService
         return $this->courseSubjectService->deleteCourseSubject($courseSubjectId);
     }
 }
-
