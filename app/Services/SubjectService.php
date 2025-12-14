@@ -6,6 +6,9 @@ use App\Models\Subject;
 
 class SubjectService
 {
+
+    protected $baseUrl = 'http://localhost/replacementSystem/public/api';
+
     /**
      * Get all subjects with courses relationship loaded
      */

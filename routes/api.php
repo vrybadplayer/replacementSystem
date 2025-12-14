@@ -6,6 +6,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\StudentTimetableController;
 use App\Http\Controllers\AdminTimetableController;
+use App\Http\Controllers\CourseSubjectController;
 
 
 // This file is what ApiService files will call
@@ -18,6 +19,9 @@ Route::get('/testing', [StudentTimetableController::class, 'test']);
 // --- Course Management API ---
 Route::get('/courses', [CourseController::class, 'apiIndex']);
 Route::get('/courses2', [CourseController::class, 'apiIndex2']);
+
+// --- Course Subject Bridge REST API ---
+Route::get('/courseSubject', [CourseSubjectController::class, 'getAllCourseSubjects']);
 
 // --- Subjects REST API ---
 Route::get('/subjects', [SubjectController::class, 'index']); 
