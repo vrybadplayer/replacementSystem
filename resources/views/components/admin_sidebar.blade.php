@@ -27,7 +27,7 @@
         <a href="{{ route('admin.timeslotManagement') }}" class="menu-item">
             <span class="menu-text">Timeslot Management</span>
         </a>
-        <a href="#" class="menu-item">
+        <a href="{{ route('admin.user.index') }}" class="menu-item {{ request()->routeIs('admin.user.*') ? 'active' : '' }}">
             <span class="menu-text">User Management</span>
         </a>
         <form method="POST" action="{{ route('logout') }}" class="logout-item">
