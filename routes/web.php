@@ -7,6 +7,8 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ReplacementController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\AdminUserController;
 
 
 // Welcome/Landing Page
@@ -27,6 +29,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         return view('admin_dashboard');
     })->name('admin.dashboard');
     
+    // User Management
+    Route::get('/users', [AdminUserController::class, 'index'])->name('admin.user.index');
+    Route::get('/users/{userId}/edit', [AdminUserController::class, 'edit'])->name('admin.user.edit');
+    Route::post('/users/{userId}/update', [AdminUserController::class, 'update'])->name('admin.user.update');
+    Route::delete('/users/{userId}', [AdminUserController::class, 'delete'])->name('admin.user.delete');
+    
     // Admin-specific routes
     Route::get('/subjectAssignment', [AdminTimetableController::class, 'viewSubjectAssignment'])->name('admin.subjectAssignment');
     Route::get('/timeslotManagement', [AdminTimetableController::class, 'viewTimeslotManagement'])->name('admin.timeslotManagement');
@@ -40,6 +48,9 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->group(function (
     Route::get('/dashboard', function () {
         return view('student_dashboard');
     })->name('student.dashboard');
+    
+    // Student Profile module
+    Route::get('/profile', [UserController::class, 'showProfile'])->name('student.profile');
     
     // Timetable module
     Route::get('/timetable', [StudentTimetableController::class, 'index'])->name('student.timetable');

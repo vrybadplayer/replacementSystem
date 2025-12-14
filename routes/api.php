@@ -7,9 +7,29 @@ use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\StudentTimetableController;
 use App\Http\Controllers\AdminTimetableController;
 use App\Http\Controllers\CourseSubjectController;
+use App\Http\Controllers\LoginController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\AdminUserController;
 
 
 // This file is what ApiService files will call
+
+// --- Authentication API ---
+Route::post('/login', [LoginController::class, 'apiLogin']);
+Route::post('/logout', [LoginController::class, 'apiLogout'])->middleware('auth');
+Route::get('/auth/user', [LoginController::class, 'apiGetUser'])->middleware('auth');
+
+// --- User Management API (Admin) ---
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/admin/users', [AdminUserController::class, 'getUsersJson']);
+});
+
+// --- Student Profile API ---
+Route::middleware('auth')->group(function () {
+    Route::get('/user/profile', [UserController::class, 'getProfileData']);
+    Route::get('/user/courses', [UserController::class, 'getEnrolledCourses']);
+    Route::post('/user/profile/update', [UserController::class, 'updateProfile']);
+});
 
 // Timetable Module API
 Route::get('/', [StudentTimetableController::class, '']);
@@ -35,6 +55,11 @@ Route::delete('/subjects/{id}', [SubjectController::class, 'destroy']);
 // --- User Management API ---
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+Route::middleware('auth')->group(function () {
+    Route::get('/user/profile', [UserController::class, 'getProfileData']);
+    Route::get('/user/courses', [UserController::class, 'getEnrolledCourses']);
+    Route::post('/user/profile/update', [UserController::class, 'updateProfile']);
 });
 
 // --- Replacement Module API ---

@@ -73,6 +73,15 @@
                         <h3>Replacement Appeal</h3>
                         <p>Submit an appeal for replacement</p>
                     </a>
+                    <a href="{{ route('student.profile') }}" class="action-card">
+                        <div class="action-card-icon">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                        </div>
+                        <h3>My Profile</h3>
+                        <p>View and manage your profile</p>
+                    </a>
                 </div>
 
             </div>
