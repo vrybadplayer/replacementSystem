@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Facades\CourseManagementFacade;
+use App\Models\Course;
 
 class CourseController extends Controller
 {
@@ -21,17 +22,17 @@ class CourseController extends Controller
     // ---------- API TEST ----------
     public function apiIndex()
     {
-        // Option A: If you have seeded database data
-        // return response()->json(Course::all());
-
-        // Option B: Hardcoded Dummy Data (Safe for testing right now)
+        // TODO: Fetch properly
         $dummyCourses = [
             ['courseId' => 'RSD', 'courseName' => 'Software Engineering'],
             ['courseId' => 'RIS', 'courseName' => 'Information Systems'],
             ['courseId' => 'RIT', 'courseName' => 'Internet Technology'],
         ];
 
-        return response()->json($dummyCourses);
+        return response()->json([
+            'success' => true,
+            'data' => $dummyCourses,
+        ]);
     }
 
         public function apiIndex2()

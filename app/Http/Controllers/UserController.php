@@ -197,7 +197,7 @@ class UserController extends Controller
      */
     public function apiShow($id)
     {
-        $user = $this->userService->getUser($id);
+        $user = User::find($id);
 
         if (!$user || empty($user)) {
             return response()->json(['error' => 'User not found'], 404);
