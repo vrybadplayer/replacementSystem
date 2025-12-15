@@ -43,7 +43,17 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/timeslotManagement', [AdminTimetableController::class, 'viewTimeslotManagement'])->name('admin.timeslotManagement');
     Route::get('/courses', [CourseController::class, 'courseListView'])->name('admin.courses');
     Route::get('/subjects', [SubjectController::class, 'subjectListView'])->name('admin.subjects');
+
+    // Admin Replacement Module
+    Route::get('/replacement/appeals', [ReplacementController::class, 'adminViewAppeals'])->name('admin.replacement.appeals');
+    Route::get('/replacement/appeals/{appealId}', [ReplacementController::class, 'adminViewAppealDetail'])->name('admin.replacement.detail');
+    Route::post('/replacement/appeals/{appealId}/process', [ReplacementController::class, 'adminProcessAppeal'])->name('admin.replacement.process');
+
+    // Admin Timetable Assignment Module
+    Route::get('/ajax/filter-subjects', [AdminTimetableController::class, 'ajaxFilterSubjects']);
+    Route::post('/assignment/submit', [AdminTimetableController::class, 'storeTimetable'])->name('admin.assignment.submit');
 });
+
 
 // Student Routes
 Route::middleware(['auth', 'role:student'])->prefix('student')->group(function () {
@@ -66,12 +76,7 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->group(function (
     Route::get('/replacement/my-appeals', [ReplacementController::class, 'myAppeals'])->name('replacement.myAppeals');
 });
 
-// Admin Replacement Module
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
-    Route::get('/replacement/appeals', [ReplacementController::class, 'adminViewAppeals'])->name('admin.replacement.appeals');
-    Route::get('/replacement/appeals/{appealId}', [ReplacementController::class, 'adminViewAppealDetail'])->name('admin.replacement.detail');
-    Route::post('/replacement/appeals/{appealId}/process', [ReplacementController::class, 'adminProcessAppeal'])->name('admin.replacement.process');
-});
+
 
 // Root route - redirect to login
 Route::get('/', function () {

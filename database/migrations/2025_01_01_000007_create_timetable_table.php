@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('timetable', function (Blueprint $table) {
             $table->string('timetableId', 10)->primary();
-            $table->string('classGroupId', 100);
+            $table->string('classGroupId', 100)->index();
             $table->string('courseSubjectId', 10);
             $table->string('classType', 8);
             $table->string('userId', 10)->nullable();
