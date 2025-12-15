@@ -3,14 +3,16 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Log;
 
 /**
- * Unified Service for Course Management Module
+ * Unified Service for Course Subject Management Module
  * 
  * Aggregates Course, Subject, and CourseSubject services
  * Provides a single entry point for all course management operations
  */
-class CourseManagementService
+class CourseSubjectManagementService
 {
     protected CourseService $courseService;
     protected SubjectService $subjectService;
@@ -25,7 +27,6 @@ class CourseManagementService
         $this->courseService = $courseService;
         $this->subjectService = $subjectService;
         $this->courseSubjectService = $courseSubjectService;
-        // API base URL - matches CourseService pattern for XAMPP setup
         $this->baseUrl = 'http://127.0.0.1:8001/api';
     }
 
@@ -96,11 +97,24 @@ class CourseManagementService
      */
     public function fetchCoursesFromApi(): array
     {
-        $response = Http::get("{$this->baseUrl}/courses");
+        try {
+            $response = Http::timeout(5)->get("{$this->baseUrl}/courses");
 
-        if ($response->successful()) {
-            $json = $response->json();
-            return $json['data'] ?? [];
+            if ($response->successful()) {
+                $json = $response->json();
+                return $json['data'] ?? [];
+            }
+        } catch (ConnectionException $e) {
+            // API server is not available
+            Log::warning('Failed to connect to courses API', [
+                'url' => "{$this->baseUrl}/courses",
+                'error' => $e->getMessage()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching courses from API', [
+                'url' => "{$this->baseUrl}/courses",
+                'error' => $e->getMessage()
+            ]);
         }
 
         return [];
@@ -108,6 +122,7 @@ class CourseManagementService
 
     /**
      * Step 2-4: Fetch from API, process data, format for views
+     * Falls back to database if API is unavailable
      * 
      * @param array|null $filters Optional filters to apply
      * @return array Formatted courses for view
@@ -117,35 +132,17 @@ class CourseManagementService
         // Step 1: Fetch data from API
         $apiData = $this->fetchCoursesFromApi();
 
-        // Step 2: Process data (filtering, transformation, etc.)
-        $processedData = $this->processCoursesData($apiData, $filters);
-
-        // Step 3: Format for views
-        return $this->formatCoursesForView($processedData);
-    }
-
-    /**
-     * Step 2: Process courses data (filtering, validation, etc.)
-     * 
-     * @param array $data Raw API data
-     * @param array|null $filters Optional filters
-     * @return array Processed data
-     */
-    protected function processCoursesData(array $data, ?array $filters = null): array
-    {
-        // Apply filters if provided
-        if ($filters) {
-            $data = $this->applyFilters($data, $filters);
+        // If API returned no data (empty or connection failed), fall back to database
+        if (empty($apiData)) {
+            return $this->getCoursesForView();
         }
 
-        // Additional processing logic can be added here
-        // e.g., validation, data enrichment, etc.
-
-        return $data;
+        // Format directly for views (no processing step needed)
+        return $this->formatCoursesForView($apiData);
     }
 
     /**
-     * Step 3: Format courses data for views
+     * Format courses data for views
      * 
      * @param array $data Processed data
      * @return array Formatted data for view
@@ -170,55 +167,57 @@ class CourseManagementService
      */
     public function fetchSubjectsFromApi(): array
     {
-        $response = Http::get("{$this->baseUrl}/subjects");
+        try {
+            $url = "{$this->baseUrl}/subjects";
+            Log::info('Fetching subjects from API', ['url' => $url]);
+            
+            $response = Http::timeout(5)->get($url);
 
-        if ($response->successful()) {
-            return $response->json();
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                // Debug: Log the response structure
+                Log::info('API response received', [
+                    'status' => $response->status(),
+                    'has_data_key' => isset($data['data']),
+                    'data_type' => gettype($data['data'] ?? null),
+                    'data_count' => isset($data['data']) && is_array($data['data']) ? count($data['data']) : 0,
+                    'response_keys' => array_keys($data ?? [])
+                ]);
+                
+                // Handle different response formats
+                if (isset($data['data']) && is_array($data['data'])) {
+                    // Standard format: { "success": true, "data": [...] }
+                    return $data['data'];
+                } elseif (is_array($data) && isset($data[0])) {
+                    // Direct array format: [...]
+                    return $data;
+                } else {
+                    // Empty or unexpected format
+                    Log::warning('Unexpected API response format', ['data' => $data]);
+                    return [];
+                }
+            } else {
+                throw new \Exception('API returned unsuccessful response: ' . $response->status());
+            }
+        } catch (ConnectionException $e) {
+            // API server is not available - throw exception instead of returning empty
+            Log::error('Failed to connect to subjects API', [
+                'url' => "{$this->baseUrl}/subjects",
+                'error' => $e->getMessage()
+            ]);
+            throw new \Exception('Failed to connect to subjects API. Please ensure the API server is running on port 8001. Error: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error('Error fetching subjects from API', [
+                'url' => "{$this->baseUrl}/subjects",
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
         }
-
-        return [];
-    }
-
-    /**
-     * Fetch from API, process data, format for views
-     * 
-     * @param array|null $filters Optional filters to apply
-     * @return array Formatted subjects for view
-     */
-    public function getSubjectsForViewFromApi(array $filters = null): array
-    {
-        // Step 1: Fetch data from API
-        $apiData = $this->fetchSubjectsFromApi();
-
-        // Step 2: Process data (filtering, transformation, etc.)
-        $processedData = $this->processSubjectsData($apiData, $filters);
-
-        // Step 3: Format for views
-        return $this->formatSubjectsForView($processedData);
-    }
-
-    /**
-     * Process subjects data (filtering, validation, etc.)
-     * 
-     * @param array $data Raw API data
-     * @param array|null $filters Optional filters
-     * @return array Processed data
-     */
-    protected function processSubjectsData(array $data, ?array $filters = null): array
-    {
-        // Apply filters if provided
-        if ($filters) {
-            $data = $this->applyFilters($data, $filters);
-        }
-
-        // Additional processing logic can be added here
-
-        return $data;
     }
 
     /**
      * Format subjects data for views
-     * 
      * @param array $data Processed data
      * @return array Formatted data for view
      */
@@ -239,63 +238,45 @@ class CourseManagementService
     }
 
     /**
-     * Apply filters to data array
+     * Fetch from API and format for views
+     * ONLY fetches from external API (no database fallback)
      * 
-     * @param array $data Data to filter
-     * @param array $filters Filters to apply
-     * @return array Filtered data
+     * @param array|null $filters Optional filters to apply (currently not used)
+     * @return array Formatted subjects for view
+     * @throws \Exception if API is unavailable
      */
-    protected function applyFilters(array $data, array $filters): array
+    public function getSubjectsForViewFromApi(array $filters = null): array
     {
-        foreach ($filters as $key => $value) {
-            if ($value !== null && $value !== '') {
-                $data = array_filter($data, function ($item) use ($key, $value) {
-                    return isset($item[$key]) && 
-                           (stripos($item[$key], $value) !== false || $item[$key] == $value);
-                });
-            }
-        }
-
-        return array_values($data);
+        // Fetch data from API and format directly for views
+        $apiData = $this->fetchSubjectsFromApi();
+        return $this->formatSubjectsForView($apiData);
     }
 
     // ==================== Subject Methods ====================
 
     /**
      * Get all subjects via API
+     * Falls back to database if API is unavailable
+     * Uses fetchSubjectsFromApi() to avoid code duplication
      */
     public function getAllSubjects()
     {
-        $response = Http::get("{$this->baseUrl}/subjects");
-
-        if ($response->successful()) {
-            $data = $response->json();
-            // Convert API response to collection format
-            if (isset($data['data']) && is_array($data['data'])) {
-                return collect($data['data'])->map(function ($item) {
-                    return (object) $item;
-                });
-            }
+        try {
+            // Use fetchSubjectsFromApi() to avoid duplicating HTTP call logic
+            $apiData = $this->fetchSubjectsFromApi();
+            
+            // Convert array to collection format
+            return collect($apiData)->map(function ($item) {
+                return (object) $item;
+            });
+        } catch (\Exception $e) {
+            // API server is not available, fall back to database
+            Log::warning('Failed to fetch subjects from API, falling back to database', [
+                'url' => "{$this->baseUrl}/subjects",
+                'error' => $e->getMessage()
+            ]);
+            return $this->subjectService->getAllSubjects();
         }
-
-        return collect([]);
-    }
-
-    /**
-     * Get subject by ID via API
-     */
-    public function getSubjectById(string $subjectId)
-    {
-        $response = Http::get("{$this->baseUrl}/subjects/{$subjectId}");
-
-        if ($response->successful()) {
-            $data = $response->json();
-            if (isset($data['data']) && is_array($data['data'])) {
-                return (object) $data['data'];
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -308,16 +289,32 @@ class CourseManagementService
 
     /**
      * Create a new subject via API
+     * Falls back to database if API is unavailable
      */
     public function createSubject(array $data)
     {
-        $response = Http::post("{$this->baseUrl}/subjects", $data);
+        try {
+            $response = Http::timeout(5)->post("{$this->baseUrl}/subjects", $data);
 
-        if ($response->successful()) {
-            $responseData = $response->json();
-            if (isset($responseData['data']) && is_array($responseData['data'])) {
-                return (object) $responseData['data'];
+            if ($response->successful()) {
+                $responseData = $response->json();
+                if (isset($responseData['data']) && is_array($responseData['data'])) {
+                    return (object) $responseData['data'];
+                }
             }
+        } catch (ConnectionException $e) {
+            // API server is not available, fall back to database
+            Log::warning('Failed to connect to subjects API, falling back to database', [
+                'url' => "{$this->baseUrl}/subjects",
+                'error' => $e->getMessage()
+            ]);
+            return $this->subjectService->createSubject($data);
+        } catch (\Exception $e) {
+            Log::error('Error creating subject via API, falling back to database', [
+                'url' => "{$this->baseUrl}/subjects",
+                'error' => $e->getMessage()
+            ]);
+            return $this->subjectService->createSubject($data);
         }
 
         throw new \Exception('Failed to create subject via API');
@@ -325,50 +322,41 @@ class CourseManagementService
 
     /**
      * Update a subject via API
+     * Falls back to database if API is unavailable
      */
     public function updateSubject(string $subjectId, array $data)
     {
-        $response = Http::put("{$this->baseUrl}/subjects/{$subjectId}", $data);
+        try {
+            $response = Http::timeout(5)->put("{$this->baseUrl}/subjects/{$subjectId}", $data);
 
-        if ($response->successful()) {
-            $responseData = $response->json();
-            if (isset($responseData['data']) && is_array($responseData['data'])) {
-                return (object) $responseData['data'];
+            if ($response->successful()) {
+                $responseData = $response->json();
+                if (isset($responseData['data']) && is_array($responseData['data'])) {
+                    return (object) $responseData['data'];
+                }
             }
-        }
 
-        if ($response->status() === 404) {
-            throw new \Illuminate\Database\Eloquent\ModelNotFoundException('Subject not found');
+            if ($response->status() === 404) {
+                throw new \Illuminate\Database\Eloquent\ModelNotFoundException('Subject not found');
+            }
+        } catch (ConnectionException $e) {
+            // API server is not available, fall back to database
+            Log::warning('Failed to connect to subjects API, falling back to database', [
+                'url' => "{$this->baseUrl}/subjects/{$subjectId}",
+                'error' => $e->getMessage()
+            ]);
+            return $this->subjectService->updateSubject($subjectId, $data);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('Error updating subject via API, falling back to database', [
+                'url' => "{$this->baseUrl}/subjects/{$subjectId}",
+                'error' => $e->getMessage()
+            ]);
+            return $this->subjectService->updateSubject($subjectId, $data);
         }
 
         throw new \Exception('Failed to update subject via API');
-    }
-
-    /**
-     * Delete a subject via API
-     */
-    public function deleteSubject(string $subjectId)
-    {
-        $response = Http::delete("{$this->baseUrl}/subjects/{$subjectId}");
-
-        if ($response->successful()) {
-            $responseData = $response->json();
-            return isset($responseData['success']) && $responseData['success'] === true;
-        }
-
-        if ($response->status() === 404) {
-            throw new \Illuminate\Database\Eloquent\ModelNotFoundException('Subject not found');
-        }
-
-        return false;
-    }
-
-    /**
-     * Get subjects formatted for views
-     */
-    public function getSubjectsForView()
-    {
-        return $this->subjectService->getSubjectsForView();
     }
 
     /**
@@ -533,3 +521,4 @@ class CourseManagementService
         return $this->courseSubjectService->deleteCourseSubject($courseSubjectId);
     }
 }
+

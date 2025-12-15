@@ -67,7 +67,16 @@
                         @empty
                         <tr>
                             <td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">
-                                No subjects found.
+                                @if(isset($error))
+                                    <div style="color: #dc2626; font-weight: bold;">
+                                        {{ $error }}
+                                    </div>
+                                    <div style="margin-top: 0.5rem; font-size: 0.875rem;">
+                                        Please ensure the API server is running on port 8001.
+                                    </div>
+                                @else
+                                    No subjects found.
+                                @endif
                             </td>
                         </tr>
                         @endforelse

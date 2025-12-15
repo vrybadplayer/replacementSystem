@@ -5,7 +5,7 @@ namespace App\Facades;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * Unified Facade for Course Management Module
+ * Unified Facade for Course Subject Management Module
  * 
  * Handles all operations related to Courses, Subjects, and CourseSubject relationships
  * 
@@ -47,9 +47,9 @@ use Illuminate\Support\Facades\Facade;
  * @see \App\Services\CourseService
  * @see \App\Services\SubjectService
  * @see \App\Services\CourseSubjectService
- * @see \App\Services\CourseManagementService
+ * @see \App\Services\CourseSubjectManagementService
  */
-class CourseManagementFacade extends Facade
+class CourseSubjectManagementFacade extends Facade
 {
     /**
      * Get the registered name of the component.

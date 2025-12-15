@@ -6,7 +6,7 @@ use App\Models\Timetable;
 use App\Models\Venue;
 use App\Models\ClassGroup;
 use App\Models\CourseSubject;
-use App\Services\CourseManagementService;
+use App\Services\CourseSubjectManagementService;
 use App\Services\CourseSubjectService;
 use App\Services\UserService;
 use Illuminate\Support\Facades\DB; 
@@ -18,7 +18,7 @@ class TimetableMediator implements TimetableMediatorInterface
     protected $courseSubjectApi;
     protected $userApi;
 
-    public function __construct(CourseManagementService $courseApi, CourseSubjectService $courseSubjectApi, UserService $userApi)
+    public function __construct(CourseSubjectManagementService $courseApi, CourseSubjectService $courseSubjectApi, UserService $userApi)
     {
         $this->courseApi = $courseApi;
         $this->courseSubjectApi = $courseSubjectApi;

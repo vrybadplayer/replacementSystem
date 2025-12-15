@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Facades\CourseManagementFacade;
+use App\Facades\CourseSubjectManagementFacade;
 use App\Models\Course;
 
 class CourseController extends Controller
@@ -13,7 +13,7 @@ class CourseController extends Controller
     public function index()
     {
         // Step 1-3: Fetch from API, process data, format for views (through Facade/Service)
-        $courses = CourseManagementFacade::getCoursesForViewFromApi();
+        $courses = CourseSubjectManagementFacade::getCoursesForViewFromApi();
 
         // Step 4: Return view with processed data
         return view('course.listCourse', compact('courses'));

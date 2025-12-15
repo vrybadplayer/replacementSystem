@@ -3,33 +3,23 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Facades\CourseManagementFacade;
+use Illuminate\Support\Facades\Log;
+use App\Facades\CourseSubjectManagementFacade;
+use App\Models\Subject;
 
 class SubjectController extends Controller
 {
-    /**
-     * Web View: GET /admin/subjects
-     * Return view with subjects list
-     */
-    public function subjectListView()
-    {
-        // Single point to get subjects with course information
-        // Can optionally pass filters: ['status' => 'active', 'category' => 'Core', 'search' => 'Database']
-        $subjects = CourseManagementFacade::getSubjectsWithCoursesForView();
-
-        // Return view with processed data
-        return view('subject.listSubject', compact('subjects'));
-    }
-
+    
     /**
      * REST API: GET /api/subjects
-     * Get all subjects data
+     * Get all subjects data FROM DATABASE directly (to avoid circular API calls)
+     * This endpoint is called by the web view's API fetch
      */
     public function index()
     {
-        // Get all subjects
-        $subjects = CourseManagementFacade::getAllSubjects();
-
+        // Get all subjects FROM DATABASE directly (bypassing services to avoid circular calls)
+        $subjects = Subject::with(['courses'])->get();
+        
         // Map to API response format
         $subjectsData = $subjects->map(function ($subject) {
             return [
@@ -50,35 +40,30 @@ class SubjectController extends Controller
     }
 
     /**
-     * REST API: GET /api/subjects/{id}
-     * Get a single subject by ID
+     * Web View: GET /admin/subjects
+     * Return view with subjects list FROM EXTERNAL API
      */
-    public function show(string $id)
+    public function subjectListView()
     {
-        $subject = CourseManagementFacade::getSubjectById($id);
-        
-        if (!$subject) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Subject not found'
-            ], 404);
+        try {
+            // Fetch subjects FROM EXTERNAL API (port 8001)
+            // Requires separate API server running on port 8001
+            $subjects = CourseSubjectManagementFacade::getSubjectsForViewFromApi();
+
+            // Return view with processed data
+            return view('subject.listSubject', compact('subjects'));
+        } catch (\Exception $e) {
+            // If API fails, show error message
+            Log::error('Failed to fetch subjects from API', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return view('subject.listSubject', [
+                'subjects' => [],
+                'error' => 'Failed to load subjects from API: ' . $e->getMessage()
+            ]);
         }
-
-        // Prepare course codes
-        $subject = CourseManagementFacade::prepareCourseCodes(collect([$subject]))->first();
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'subjectId' => $subject->subjectId,
-                'subjectCode' => $subject->subjectCode ?? '',
-                'subjectName' => $subject->subjectName ?? '',
-                'creditHours' => $subject->creditHours ?? 0,
-                'category' => $subject->category ?? '',
-                'status' => $subject->status ?? 'active',
-                'courseCode' => $subject->courseCodes ?? 'N/A',
-            ]
-        ], 200);
     }
 
     /**
@@ -97,7 +82,7 @@ class SubjectController extends Controller
         ]);
 
         try {
-            $subject = CourseManagementFacade::createSubject($validated);
+            $subject = CourseSubjectManagementFacade::createSubject($validated);
             
             return response()->json([
                 'success' => true,
@@ -135,7 +120,7 @@ class SubjectController extends Controller
         ]);
 
         try {
-            $subject = CourseManagementFacade::updateSubject($id, $validated);
+            $subject = CourseSubjectManagementFacade::updateSubject($id, $validated);
             
             return response()->json([
                 'success' => true,
@@ -158,40 +143,6 @@ class SubjectController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update subject',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * REST API: DELETE /api/subjects/{id}
-     * Delete a subject
-     */
-    public function destroy(string $id)
-    {
-        try {
-            $deleted = CourseManagementFacade::deleteSubject($id);
-            
-            if ($deleted) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Subject deleted successfully'
-                ], 200);
-            }
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete subject'
-            ], 500);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Subject not found'
-            ], 404);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete subject',
                 'error' => $e->getMessage()
             ], 500);
         }

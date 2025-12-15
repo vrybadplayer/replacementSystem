@@ -53,11 +53,9 @@ Route::get('/courseSubject', [CourseSubjectController::class, 'getAllCourseSubje
 
 // --- Subjects REST API ---
 Route::get('/subjects', [SubjectController::class, 'index']); 
-Route::get('/subjects/{id}', [SubjectController::class, 'show']); 
 Route::post('/subjects', [SubjectController::class, 'store']); 
 Route::put('/subjects/{id}', [SubjectController::class, 'update']);
 Route::patch('/subjects/{id}', [SubjectController::class, 'update']); 
-Route::delete('/subjects/{id}', [SubjectController::class, 'destroy']);
 
 
 // --- User Management API ---
