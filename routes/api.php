@@ -20,24 +20,20 @@ Route::post('/logout', [LoginController::class, 'apiLogout'])->middleware('auth'
 Route::get('/auth/user', [LoginController::class, 'apiGetUser'])->middleware('auth');
 
 // --- User Management API (Admin) ---
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/admin/users', [AdminUserController::class, 'getUsersJson']);
-    Route::get('/users', [UserController::class, 'apiIndex']);
-    Route::post('/users', [UserController::class, 'apiStore']);
-    Route::get('/users/{id}', [UserController::class, 'apiShow']);
-    Route::get('/users/{id}/db', [UserController::class, 'apiShowDb']);
-    Route::put('/users/{id}', [UserController::class, 'apiUpdate']);
-    Route::delete('/users/{id}', [UserController::class, 'apiDestroy']);
-    Route::get('/users/{userId}/profile', [UserController::class, 'apiGetProfileData']);
-    Route::get('/users/{userId}/courses', [UserController::class, 'apiGetEnrolledCourses']);
-});
+Route::get('/admin/users', [AdminUserController::class, 'getUsersJson']);
+Route::get('/users', [UserController::class, 'apiIndex']);
+Route::post('/users', [UserController::class, 'apiStore']);
+Route::get('/users/{id}', [UserController::class, 'apiShow']);
+Route::get('/users/{id}/db', [UserController::class, 'apiShowDb']);
+Route::put('/users/{id}', [UserController::class, 'apiUpdate']);
+Route::delete('/users/{id}', [UserController::class, 'apiDestroy']);
+Route::get('/users/{userId}/profile', [UserController::class, 'apiGetProfileData']);
+Route::get('/users/{userId}/courses', [UserController::class, 'apiGetEnrolledCourses']);
 
 // --- Student Profile API ---
-Route::middleware('auth')->group(function () {
-    Route::get('/user/profile', [UserController::class, 'getProfileData']);
-    Route::get('/user/courses', [UserController::class, 'getEnrolledCourses']);
-    Route::post('/user/profile/update', [UserController::class, 'updateProfile']);
-});
+Route::get('/user/profile', [UserController::class, 'getProfileData']);
+Route::get('/user/courses', [UserController::class, 'getEnrolledCourses']);
+Route::post('/user/profile/update', [UserController::class, 'updateProfile']);
 
 // Timetable Module API
 Route::get('/', [StudentTimetableController::class, '']);
