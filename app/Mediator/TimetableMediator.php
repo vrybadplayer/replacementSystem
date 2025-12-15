@@ -141,7 +141,6 @@ class TimetableMediator implements TimetableMediatorInterface
         return $subjectsData;
     }
 
-
     public function getAvailableTimeslots($day, $venueId, $duration) {
         
         // Hardcoded hours

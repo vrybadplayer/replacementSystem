@@ -32,6 +32,7 @@ class CourseController extends Controller
         $coursesData = $courses->map(function ($course) {
             return [
                 'courseId' => $course->courseId,
+                'courseCode' => $course->courseCode,
                 'courseName' => $course->courseName ?? '',
                 'faculty' => $course->faculty ?? '',
                 'status' => $course->status ?? 'active',
