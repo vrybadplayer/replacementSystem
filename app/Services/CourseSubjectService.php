@@ -66,4 +66,25 @@ class CourseSubjectService
             throw $e;
         }
     }
+
+    /**
+     * Create or update a course subject in the database
+     * 
+     * @param array $data Course subject data
+     * @param string|null $courseSubjectId Course subject ID (if null, will use data['courseSubjectId'])
+     * @return CourseSubject
+     */
+    public function createOrUpdateCourseSubject(array $data, ?string $courseSubjectId = null): CourseSubject
+    {
+        $courseSubjectId = $courseSubjectId ?? $data['courseSubjectId'] ?? null;
+        
+        if (!$courseSubjectId) {
+            throw new \InvalidArgumentException('Course Subject ID is required');
+        }
+
+        return CourseSubject::updateOrCreate(
+            ['courseSubjectId' => $courseSubjectId],
+            $data
+        );
+    }
 }

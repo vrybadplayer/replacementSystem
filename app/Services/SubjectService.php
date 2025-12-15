@@ -66,19 +66,75 @@ class SubjectService
     }
 
     /**
+     * Fetch course subjects from API to get course data
+     * @return array Course subjects data
+     */
+    protected function fetchCourseSubjectsFromApi(): array
+    {
+        try {
+            $url = "{$this->baseUrl}/courseSubject";
+            \Illuminate\Support\Facades\Log::info('Fetching course subjects from API for subject list', ['url' => $url]);
+            
+            $response = \Illuminate\Support\Facades\Http::timeout(5)->get($url);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                if (isset($data['data']) && is_array($data['data'])) {
+                    return $data['data'];
+                } elseif (is_array($data) && isset($data[0])) {
+                    return $data;
+                } else {
+                    return [];
+                }
+            } else {
+                \Illuminate\Support\Facades\Log::warning('Failed to fetch course subjects', ['status' => $response->status()]);
+                return [];
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Error fetching course subjects for subject list', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    /**
      * Format subjects data for views
      * @param array $data Processed data
+     * @param array $courseSubjects Course subjects data from API
      * @return array Formatted data for view
      */
-    public function formatSubjectsForView(array $data): array
+    public function formatSubjectsForView(array $data, array $courseSubjects = []): array
     {
-        return array_map(function ($subject) {
+        // Create a map of subjectId to course codes
+        $subjectCoursesMap = [];
+        foreach ($courseSubjects as $courseSubject) {
+            $subjectId = $courseSubject['subjectId'] ?? null;
+            $courseCode = $courseSubject['course']['courseId'] ?? $courseSubject['courseId'] ?? null;
+            $courseName = $courseSubject['course']['courseName'] ?? null;
+            
+            if ($subjectId) {
+                if (!isset($subjectCoursesMap[$subjectId])) {
+                    $subjectCoursesMap[$subjectId] = [];
+                }
+                // Use courseId as course code, or courseName as fallback
+                $courseDisplay = $courseCode ?? $courseName ?? 'N/A';
+                if ($courseDisplay !== 'N/A' && !in_array($courseDisplay, $subjectCoursesMap[$subjectId])) {
+                    $subjectCoursesMap[$subjectId][] = $courseDisplay;
+                }
+            }
+        }
+
+        return array_map(function ($subject) use ($subjectCoursesMap) {
+            $subjectId = $subject['subjectId'] ?? '';
+            $courseCodes = $subjectCoursesMap[$subjectId] ?? [];
+            $courseDisplay = !empty($courseCodes) ? implode(', ', $courseCodes) : 'N/A';
+            
             return [
-                'id' => $subject['subjectId'] ?? '',
+                'id' => $subjectId,
                 'code' => $subject['subjectCode'] ?? '',
                 'name' => $subject['subjectName'] ?? '',
                 'credits' => $subject['creditHours'] ?? 0,
-                'course' => $subject['courseCode'] ?? 'N/A',
+                'course' => $courseDisplay,
                 'lecturer' => $subject['lecturer'] ?? null,
                 'type' => $subject['category'] ?? '',
                 'status' => $subject['status'] ?? 'active',
@@ -89,15 +145,38 @@ class SubjectService
     /**
      * Fetch from API and format for views
      * ONLY fetches from external API (no database fallback)
+     * Uses CourseSubject API to get course data
      * 
      * @return array Formatted subjects for view
      * @throws \Exception if API is unavailable
      */
     public function getSubjectsForViewFromApi(): array
     {
-        // Fetch data from API and format directly for views
         $apiData = $this->fetchSubjectsFromApi();
-        return $this->formatSubjectsForView($apiData);
+        $courseSubjects = $this->fetchCourseSubjectsFromApi();
+
+        return $this->formatSubjectsForView($apiData, $courseSubjects);
+    }
+
+    /**
+     * Create or update a subject in the database
+     * 
+     * @param array $data Subject data
+     * @param string|null $subjectId Subject ID (if null, will use data['subjectId'])
+     * @return Subject
+     */
+    public function createOrUpdateSubject(array $data, ?string $subjectId = null): Subject
+    {
+        $subjectId = $subjectId ?? $data['subjectId'] ?? null;
+        
+        if (!$subjectId) {
+            throw new \InvalidArgumentException('Subject ID is required');
+        }
+
+        return Subject::updateOrCreate(
+            ['subjectId' => $subjectId],
+            $data
+        );
     }
 }
 

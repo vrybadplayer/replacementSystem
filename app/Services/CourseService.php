@@ -98,5 +98,26 @@ class CourseService
         $apiData = $this->fetchCoursesFromApi();
         return $this->formatCoursesForView($apiData);
     }
+
+    /**
+     * Create or update a course in the database
+     * 
+     * @param array $data Course data
+     * @param string|null $courseId Course ID (if null, will use data['courseId'])
+     * @return Course
+     */
+    public function createOrUpdateCourse(array $data, ?string $courseId = null): Course
+    {
+        $courseId = $courseId ?? $data['courseId'] ?? null;
+        
+        if (!$courseId) {
+            throw new \InvalidArgumentException('Course ID is required');
+        }
+
+        return Course::updateOrCreate(
+            ['courseId' => $courseId],
+            $data
+        );
+    }
 }
 

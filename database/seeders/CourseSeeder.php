@@ -16,40 +16,40 @@ class CourseSeeder extends Seeder
         $courses = [
             [
                 'courseId' => 'C0001',
-                'courseCode' => 'CSIT101',
-                'courseName' => 'Introduction to Computer Science',
+                'courseCode' => 'RSD',
+                'courseName' => 'Bachelor of Information Technology (Honours) – Software Systems Development',
                 'faculty' => 'FOCS',
                 'status' => 'active',
             ],
             [
                 'courseId' => 'C0002',
-                'courseCode' => 'CSIT201',
-                'courseName' => 'Data Structures and Algorithms',
+                'courseCode' => 'RIS',
+                'courseName' => 'Bachelor of Information Technology (Honours) – Information Security',
                 'faculty' => 'FOCS',
                 'status' => 'active',
             ],
             [
                 'courseId' => 'C0003',
-                'courseCode' => 'BMIT3173',
-                'courseName' => 'Integrative Programming',
-                'faculty' => 'FOIT',
-                'status' => 'active',
-            ],
-            [
-                'courseId' => 'C0004',
-                'courseCode' => 'RSD',
-                'courseName' => 'Bachelor of Software Engineering',
+                'courseCode' => 'RIT',
+                'courseName' => 'Diploma in Information Technology',
                 'faculty' => 'FOCS',
                 'status' => 'active',
             ],
             [
-                'courseId' => 'C0005',
-                'courseCode' => 'RIS',
-                'courseName' => 'Bachelor of Information Systems',
+                'courseId' => 'C0004',
+                'courseCode' => 'BIS',
+                'courseName' => 'Bachelor of Information Systems (Honours)',
                 'faculty' => 'FOIT',
                 'status' => 'active',
             ],
-        ];
+            [
+                'courseId' => 'C0005',
+                'courseCode' => 'BCS',
+                'courseName' => 'Bachelor of Computer Science (Honours)',
+                'faculty' => 'FOCS',
+                'status' => 'active',
+            ],
+        ];        
 
         foreach ($courses as $course) {
             CourseSubjectManagementFacade::createOrUpdateCourse($course, $course['courseId']);
