@@ -8,10 +8,10 @@ use Carbon\Carbon;
 class AdminTimetableController extends Controller
 {
 
-    public function viewSubjectAssignment()
+    public function viewTimetableAssignment()
     {
-        // Returns the Admin View located at resources/views/admin/subject_assignment.blade.php
-        return view('admin.timetableModule.subjectAssignment');
+        // Returns the Admin View located at resources/views/admin/timetable_assignment.blade.php
+        return view('admin.timetableModule.timetableAssignment');
     }
 
     public function viewTimeslotManagement()

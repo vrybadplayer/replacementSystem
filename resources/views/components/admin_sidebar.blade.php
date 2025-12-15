@@ -21,8 +21,8 @@
             <span class="menu-text">Subject Management</span>
         </a>
         <!-- Active State Styling (Hardcoded for this page) style="background-color: #d1d5db; border-right: 4px solid #3b82f6; -->
-        <a href="{{ route('admin.subjectAssignment') }}" class="menu-item">
-            <span class="menu-text">Subject Assignment</span>
+        <a href="{{ route('admin.timetableAssignment') }}" class="menu-item">
+            <span class="menu-text">Timetable Assignment</span>
         </a>
         <a href="{{ route('admin.timeslotManagement') }}" class="menu-item">
             <span class="menu-text">Timeslot Management</span>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Subject Assignment</title>
+    <title>Admin - Timetable Assignment</title>
     
     <!-- Load Global & Sidebar CSS -->
     <link rel="stylesheet" href="{{ asset('css/common/global.css') }}">
@@ -26,7 +26,7 @@
 
         <main class="main-content">
             
-            <h2 class="page-title">Subject Assignment</h2>
+            <h2 class="page-title">Timetable Assignment</h2>
 
             <!-- LAYER 1: Dropdowns -->
             <div class="filters-container">

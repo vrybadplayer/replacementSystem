@@ -36,7 +36,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::delete('/users/{userId}', [AdminUserController::class, 'delete'])->name('admin.user.delete');
     
     // Admin-specific routes
-    Route::get('/subjectAssignment', [AdminTimetableController::class, 'viewSubjectAssignment'])->name('admin.subjectAssignment');
+    Route::get('/timetableAssignment', [AdminTimetableController::class, 'viewTimetableAssignment'])->name('admin.timetableAssignment');
     Route::get('/timeslotManagement', [AdminTimetableController::class, 'viewTimeslotManagement'])->name('admin.timeslotManagement');
     Route::get('/courses', [CourseController::class, 'index'])->name('admin.courses');
     Route::get('/subjects', [SubjectController::class, 'subjectListView'])->name('admin.subjects');
@@ -74,8 +74,3 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 Route::get('/', function () {
     return redirect('/login');
 })->name('home');
-
-// Replacement Module (Admin)
-Route::get('/admin/replacement/appeals', [ReplacementController::class, 'adminViewAppeals'])->name('admin.replacement.appeals');
-Route::get('/admin/replacement/appeal/{id}', [ReplacementController::class, 'adminViewAppealDetail'])->name('admin.replacement.detail');
-Route::post('/admin/replacement/appeal/{id}/process', [ReplacementController::class, 'adminProcessAppeal'])->name('admin.replacement.process');
