@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Auth;
 
 class RoleMiddleware
 {
@@ -15,7 +16,13 @@ class RoleMiddleware
         }
 
         if ($request->user()->role !== $role) {
-            abort(403, 'Unauthorized action.');
+            // Store intended URL for the controller to handle
+            session(['url.intended' => $request->fullUrl()]);
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            
+            return redirect('/login')->with('error', 'You do not have permission to access this resource. Please log in with the correct account.');
         }
 
         return $next($request);

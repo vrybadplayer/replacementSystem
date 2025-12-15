@@ -31,6 +31,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     
     // User Management
     Route::get('/users', [AdminUserController::class, 'index'])->name('admin.user.index');
+    Route::get('/users/create', [AdminUserController::class, 'create'])->name('admin.user.create');
+    Route::post('/users/store', [AdminUserController::class, 'store'])->name('admin.user.store');
+    Route::get('/users/{userId}', [AdminUserController::class, 'show'])->name('admin.user.show');
     Route::get('/users/{userId}/edit', [AdminUserController::class, 'edit'])->name('admin.user.edit');
     Route::post('/users/{userId}/update', [AdminUserController::class, 'update'])->name('admin.user.update');
     Route::delete('/users/{userId}', [AdminUserController::class, 'delete'])->name('admin.user.delete');

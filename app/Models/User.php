@@ -65,6 +65,12 @@ class User extends Authenticatable
         return $this->role === 'student';
     }
 
+    // Check if user is lecturer
+    public function isLecturer(): bool
+    {
+        return $this->role === 'lecturer';
+    }
+
     public function classGroup()
     {
         return $this->belongsTo(ClassGroup::class, 'classGroupId', 'classGroupId');

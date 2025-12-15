@@ -22,8 +22,15 @@ Route::get('/auth/user', [LoginController::class, 'apiGetUser'])->middleware('au
 // --- User Management API (Admin) ---
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/users', [AdminUserController::class, 'getUsersJson']);
+    Route::get('/users', [UserController::class, 'apiIndex']);
+    Route::post('/users', [UserController::class, 'apiStore']);
+    Route::get('/users/{id}', [UserController::class, 'apiShow']);
+    Route::get('/users/{id}/db', [UserController::class, 'apiShowDb']);
+    Route::put('/users/{id}', [UserController::class, 'apiUpdate']);
+    Route::delete('/users/{id}', [UserController::class, 'apiDestroy']);
+    Route::get('/users/{userId}/profile', [UserController::class, 'apiGetProfileData']);
+    Route::get('/users/{userId}/courses', [UserController::class, 'apiGetEnrolledCourses']);
 });
-Route::get('/users/{id}', [UserController::class, 'apiShow']);
 
 // --- Student Profile API ---
 Route::middleware('auth')->group(function () {

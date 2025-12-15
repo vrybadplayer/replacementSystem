@@ -281,6 +281,10 @@
             <div class="container">
                 <h1>User Management</h1>
 
+                <div style="margin-bottom: 20px;">
+                    <a href="{{ route('admin.user.create') }}" class="btn btn-primary">+ Add New User</a>
+                </div>
+
                 @if (session('success'))
                     <div class="alert alert-success">{{ session('success') }}</div>
                 @endif

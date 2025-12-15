@@ -184,6 +184,10 @@
             <div class="container">
                 <h1>User Management</h1>
 
+                <div style="margin-bottom: 20px;">
+                    <a href="{{ route('admin.user.create') }}" class="btn-small btn-edit" style="background: #28a745;">+ Add New User</a>
+                </div>
+
                 @if (session('success'))
                     <div class="alert alert-success">{{ session('success') }}</div>
                 @endif
@@ -217,6 +221,7 @@
                                         </td>
                                         <td>
                                             <div class="actions">
+                                                <a href="{{ route('admin.user.show', $user->userId) }}" class="btn-small" style="background: #17a2b8; color: white;">View</a>
                                                 <a href="{{ route('admin.user.edit', $user->userId) }}" class="btn-small btn-edit">Edit</a>
                                                 <form method="POST" action="{{ route('admin.user.delete', $user->userId) }}" style="display: inline;" onsubmit="return confirm('Are you sure?');">
                                                     @csrf
