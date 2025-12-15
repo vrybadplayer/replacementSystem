@@ -48,7 +48,10 @@ Route::get('/testing', [StudentTimetableController::class, 'test']);
 Route::get('/courses', [CourseController::class, 'index']);
 
 // --- Course Subject Bridge REST API ---
-Route::get('/courseSubject', [CourseSubjectController::class, 'getAllCourseSubjects']);
+Route::get('/courseSubject', [CourseSubjectController::class, 'index']);
+Route::post('/courseSubject', [CourseSubjectController::class, 'store']);
+Route::put('/courseSubject/{id}', [CourseSubjectController::class, 'update']);
+Route::patch('/courseSubject/{id}', [CourseSubjectController::class, 'update']);
 
 // --- Subjects REST API ---
 Route::get('/subjects', [SubjectController::class, 'index']); 

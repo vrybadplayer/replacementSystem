@@ -150,6 +150,8 @@ use Carbon\Carbon;
 
         </main>
     </div>
+
+    <script src="{{ asset('js/sidebar.js') }}"></script>
 </body>
 
 </html>

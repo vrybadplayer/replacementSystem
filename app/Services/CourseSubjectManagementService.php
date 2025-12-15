@@ -28,6 +28,7 @@ class CourseSubjectManagementService
         return $this->courseService->getCoursesForViewFromApi();
     }
 
+    
     public function fetchSubjectsFromApi(): array
     {
         return $this->subjectService->fetchSubjectsFromApi();
@@ -36,6 +37,12 @@ class CourseSubjectManagementService
     public function getSubjectsForViewFromApi(): array
     {
         return $this->subjectService->getSubjectsForViewFromApi();
+    }
+
+
+    public function fetchCourseSubjectsFromApi(): array
+    {
+        return $this->courseSubjectService->fetchCourseSubjectsFromApi();
     }
 }
 

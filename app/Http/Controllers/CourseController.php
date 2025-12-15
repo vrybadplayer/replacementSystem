@@ -14,21 +14,8 @@ class CourseController extends Controller
      */
     public function courseListView()
     {
-        try {
-            $courses = CourseSubjectManagementFacade::getCoursesForViewFromApi();
-
-            return view('admin.course.listCourse', compact('courses'));
-        } catch (\Exception $e) {
-            Log::error('Failed to fetch courses from API', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return view('admin.course.listCourse', [
-                'courses' => [],
-                'error' => 'Failed to load courses from API: ' . $e->getMessage()
-            ]);
-        }
+        $courses = CourseSubjectManagementFacade::getCoursesForViewFromApi();
+        return view('admin.courseModule.listCourse', compact('courses'));
     }
 
     /**
@@ -40,7 +27,7 @@ class CourseController extends Controller
     {
         // Get all courses FROM DATABASE directly (bypassing services to avoid circular calls)
         $courses = Course::all();
-        
+
         // Map to API response format
         $coursesData = $courses->map(function ($course) {
             return [
@@ -58,4 +45,3 @@ class CourseController extends Controller
         ], 200);
     }
 }
-

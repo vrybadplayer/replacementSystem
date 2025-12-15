@@ -8,23 +8,37 @@
     </div>
 
     <div class="sidebar-menu">
-        <a href="{{ route('admin.dashboard') }}" class="menu-item">
+        <a href="{{ route('admin.dashboard') }}" class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
             <span class="menu-text">Main Menu</span>
         </a>
-        <a href="{{ route('admin.replacement.appeals') }}" class="menu-item">
+        <a href="{{ route('admin.replacement.appeals') }}" class="menu-item {{ request()->routeIs('admin.replacement.*') ? 'active' : '' }}">
             <span class="menu-text">Replacement Management</span>
         </a>
-        <a href="{{ route('admin.courses') }}" class="menu-item">
-            <span class="menu-text">Course Management</span>
-        </a>
-        <a href="{{ route('admin.subjects') }}" class="menu-item">
-            <span class="menu-text">Subject Management</span>
-        </a>
-        <!-- Active State Styling (Hardcoded for this page) style="background-color: #d1d5db; border-right: 4px solid #3b82f6; -->
-        <a href="{{ route('admin.timetableAssignment') }}" class="menu-item">
+        
+        <!-- Course Subject Management Dropdown -->
+        <div class="menu-dropdown {{ request()->routeIs('admin.courses') || request()->routeIs('admin.subjects') || request()->routeIs('admin.courseSubjects') ? 'active' : '' }}">
+            <div class="menu-item dropdown-toggle" onclick="toggleDropdown(this)">
+                <span class="menu-text">Course Subject Management</span>
+                <svg class="dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </div>
+            <div class="dropdown-menu">
+                <a href="{{ route('admin.courses') }}" class="dropdown-item {{ request()->routeIs('admin.courses') ? 'active' : '' }}">
+                    <span class="menu-text">Course</span>
+                </a>
+                <a href="{{ route('admin.subjects') }}" class="dropdown-item {{ request()->routeIs('admin.subjects') ? 'active' : '' }}">
+                    <span class="menu-text">Subject</span>
+                </a>
+                <a href="{{ route('admin.courseSubjects') }}" class="dropdown-item {{ request()->routeIs('admin.courseSubjects') ? 'active' : '' }}">
+                    <span class="menu-text">Course Subject</span>
+                </a>
+            </div>
+        </div>
+        <a href="{{ route('admin.timetableAssignment') }}" class="menu-item {{ request()->routeIs('admin.timetableAssignment') ? 'active' : '' }}">
             <span class="menu-text">Timetable Assignment</span>
         </a>
-        <a href="{{ route('admin.timeslotManagement') }}" class="menu-item">
+        <a href="{{ route('admin.timeslotManagement') }}" class="menu-item {{ request()->routeIs('admin.timeslotManagement') ? 'active' : '' }}">
             <span class="menu-text">Timeslot Management</span>
         </a>
         <a href="{{ route('admin.user.index') }}" class="menu-item {{ request()->routeIs('admin.user.*') ? 'active' : '' }}">

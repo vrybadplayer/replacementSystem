@@ -9,7 +9,7 @@ use App\Models\Subject;
 
 class SubjectController extends Controller
 {
-    
+
     /**
      * REST API: GET /api/subjects
      * Get all subjects data FROM DATABASE directly (to avoid circular API calls)
@@ -19,7 +19,7 @@ class SubjectController extends Controller
     {
         // Get all subjects FROM DATABASE directly (bypassing services to avoid circular calls)
         $subjects = Subject::with(['courses'])->get();
-        
+
         // Map to API response format
         $subjectsData = $subjects->map(function ($subject) {
             return [
@@ -45,25 +45,8 @@ class SubjectController extends Controller
      */
     public function subjectListView()
     {
-        try {
-            // Fetch subjects FROM EXTERNAL API (port 8001)
-            // Requires separate API server running on port 8001
-            $subjects = CourseSubjectManagementFacade::getSubjectsForViewFromApi();
-
-            // Return view with processed data
-            return view('admin.subject.listSubject', compact('subjects'));
-        } catch (\Exception $e) {
-            // If API fails, show error message
-            Log::error('Failed to fetch subjects from API', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return view('admin.subject.listSubject', [
-                'subjects' => [],
-                'error' => 'Failed to load subjects from API: ' . $e->getMessage()
-            ]);
-        }
+        $subjects = CourseSubjectManagementFacade::getSubjectsForViewFromApi();
+        return view('admin.courseModule.listSubject', compact('subjects'));
     }
 
     /**
@@ -83,7 +66,7 @@ class SubjectController extends Controller
 
         try {
             $subject = CourseSubjectManagementFacade::createSubject($validated);
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Subject created successfully',
@@ -121,7 +104,7 @@ class SubjectController extends Controller
 
         try {
             $subject = CourseSubjectManagementFacade::updateSubject($id, $validated);
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Subject updated successfully',
@@ -148,4 +131,3 @@ class SubjectController extends Controller
         }
     }
 }
-

@@ -7,11 +7,7 @@ use Illuminate\Support\Facades\Http;
 
 class CourseService
 {
-
-
-    // ---------------------------- API TEST -----------------------------------------
     protected $baseUrl = 'http://127.0.0.1:8001/api';
-
 
     /**
      * Fetch courses from API

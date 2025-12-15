@@ -5,6 +5,7 @@ use App\Http\Controllers\StudentTimetableController;
 use App\Http\Controllers\AdminTimetableController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\CourseSubjectController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ReplacementController;
 use App\Http\Controllers\UserController;
@@ -43,6 +44,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/timeslotManagement', [AdminTimetableController::class, 'viewTimeslotManagement'])->name('admin.timeslotManagement');
     Route::get('/courses', [CourseController::class, 'courseListView'])->name('admin.courses');
     Route::get('/subjects', [SubjectController::class, 'subjectListView'])->name('admin.subjects');
+    Route::get('/courseSubjects', [CourseSubjectController::class, 'courseSubjectListView'])->name('admin.courseSubjects');
 
     // Admin Replacement Module
     Route::get('/replacement/appeals', [ReplacementController::class, 'adminViewAppeals'])->name('admin.replacement.appeals');
