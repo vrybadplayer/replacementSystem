@@ -17,14 +17,14 @@ class CourseController extends Controller
         try {
             $courses = CourseSubjectManagementFacade::getCoursesForViewFromApi();
 
-            return view('course.listCourse', compact('courses'));
+            return view('admin.course.listCourse', compact('courses'));
         } catch (\Exception $e) {
             Log::error('Failed to fetch courses from API', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return view('course.listCourse', [
+            return view('admin.course.listCourse', [
                 'courses' => [],
                 'error' => 'Failed to load courses from API: ' . $e->getMessage()
             ]);

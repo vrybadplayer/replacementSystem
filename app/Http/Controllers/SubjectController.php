@@ -51,7 +51,7 @@ class SubjectController extends Controller
             $subjects = CourseSubjectManagementFacade::getSubjectsForViewFromApi();
 
             // Return view with processed data
-            return view('subject.listSubject', compact('subjects'));
+            return view('admin.subject.listSubject', compact('subjects'));
         } catch (\Exception $e) {
             // If API fails, show error message
             Log::error('Failed to fetch subjects from API', [
@@ -59,7 +59,7 @@ class SubjectController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return view('subject.listSubject', [
+            return view('admin.subject.listSubject', [
                 'subjects' => [],
                 'error' => 'Failed to load subjects from API: ' . $e->getMessage()
             ]);

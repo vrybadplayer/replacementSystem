@@ -2,12 +2,6 @@
 
 namespace App\Services;
 
-/**
- * Minimal Coordinator Service for Course Subject Management Module
- * 
- * Routes facade calls to appropriate individual services
- * All business logic is in CourseService, SubjectService, and CourseSubjectService
- */
 class CourseSubjectManagementService
 {
     protected CourseService $courseService;
@@ -23,8 +17,6 @@ class CourseSubjectManagementService
         $this->subjectService = $subjectService;
         $this->courseSubjectService = $courseSubjectService;
     }
-
-    // ==================== API-Based Methods ====================
 
     public function fetchCoursesFromApi(): array
     {
