@@ -39,12 +39,12 @@ class StudentTimetableController extends Controller
 
 
         // get the date from URL (if any)
-        $selectedDate = $request->input('date') ? $request->input('date') : "";
+        $selectedDate = $request->input('date') ? $request->input('date') : "2025-11-10";
 
 
         // Get all the classes the user has (in the selected week)
         $weeklyClasses = $this->mediator->getCurrentWeekSchedule($userId, $selectedDate);
-
+        
 
         // check if public holiday, then type the timeslot (hardcoded)
         $holidays = [

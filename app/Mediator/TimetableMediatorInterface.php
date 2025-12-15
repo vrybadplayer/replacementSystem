@@ -14,10 +14,6 @@ interface TimetableMediatorInterface {
     public function getAllSubjects();
     public function getAvailableTimeslots($day, $venueId, $duration);
     public function assignClass($data);
-
-    // For API
-    public function getClassDetails($timetableId);
-    public function createReplacementSlot($originalId, $date, $time);
 }
 
 ?>
