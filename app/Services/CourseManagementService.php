@@ -26,7 +26,7 @@ class CourseManagementService
         $this->subjectService = $subjectService;
         $this->courseSubjectService = $courseSubjectService;
         // API base URL - matches CourseService pattern for XAMPP setup
-        $this->baseUrl = 'http://127.0.0.1:8001/replacementSystem/public/api';
+        $this->baseUrl = 'http://127.0.0.1:8001/api';
     }
 
     // ==================== Course Methods ====================
@@ -99,7 +99,8 @@ class CourseManagementService
         $response = Http::get("{$this->baseUrl}/courses");
 
         if ($response->successful()) {
-            return $response->json();
+            $json = $response->json();
+            return $json['data'] ?? [];
         }
 
         return [];

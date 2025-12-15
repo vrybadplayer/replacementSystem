@@ -10,7 +10,7 @@ class UserService
 {
     // ======================== API BASE URL ========================
     // Make sure this points to your running server
-    protected $baseUrl = 'http://127.0.0.1:8001/replacementSystem/public/api';
+    protected $baseUrl = 'http://127.0.0.1:8001/api';
 
     /**
      * Fetch user from API

@@ -10,7 +10,7 @@ class CourseService
 
 
     // ---------------------------- API TEST -----------------------------------------
-    protected $baseUrl = 'http://127.0.0.1:8001/replacementSystem/public/api';
+    protected $baseUrl = 'http://127.0.0.1:8001/api';
 
 
     public function fetchCourses()
