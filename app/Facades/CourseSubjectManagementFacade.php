@@ -40,9 +40,9 @@ use Illuminate\Support\Facades\Facade;
  * 
  * API-Based Methods:
  * @method static array fetchCoursesFromApi() Fetch courses from API endpoint
- * @method static array getCoursesForViewFromApi(array|null $filters = null) Fetch, process, and format courses from API
+ * @method static array getCoursesForViewFromApi() Fetch, process, and format courses from API
  * @method static array fetchSubjectsFromApi() Fetch subjects from API endpoint
- * @method static array getSubjectsForViewFromApi(array|null $filters = null) Fetch, process, and format subjects from API
+ * @method static array getSubjectsForViewFromApi() Fetch, process, and format subjects from API
  * 
  * @see \App\Services\CourseService
  * @see \App\Services\SubjectService

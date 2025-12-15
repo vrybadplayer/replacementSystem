@@ -45,8 +45,7 @@ Route::get('/testing', [StudentTimetableController::class, 'test']);
 
 
 // --- Course Management API ---
-Route::get('/courses', [CourseController::class, 'apiIndex']);
-Route::get('/courses2', [CourseController::class, 'apiIndex2']);
+Route::get('/courses', [CourseController::class, 'index']);
 
 // --- Course Subject Bridge REST API ---
 Route::get('/courseSubject', [CourseSubjectController::class, 'getAllCourseSubjects']);

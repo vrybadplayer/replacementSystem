@@ -4,46 +4,58 @@ namespace App\Http\Controllers;
 
 use App\Facades\CourseSubjectManagementFacade;
 use App\Models\Course;
+use Illuminate\Support\Facades\Log;
 
 class CourseController extends Controller
 {
     /**
-     * Step 1-4: Fetch from API → Process → Format → Return View
+     * Web View: GET /admin/courses
+     * Return view with courses list FROM EXTERNAL API
+     */
+    public function courseListView()
+    {
+        try {
+            $courses = CourseSubjectManagementFacade::getCoursesForViewFromApi();
+
+            return view('course.listCourse', compact('courses'));
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch courses from API', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return view('course.listCourse', [
+                'courses' => [],
+                'error' => 'Failed to load courses from API: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * REST API: GET /api/courses
+     * Get all courses data FROM DATABASE directly (to avoid circular API calls)
+     * This endpoint is called by the web view's API fetch
      */
     public function index()
     {
-        // Step 1-3: Fetch from API, process data, format for views (through Facade/Service)
-        $courses = CourseSubjectManagementFacade::getCoursesForViewFromApi();
-
-        // Step 4: Return view with processed data
-        return view('course.listCourse', compact('courses'));
-    }
-
-    // ---------- API TEST ----------
-    public function apiIndex()
-    {
-        // TODO: Fetch properly
-        $dummyCourses = [
-            ['courseId' => 'RSD', 'courseName' => 'Software Engineering'],
-            ['courseId' => 'RIS', 'courseName' => 'Information Systems'],
-            ['courseId' => 'RIT', 'courseName' => 'Internet Technology'],
-        ];
+        // Get all courses FROM DATABASE directly (bypassing services to avoid circular calls)
+        $courses = Course::all();
+        
+        // Map to API response format
+        $coursesData = $courses->map(function ($course) {
+            return [
+                'courseId' => $course->courseId,
+                'courseName' => $course->courseName ?? '',
+                'faculty' => $course->faculty ?? '',
+                'status' => $course->status ?? 'active',
+            ];
+        })->toArray();
 
         return response()->json([
             'success' => true,
-            'data' => $dummyCourses,
-        ]);
-    }
-
-        public function apiIndex2()
-    {
-        $dummyCourses = [
-            ['courseId' => 'AAA', 'courseName' => 'COURSE AAA'],
-            ['courseId' => 'BBB', 'courseName' => 'COURSE BBB'],
-            ['courseId' => 'CCC', 'courseName' => 'COURSE CCC'],
-        ];
-
-        return response()->json($dummyCourses);
+            'data' => $coursesData,
+            'count' => count($coursesData)
+        ], 200);
     }
 }
 
