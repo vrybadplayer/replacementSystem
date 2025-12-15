@@ -41,12 +41,21 @@ class TimetableMediator implements TimetableMediatorInterface
 
         // Fetch
         $classGroupId = $studentProfile['classGroupId'];
+        $startOfWeek = Carbon::parse($selectedDate)->startOfWeek()->format('Y-m-d');
+        $endOfWeek = Carbon::parse($selectedDate)->endOfWeek()->format('Y-m-d');
+
         $classes = Timetable::with(['venue', 'courseSubject'])
-            ->where('classGroupId', 'LIKE', "%{$classGroupId}%")
+            // get both solo class and joint class
+            ->where(function ($query) use ($classGroupId) {
+                                $query->where('classGroupId', $classGroupId)
+                      ->orWhereRaw("FIND_IN_SET(?, classGroupId) > 0", [$classGroupId]);
+            })
             ->whereBetween('classDate', [$startOfWeek, $endOfWeek])
             ->orderBy('classDate')
             ->orderBy('startTime')
-            ->get();
+            ->get();        
+
+            //dd($classes);
 
         return $classes;
     }

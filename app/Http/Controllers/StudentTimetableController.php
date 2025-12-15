@@ -124,14 +124,14 @@ class StudentTimetableController extends Controller
                 'timetableId' => $class->timetableId,
                 'subject' => $transitiveSubjectList[$class->courseSubjectId],
                 'venueId' => $class->venueId,
-                // Use API to get Lecturer name
-                'lecturer' => null, 
                 'duration' => $duration,
                 'type' => $type,
                 'time_str' => $startTime->format('g:i A') . ' - ' . $endTime->format('g:i A'),
                 'note' => $note
             ];
         }
+
+        //dd($timetableData);
 
         // weeks for dropdownList
         // timeSlots, days for UI
