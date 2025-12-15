@@ -6,8 +6,9 @@ use App\Models\Timetable;
 use App\Models\Venue;
 use App\Models\ClassGroup;
 use App\Models\CourseSubject;
-use App\Services\CourseSubjectManagementService;
+use App\Services\CourseService;
 use App\Services\CourseSubjectService;
+use App\Services\SubjectService;
 use App\Services\UserService;
 use Dflydev\DotAccessData\Data;
 use Illuminate\Support\Facades\DB; 
@@ -17,12 +18,14 @@ class TimetableMediator implements TimetableMediatorInterface
 {
     // Assume the Course Service API is stored here
     protected $courseApi;
+    protected $subjectApi;
     protected $courseSubjectApi;
     protected $userApi;
 
-    public function __construct(CourseSubjectManagementService $courseApi, CourseSubjectService $courseSubjectApi, UserService $userApi)
+    public function __construct(CourseService $courseApi, SubjectService $subjectApi, CourseSubjectService $courseSubjectApi, UserService $userApi)
     {
         $this->courseApi = $courseApi;
+        $this->subjectApi = $subjectApi;
         $this->courseSubjectApi = $courseSubjectApi;
         $this->userApi = $userApi;
     }
@@ -57,7 +60,6 @@ class TimetableMediator implements TimetableMediatorInterface
             ->orderBy('startTime')
             ->get();        
 
-            //dd($classes);
 
         return $classes;
     }
@@ -111,11 +113,11 @@ class TimetableMediator implements TimetableMediatorInterface
     // ================================ For Admin Timetable Assignment ===========================================
 
     public function getAllCourses() {
-        $courses = DB::table('course')->select('courseId', 'courseCode')->get(); // FLAWED!!!!!!!!
+        $rawCourses = $this->courseApi->fetchCoursesFromApi();
         $result = [];
         
-        foreach($courses as $course) {
-            $result[$course->courseId] = $course->courseCode;
+        foreach($rawCourses as $course) {
+            $result[$course['courseId']] = $course['courseCode'];
         }
         
         return $result;
@@ -124,21 +126,21 @@ class TimetableMediator implements TimetableMediatorInterface
 
     public function getAllSubjects()
     {
-        //$subjects = $this->courseApi->fetchSubjectsFromApi(); // !!!!! FLAWED !!!!!!
-        $subjects = DB::table('subject')->get()->toArray();
+        $subjects = $this->subjectApi->fetchSubjectsFromApi();
 
         $subjectsData = [];
         
         foreach ($subjects as $subject) {
             $subjectsData[] = [
-                'subjectId' => $subject->subjectId, 
-                'subjectCode' => $subject->subjectCode,
-                'subjectName' => $subject->subjectName,
+                'subjectId' => $subject['subjectId'], 
+                'subjectCode' => $subject['subjectCode'],
+                'subjectName' => $subject['subjectName'],
             ];
         }
 
         return $subjectsData;
     }
+
 
     public function getAvailableTimeslots($day, $venueId, $duration) {
         
@@ -203,7 +205,7 @@ class TimetableMediator implements TimetableMediatorInterface
         $classGroupIds = is_array($data['classGroupIds']) ? implode(',', $data['classGroupIds']) : $data['classGroupIds'];
         
         // Find the correct courseSubjectId (The Bridge)
-        $courseSubject = \App\Models\CourseSubject::where('subjectId', $data['subjectId'])
+        $courseSubject = \App\Models\CourseSubject::where('subjectId', $data['subjectId']) // CALL FROM API
             ->where('courseId', $data['courseId'])
             ->first();
         
@@ -289,18 +291,6 @@ class TimetableMediator implements TimetableMediatorInterface
         return 'T' . str_pad($newNumber, 3, '0', STR_PAD_LEFT); 
         // NOTE: If you have IDs T001 to T999, T1000 will be T1000, 
         // so change padding from 3 to 4 if needed.
-    }
-
-
-    // =============================================================================================
-    // =================================== API ENDPOINTS ===========================================
-    // =============================================================================================
-    public function getClassDetails($timetableId) {
-
-    }
-
-    public function createReplacementSlot($originalId, $date, $time) {
-
     }
 
 }
