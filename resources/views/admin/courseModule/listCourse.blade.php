@@ -61,7 +61,7 @@
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <a href="#" class="btn-edit">Edit</a>
+                                    <a href="{{ route('admin.courses.edit', $course['courseId']) }}" class="btn-edit">Edit</a>
                                 </div>
                             </td>
                         </tr>
@@ -74,6 +74,12 @@
                         @endforelse
                     </tbody>
                 </table>
+
+                @if($courses->count() > 0)
+                    <div class="pagination-container">
+                        {{ $courses->links('pagination::bootstrap-4') }}
+                    </div>
+                @endif
             </div>
         </main>
     </div>

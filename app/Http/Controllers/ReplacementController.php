@@ -22,38 +22,6 @@ class ReplacementController extends Controller
     }
 
     /**
-     * Get all replacement appeals (API format)
-     * Returns all appeals from database in JSON format
-     */
-    public function index()
-    {
-        try {
-            $appeals = ReplacementAppeal::with([
-                'user',
-                'originalClass.subject',
-                'originalClass.venue',
-                'originalClass.classGroup',
-                'requestedClass.subject',
-                'requestedClass.venue',
-                'requestedClass.classGroup',
-                'adminUser',
-                'replacement'
-            ])->orderBy('submissionDate', 'desc')->get();
-
-            return response()->json([
-                'success' => true,
-                'data' => $appeals,
-                'count' => $appeals->count()
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch appeals: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
      * Display the replacement appeal form
      * This is where students submit their replacement appeal
      * Calls ReplacementService which makes API calls to port 8001
@@ -219,65 +187,8 @@ class ReplacementController extends Controller
     }
 
     // ============================================
-    // API METHODS (Previously in ReplacementApiController and TimetableController)
+    // API METHODS (Previously in ReplacementApiController)
     // ============================================
-
-    /**
-     * API: Get all timetable records
-     */
-    public function getAllTimetableRecords()
-    {
-        $timetable = Timetable::all();
-        
-        return response()->json([
-            'success' => true,
-            'data' => $timetable
-        ]);
-    }
-
-    /**
-     * API: Get single timetable record by ID
-     */
-    public function getTimetableById($id)
-    {
-        $timetable = Timetable::with(['subject', 'venue', 'classGroup'])->find($id);
-        
-        if (!$timetable) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Timetable record not found'
-            ], 404);
-        }
-        
-        return response()->json([
-            'success' => true,
-            'data' => $timetable
-        ]);
-    }
-
-    /**
-     * API: Get all available classes for replacement
-     */
-    public function getAvailableClasses()
-    {
-        try {
-            $classes = Timetable::with(['subject', 'venue', 'classGroup'])
-                ->where('classDate', '>=', now()->format('Y-m-d'))
-                ->orderBy('classDate')
-                ->orderBy('startTime')
-                ->get();
-
-            return response()->json([
-                'success' => true,
-                'data' => $classes
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch available classes: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 
     /**
      * API: Get all appeals (admin)
@@ -340,36 +251,10 @@ class ReplacementController extends Controller
                 'data' => $appeals
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch appeals', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch appeals: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * API: Get pending appeals (admin)
-     */
-    public function getPendingAppeals()
-    {
-        try {
-            $appeals = ReplacementAppeal::with([
-                'user',
-                'originalClass.subject',
-                'requestedClass.subject'
-            ])
-            ->where('status', 'Pending')
-            ->orderBy('submissionDate', 'desc')
-            ->get();
-
-            return response()->json([
-                'success' => true,
-                'data' => $appeals
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch pending appeals: ' . $e->getMessage()
+                'message' => 'Unable to retrieve appeals. Please try again later.'
             ], 500);
         }
     }
@@ -437,9 +322,10 @@ class ReplacementController extends Controller
                 'data' => $appeals
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch user appeals', ['userId' => $userId, 'error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch user appeals: ' . $e->getMessage()
+                'message' => 'Unable to retrieve your appeals. Please try again later.'
             ], 500);
         }
     }
@@ -503,9 +389,10 @@ class ReplacementController extends Controller
                 'data' => $appealData
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch appeal details', ['appealId' => $appealId, 'error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Appeal not found: ' . $e->getMessage()
+                'message' => 'Appeal not found.'
             ], 404);
         }
     }
@@ -542,9 +429,10 @@ class ReplacementController extends Controller
                 'data' => $appeal
             ], 201);
         } catch (\Exception $e) {
+            Log::error('Failed to create appeal', ['error' => $e->getMessage(), 'request' => $request->except(['proof'])]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create appeal: ' . $e->getMessage()
+                'message' => 'Unable to create appeal. Please check your input and try again.'
             ], 400);
         }
     }
@@ -575,9 +463,10 @@ class ReplacementController extends Controller
                 'data' => $appeal
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to process appeal', ['appealId' => $appealId, 'error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to process appeal: ' . $e->getMessage()
+                'message' => 'Unable to process appeal. Please try again later.'
             ], 400);
         }
     }
@@ -604,9 +493,10 @@ class ReplacementController extends Controller
                 'data' => $appeals
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch user replacements', ['userId' => $userId, 'error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch replacements: ' . $e->getMessage()
+                'message' => 'Unable to retrieve replacements. Please try again later.'
             ], 500);
         }
     }
@@ -629,9 +519,10 @@ class ReplacementController extends Controller
                 'data' => $stats
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch statistics', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch statistics: ' . $e->getMessage()
+                'message' => 'Unable to retrieve statistics. Please try again later.'
             ], 500);
         }
     }

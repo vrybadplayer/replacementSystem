@@ -7,39 +7,84 @@ use Illuminate\Support\Facades\Log;
 use App\Facades\CourseSubjectManagementFacade;
 use App\Models\CourseSubject;
 use App\Services\CourseSubjectService;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class CourseSubjectController extends Controller
 {
 
     protected $courseSubjectService;
-    
+
     public function __construct(CourseSubjectService $courseSubjectService)
     {
         $this->courseSubjectService = $courseSubjectService;
     }
 
-
-    /**
-     * Web View: GET /admin/courseSubjects
-     * Return view with course subjects list FROM EXTERNAL API
-     */
-    public function courseSubjectListView()
+    public function courseSubjectListView(Request $request)
     {
-        $courseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
+        $allCourseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
+        
+        $perPage = 10;
+        $currentPage = $request->get('page', 1);
+        $total = count($allCourseSubjects);
+        $items = array_slice($allCourseSubjects, ($currentPage - 1) * $perPage, $perPage);
+        
+        $courseSubjects = new LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+        
         return view('admin.courseModule.listCourseSubject', compact('courseSubjects'));
     }
 
+    public function create()
+    {
+        $courses = CourseSubjectManagementFacade::getCoursesForViewFromApi();
+        $subjects = CourseSubjectManagementFacade::getSubjectsForViewFromApi();
+        return view('admin.courseModule.addCourseSubject', compact('courses', 'subjects'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'courseSubjectId' => 'required|string',
+            'courseId' => 'required|string',
+            'subjectId' => 'required|string',
+        ]);
+        CourseSubjectManagementFacade::createOrUpdateCourseSubject($validated);
+        return redirect()->route('admin.courseSubjects')
+            ->with('success', 'Course Subject created successfully!');
+    }
+
+    public function edit(string $courseSubjectId)
+    {
+        $courseSubject = CourseSubjectManagementFacade::getCourseSubjectByIdFromApi($courseSubjectId);
+        $courses = CourseSubjectManagementFacade::getCoursesForViewFromApi();
+        $subjects = CourseSubjectManagementFacade::getSubjectsForViewFromApi();
+        return view('admin.courseModule.editCourseSubject', compact('courseSubject', 'courses', 'subjects'));
+    }
+
+    public function update(Request $request, string $courseSubjectId)
+    {
+        $validated = $request->validate([
+            'courseId' => 'required|string',
+            'subjectId' => 'required|string',
+        ]);
+        $validated['courseSubjectId'] = $courseSubjectId;
+        CourseSubjectManagementFacade::createOrUpdateCourseSubject($validated, $courseSubjectId);
+        return redirect()->route('admin.courseSubjects')
+            ->with('success', 'Course Subject updated successfully!');
+    }
+
     /**
-     * REST API: GET /api/courseSubject
-     * Get all course subjects data FROM DATABASE directly (to avoid circular API calls)
-     * This endpoint is called by the web view's API fetch
+     * REST API
      */
     public function index()
     {
-        // Get all course subjects FROM DATABASE directly (bypassing services to avoid circular calls)
         $courseSubjects = CourseSubject::with(['course', 'subject'])->get();
 
-        // Map to API response format
         $courseSubjectsData = $courseSubjects->map(function ($courseSubject) {
             return [
                 'courseSubjectId' => $courseSubject->courseSubjectId,
@@ -65,11 +110,29 @@ class CourseSubjectController extends Controller
         ], 200);
     }
 
-    /**
-     * REST API: POST /api/courseSubject
-     * Create a new course subject
-     */
-    public function store(Request $request)
+    public function apiShow(string $courseSubjectId)
+    {
+        $courseSubject = CourseSubject::with(['course', 'subject'])->findOrFail($courseSubjectId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'courseSubjectId' => $courseSubject->courseSubjectId,
+                'courseId' => $courseSubject->courseId,
+                'subjectId' => $courseSubject->subjectId,
+                'course' => $courseSubject->course ? [
+                    'courseId' => $courseSubject->course->courseId,
+                    'courseCode' => $courseSubject->course->courseCode ?? '',
+                ] : null,
+                'subject' => $courseSubject->subject ? [
+                    'subjectId' => $courseSubject->subject->subjectId,
+                    'subjectCode' => $courseSubject->subject->subjectCode ?? '',
+                ] : null,
+            ]
+        ], 200);
+    }
+
+    public function apiStore(Request $request)
     {
         $validated = $request->validate([
             'courseSubjectId' => 'required|string|unique:course_subject,courseSubjectId',
@@ -77,92 +140,55 @@ class CourseSubjectController extends Controller
             'subjectId' => 'required|string|exists:subject,subjectId',
         ]);
 
-        try {
-            $courseSubject = CourseSubjectManagementFacade::createCourseSubject($validated);
+        $courseSubject = CourseSubject::create($validated);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Course subject created successfully',
-                'data' => [
-                    'courseSubjectId' => $courseSubject->courseSubjectId,
-                    'courseId' => $courseSubject->courseId,
-                    'subjectId' => $courseSubject->subjectId,
-                ]
-            ], 201);
-        } catch (\Exception $e) {
-            Log::error('Failed to create course subject', [
-                'error' => $e->getMessage(),
-                'data' => $validated
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create course subject',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Course subject created successfully',
+            'data' => [
+                'courseSubjectId' => $courseSubject->courseSubjectId,
+                'courseId' => $courseSubject->courseId,
+                'subjectId' => $courseSubject->subjectId,
+            ]
+        ], 201);
     }
 
-    /**
-     * REST API: PUT/PATCH /api/courseSubject/{id}
-     * Update a course subject
-     */
-    public function update(Request $request, string $id)
+    public function apiUpdate(Request $request, string $id)
     {
         $validated = $request->validate([
             'courseId' => 'nullable|string|exists:course,courseId',
             'subjectId' => 'nullable|string|exists:subject,subjectId',
         ]);
 
-        try {
-            $courseSubject = CourseSubjectManagementFacade::updateCourseSubject($id, $validated);
+        $courseSubject = CourseSubject::findOrFail($id);
+        $courseSubject->update($validated);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Course subject updated successfully',
-                'data' => [
-                    'courseSubjectId' => $courseSubject->courseSubjectId,
-                    'courseId' => $courseSubject->courseId,
-                    'subjectId' => $courseSubject->subjectId,
-                ]
-            ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Course subject not found'
-            ], 404);
-        } catch (\Exception $e) {
-            Log::error('Failed to update course subject', [
-                'error' => $e->getMessage(),
-                'id' => $id,
-                'data' => $validated
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update course subject',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Course subject updated successfully',
+            'data' => [
+                'courseSubjectId' => $courseSubject->courseSubjectId,
+                'courseId' => $courseSubject->courseId,
+                'subjectId' => $courseSubject->subjectId,
+            ]
+        ], 200);
     }
 
     public function fetchCourseSubjectWithForeignKeys(Request $request)
     {
         $subjectId = $request->query('subjectId');
         $courseId = $request->query('courseId');
-        
+
         $courseSubject = $this->courseSubjectService->fetchCourseSubjectWithForeignKeys(
-            $subjectId, 
+            $subjectId,
             $courseId
         );
-        
-        // Return null if not found (or empty array)
+
         if (!$courseSubject) {
             return response()->json(null, 404);
         }
-        
+
         // Return just the data
         return response()->json($courseSubject, 200);
     }
-
 }

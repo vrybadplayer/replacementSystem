@@ -46,8 +46,18 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/courses', [CourseController::class, 'courseListView'])->name('admin.courses');
     Route::get('/courses/create', [CourseController::class, 'create'])->name('admin.courses.create');
     Route::post('/courses/store', [CourseController::class, 'store'])->name('admin.courses.store');
+    Route::get('/courses/{courseId}/edit', [CourseController::class, 'edit'])->name('admin.courses.edit');
+    Route::post('/courses/{courseId}/update', [CourseController::class, 'update'])->name('admin.courses.update');
     Route::get('/subjects', [SubjectController::class, 'subjectListView'])->name('admin.subjects');
+    Route::get('/subjects/create', [SubjectController::class, 'create'])->name('admin.subjects.create');
+    Route::post('/subjects/store', [SubjectController::class, 'store'])->name('admin.subjects.store');
+    Route::get('/subjects/{subjectId}/edit', [SubjectController::class, 'edit'])->name('admin.subjects.edit');
+    Route::post('/subjects/{subjectId}/update', [SubjectController::class, 'update'])->name('admin.subjects.update');
     Route::get('/courseSubjects', [CourseSubjectController::class, 'courseSubjectListView'])->name('admin.courseSubjects');
+    Route::get('/courseSubjects/create', [CourseSubjectController::class, 'create'])->name('admin.courseSubjects.create');
+    Route::post('/courseSubjects/store', [CourseSubjectController::class, 'store'])->name('admin.courseSubjects.store');
+    Route::get('/courseSubjects/{courseSubjectId}/edit', [CourseSubjectController::class, 'edit'])->name('admin.courseSubjects.edit');
+    Route::post('/courseSubjects/{courseSubjectId}/update', [CourseSubjectController::class, 'update'])->name('admin.courseSubjects.update');
 
     // Admin Replacement Module
     Route::get('/replacement/appeals', [ReplacementController::class, 'adminViewAppeals'])->name('admin.replacement.appeals');

@@ -11,13 +11,7 @@ class CourseSubjectService
 {
     protected $baseUrl = 'http://127.0.0.1:8001/api';
 
-    /**
-     * Generic method to fetch data from API
-     * 
-     * @param string $endpoint API endpoint (without base URL)
-     * @return array API response data
-     * @throws \Exception if API fails and throwOnFail is true
-     */
+    
     function fetchFromApi(string $endpoint): array
     {
         $url = "{$this->baseUrl}/{$endpoint}";
@@ -30,25 +24,28 @@ class CourseSubjectService
         return $data['data'] ?? (is_array($data) ? $data : []);
     }
 
-    /**
-     * Fetch course subjects from API
-     * 
-     * @return array Raw API response data
-     * @throws \Exception if API is unavailable
-     */
+
     public function fetchCourseSubjectsFromApi(): array
     {
         return $this->fetchFromApi('courseSubject');
     }
 
-    /**
-     * Create or update a course subject in the database
-     * 
-     * @param array $data Course subject data
-     * @param string|null $courseSubjectId Course subject ID (if null, will use data['courseSubjectId'])
-     * @return CourseSubject
-     */
-    public function createOrUpdateCourseSubject(array $data, ?string $courseSubjectId = null): CourseSubject
+
+    public function fetchCourseSubjectByIdFromApi(string $courseSubjectId): array
+    {
+        $response = Http::timeout(5)->get("{$this->baseUrl}/courseSubject/{$courseSubjectId}");
+        if ($response->status() === 404) {
+            throw new \Exception('Course Subject not found');
+        }
+        if (!$response->successful()) {
+            throw new \Exception('Course Subject API failed: ' . $response->status());
+        }
+        $data = $response->json();
+        return $data['data'] ?? (is_array($data) ? $data : []);
+    }
+
+
+    public function createOrUpdateCourseSubject(array $data, ?string $courseSubjectId = null): array
     {
         $courseSubjectId = $courseSubjectId ?? $data['courseSubjectId'] ?? null;
 
@@ -56,11 +53,22 @@ class CourseSubjectService
             throw new \InvalidArgumentException('Course Subject ID is required');
         }
 
-        return CourseSubject::updateOrCreate(
-            ['courseSubjectId' => $courseSubjectId],
-            $data
-        );
+        $url = "{$this->baseUrl}/courseSubject/{$courseSubjectId}";
+        $response = Http::timeout(5)->put($url, $data);
+
+        if ($response->status() === 404) {
+            $response = Http::timeout(5)->post("{$this->baseUrl}/courseSubject", $data);
+        }
+        if (!$response->successful()) {
+            throw new \Exception(
+                $response->json()['message']
+                    ?? 'Failed to create/update course subject'
+            );
+        }
+
+        return $response->json()['data'] ?? $response->json();
     }
+    
 
     public function fetchCourseSubjectWithForeignKeys($subjectId, $courseId)
     {
