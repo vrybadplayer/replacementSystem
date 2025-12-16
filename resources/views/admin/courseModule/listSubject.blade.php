@@ -60,7 +60,6 @@
                             <td>
                                 <div class="action-buttons">
                                     <a href="#" class="btn-edit">Edit</a>
-                                    <a href="#" class="btn-delete">Delete</a>
                                 </div>
                             </td>
                         </tr>

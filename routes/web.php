@@ -45,6 +45,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/timetableAssignment', [AdminTimetableController::class, 'viewTimetableAssignment'])->name('admin.timetableAssignment');
     Route::get('/timeslotManagement', [AdminTimetableController::class, 'viewTimeslotManagement'])->name('admin.timeslotManagement');
     Route::get('/courses', [CourseController::class, 'courseListView'])->name('admin.courses');
+    Route::get('/courses/create', [CourseController::class, 'create'])->name('admin.courses.create');
+    Route::post('/courses/store', [CourseController::class, 'store'])->name('admin.courses.store');
     Route::get('/subjects', [SubjectController::class, 'subjectListView'])->name('admin.subjects');
     Route::get('/courseSubjects', [CourseSubjectController::class, 'courseSubjectListView'])->name('admin.courseSubjects');
 
