@@ -68,6 +68,7 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->group(function (
     
     // Student Profile module
     Route::get('/profile', [UserController::class, 'showProfile'])->name('student.profile');
+    Route::post('/change-password', [UserController::class, 'changePassword'])->name('student.changePassword');
     
     // Timetable module
     Route::get('/timetable', [StudentTimetableController::class, 'index'])->name('student.timetable');

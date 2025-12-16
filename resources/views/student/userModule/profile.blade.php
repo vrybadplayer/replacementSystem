@@ -113,6 +113,23 @@
         .edit-btn:hover {
             background: #2563eb;
         }
+
+        .btn-change-password {
+            width: 100%;
+            padding: 12px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 15px;
+            transition: background 0.2s;
+        }
+
+        .btn-change-password:hover {
+            background: #b91c1c;
+        }
         
         .section {
             background: white;
@@ -245,6 +262,103 @@
         .btn-save:hover {
             background: #2563eb;
         }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #dc2626;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .error-text {
+            display: block;
+            color: #dc2626;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .password-strength {
+            display: block;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .password-requirements {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .password-requirements p {
+            margin: 0 0 10px 0;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .password-requirements ul {
+            margin: 0;
+            padding-left: 20px;
+            list-style: none;
+        }
+
+        .password-requirements li {
+            padding: 5px 0;
+            color: #666;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        .password-requirements li:before {
+            content: '✗';
+            color: #dc2626;
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .password-requirements li.req-met:before {
+            content: '✓';
+            color: #10b981;
+        }
+
+        .alert {
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-error p {
+            margin: 5px 0;
+            font-size: 13px;
+        }
         
         @media (max-width: 768px) {
             .profile-grid {
@@ -324,6 +438,12 @@
                             <h3>Enrolled Courses</h3>
                             <div id="coursesList" class="loading">Loading courses...</div>
                         </div>
+
+                        <!-- Change Password Section -->
+                        <div class="section">
+                            <h3>Change Password</h3>
+                            <button class="btn-change-password" onclick="showChangePasswordForm()">🔐 Change Password</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -349,6 +469,62 @@
                 <div class="modal-buttons">
                     <button type="button" class="btn-cancel" onclick="closeEditForm()">Cancel</button>
                     <button type="submit" class="btn-save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔐 Change Password</h2>
+                <button type="button" class="modal-close" onclick="closeChangePasswordForm()">&times;</button>
+            </div>
+
+            @if ($errors->any())
+                <div class="alert alert-error">
+                    @foreach ($errors->all() as $error)
+                        <p>{{ $error }}</p>
+                    @endforeach
+                </div>
+            @endif
+
+            <form action="{{ route('student.changePassword') }}" method="POST" onsubmit="return validateChangePassword(event)">
+                @csrf
+                
+                <div class="form-group">
+                    <label for="currentPassword">Current Password</label>
+                    <input type="password" id="currentPassword" name="current_password" required placeholder="Enter your current password">
+                    <span class="error-text" id="currentPasswordError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" name="password" required placeholder="Enter new password">
+                    <span class="password-strength" id="passwordStrength"></span>
+                    <span class="error-text" id="newPasswordError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm New Password</label>
+                    <input type="password" id="confirmPassword" name="password_confirmation" required placeholder="Confirm new password">
+                    <span class="error-text" id="confirmPasswordError"></span>
+                </div>
+
+                <div class="password-requirements">
+                    <p><strong>Password Requirements:</strong></p>
+                    <ul>
+                        <li id="req-length">At least 8 characters</li>
+                        <li id="req-uppercase">At least one uppercase letter</li>
+                        <li id="req-lowercase">At least one lowercase letter</li>
+                        <li id="req-number">At least one number</li>
+                    </ul>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="closeChangePasswordForm()">Cancel</button>
+                    <button type="submit" class="btn-save">Change Password</button>
                 </div>
             </form>
         </div>
@@ -427,6 +603,89 @@
         document.getElementById('editModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeEditForm();
+            }
+        });
+
+        // Change Password Functions
+        function showChangePasswordForm() {
+            document.getElementById('changePasswordModal').style.display = 'flex';
+        }
+
+        function closeChangePasswordForm() {
+            document.getElementById('changePasswordModal').style.display = 'none';
+            document.getElementById('changePasswordModal').querySelector('form').reset();
+            clearPasswordErrors();
+        }
+
+        function validateChangePassword(e) {
+            clearPasswordErrors();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            let isValid = true;
+
+            if (!currentPassword) {
+                document.getElementById('currentPasswordError').textContent = 'Current password is required';
+                isValid = false;
+            }
+
+            if (newPassword.length < 8) {
+                document.getElementById('newPasswordError').textContent = 'Password must be at least 8 characters';
+                isValid = false;
+            }
+
+            if (!/[A-Z]/.test(newPassword)) {
+                document.getElementById('newPasswordError').textContent = 'Password must contain at least one uppercase letter';
+                isValid = false;
+            }
+
+            if (!/[a-z]/.test(newPassword)) {
+                document.getElementById('newPasswordError').textContent = 'Password must contain at least one lowercase letter';
+                isValid = false;
+            }
+
+            if (!/[0-9]/.test(newPassword)) {
+                document.getElementById('newPasswordError').textContent = 'Password must contain at least one number';
+                isValid = false;
+            }
+
+            if (newPassword !== confirmPassword) {
+                document.getElementById('confirmPasswordError').textContent = 'Passwords do not match';
+                isValid = false;
+            }
+
+            if (currentPassword === newPassword) {
+                document.getElementById('newPasswordError').textContent = 'New password must be different from current password';
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function clearPasswordErrors() {
+            document.getElementById('currentPasswordError').textContent = '';
+            document.getElementById('newPasswordError').textContent = '';
+            document.getElementById('confirmPasswordError').textContent = '';
+        }
+
+        // Real-time password strength indicator
+        document.getElementById('newPassword')?.addEventListener('input', function() {
+            const password = this.value;
+            updatePasswordRequirements(password);
+        });
+
+        function updatePasswordRequirements(password) {
+            document.getElementById('req-length').className = password.length >= 8 ? 'req-met' : '';
+            document.getElementById('req-uppercase').className = /[A-Z]/.test(password) ? 'req-met' : '';
+            document.getElementById('req-lowercase').className = /[a-z]/.test(password) ? 'req-met' : '';
+            document.getElementById('req-number').className = /[0-9]/.test(password) ? 'req-met' : '';
+        }
+
+        document.getElementById('changePasswordModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeChangePasswordForm();
             }
         });
     </script>
