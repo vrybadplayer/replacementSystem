@@ -61,4 +61,21 @@ class CourseSubjectService
             $data
         );
     }
+
+    public function fetchCourseSubjectWithForeignKeys($subjectId, $courseId)
+    {
+        $courseSubject = CourseSubject::where('subjectId', $subjectId)
+            ->where('courseId', $courseId)
+            ->first();
+        
+        if (!$courseSubject) {
+            return null;
+        }
+        
+        return [
+            'courseSubjectId' => $courseSubject->courseSubjectId,
+            'courseId' => $courseSubject->courseId,
+            'subjectId' => $courseSubject->subjectId,
+        ];
+    }
 }

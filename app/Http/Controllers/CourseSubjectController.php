@@ -6,9 +6,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Facades\CourseSubjectManagementFacade;
 use App\Models\CourseSubject;
+use App\Services\CourseSubjectService;
 
 class CourseSubjectController extends Controller
 {
+
+    protected $courseSubjectService;
+    
+    public function __construct(CourseSubjectService $courseSubjectService)
+    {
+        $this->courseSubjectService = $courseSubjectService;
+    }
+
+
     /**
      * Web View: GET /admin/courseSubjects
      * Return view with course subjects list FROM EXTERNAL API
@@ -135,4 +145,24 @@ class CourseSubjectController extends Controller
             ], 500);
         }
     }
+
+    public function fetchCourseSubjectWithForeignKeys(Request $request)
+    {
+        $subjectId = $request->query('subjectId');
+        $courseId = $request->query('courseId');
+        
+        $courseSubject = $this->courseSubjectService->fetchCourseSubjectWithForeignKeys(
+            $subjectId, 
+            $courseId
+        );
+        
+        // Return null if not found (or empty array)
+        if (!$courseSubject) {
+            return response()->json(null, 404);
+        }
+        
+        // Return just the data
+        return response()->json($courseSubject, 200);
+    }
+
 }
