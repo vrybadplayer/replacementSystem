@@ -69,6 +69,7 @@
                                 </td>
                                 <td>
                                     <div class="action-buttons">
+                                        <a href="{{ route('admin.user.show', $user->userId) }}" class="btn-view">View</a>
                                         <a href="{{ route('admin.user.edit', $user->userId) }}" class="btn-edit">Edit</a>
                                         <form method="POST" action="{{ route('admin.user.delete', $user->userId) }}" style="display: inline;" onsubmit="return confirm('{{ $user->status === 'active' ? 'Ban this user?' : 'Unban this user?' }}');">
                                             @csrf

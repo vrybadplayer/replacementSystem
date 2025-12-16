@@ -38,6 +38,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/users/{userId}/edit', [AdminUserController::class, 'edit'])->name('admin.user.edit');
     Route::post('/users/{userId}/update', [AdminUserController::class, 'update'])->name('admin.user.update');
     Route::delete('/users/{userId}', [AdminUserController::class, 'delete'])->name('admin.user.delete');
+    Route::post('/users/{userId}/reset-password', [AdminUserController::class, 'resetPassword'])->name('admin.user.resetPassword');
+    Route::get('/users/{userId}/password-reset-confirm', [AdminUserController::class, 'passwordResetConfirm'])->name('admin.user.passwordResetConfirm');
     
     // Admin-specific routes
     Route::get('/timetableAssignment', [AdminTimetableController::class, 'viewTimetableAssignment'])->name('admin.timetableAssignment');

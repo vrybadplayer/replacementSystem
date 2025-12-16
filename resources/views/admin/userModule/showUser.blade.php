@@ -6,7 +6,7 @@
     <title>User Profile - Admin Dashboard</title>
     <link rel="stylesheet" href="{{ asset('css/common/global.css') }}">
     <link rel="stylesheet" href="{{ asset('css/components/sidebar.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/pages/profile.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/pages/showUser.css') }}">
 </head>
 <body>
     <x-header title="Admin Dashboard" />
@@ -20,6 +20,10 @@
                     <h2>User Profile</h2>
                     <div class="profile-actions">
                         <a href="{{ route('admin.user.edit', $user->userId) }}" class="btn-action">Edit</a>
+                        <form method="POST" action="{{ route('admin.user.resetPassword', $user->userId) }}" style="display: inline;" onsubmit="return confirm('Reset password for this user?');">
+                            @csrf
+                            <button type="submit" class="btn-action btn-warning">Reset Password</button>
+                        </form>
                         <a href="{{ route('admin.user.index') }}" class="btn-action btn-secondary">Back</a>
                     </div>
                 </div>
