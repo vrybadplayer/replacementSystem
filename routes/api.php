@@ -10,6 +10,9 @@ use App\Http\Controllers\CourseSubjectController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\TimetableController;
+use App\Http\Controllers\ClassGroupController;
+use App\Http\Controllers\VenueController;
 
 
 // This file is what ApiService files will call
@@ -37,8 +40,12 @@ Route::post('/user/profile/update', [UserController::class, 'updateProfile']);
 
 // Timetable Module API
 Route::get('/', [StudentTimetableController::class, '']);
-Route::get('/testing', [StudentTimetableController::class, 'test']);
-
+Route::get('/venues', [VenueController::class, 'getAllVenue']);
+Route::get('/venues/{id}', [VenueController::class, 'getVenueById']);
+Route::get('/classgroups', [ClassGroupController::class, 'getAllClassGroups']);
+Route::get('/classgroups/{id}', [ClassGroupController::class, 'getClassGroupById']);
+Route::get('/timetable', [TimetableController::class, 'getAllTimetableRecords']);
+Route::get('/timetable/{id}', [TimetableController::class, 'getTimetableById']);
 
 // --- Course Management API ---
 Route::get('/courses', [CourseController::class, 'index']);
@@ -50,10 +57,10 @@ Route::put('/courseSubject/{id}', [CourseSubjectController::class, 'update']);
 Route::patch('/courseSubject/{id}', [CourseSubjectController::class, 'update']);
 
 // --- Subjects REST API ---
-Route::get('/subjects', [SubjectController::class, 'index']); 
-Route::post('/subjects', [SubjectController::class, 'store']); 
+Route::get('/subjects', [SubjectController::class, 'index']);
+Route::post('/subjects', [SubjectController::class, 'store']);
 Route::put('/subjects/{id}', [SubjectController::class, 'update']);
-Route::patch('/subjects/{id}', [SubjectController::class, 'update']); 
+Route::patch('/subjects/{id}', [SubjectController::class, 'update']);
 
 
 // --- User Management API ---
@@ -67,4 +74,3 @@ Route::middleware('auth')->group(function () {
 });
 
 // --- Replacement Module API ---
-

@@ -2,45 +2,27 @@
 
 namespace App\Services;
 
-use App\Models\Timetable;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
 
 class TimetableService
 {
-    public function getTimetablesByClassGroupAndDateRange($classGroupId, $startDate, $endDate)
+    protected $baseUrl = 'http://127.0.0.1:8001/api';
+
+    public function getAllTimetableRecords()
     {
-        return Timetable::with(['venue', 'courseSubject'])
-            ->where(function ($query) use ($classGroupId) {
-                $query->where('classGroupId', $classGroupId)
-                      ->orWhereRaw("FIND_IN_SET(?, classGroupId) > 0", [$classGroupId]);
-            })
-            ->whereBetween('classDate', [$startDate, $endDate])
-            ->orderBy('classDate')
-            ->orderBy('startTime')
-            ->get();
-    }
-    
-    public function getTimetablesByStudentAndWeek($studentId, $selectedDate)
-    {
-        $selectedDate = Carbon::parse($selectedDate);
-        $startOfWeek = $selectedDate->startOfWeek()->format('Y-m-d');
-        $endOfWeek = $selectedDate->endOfWeek()->format('Y-m-d');
-        
-        // Note: You'll need to get classGroupId from user/student somehow
-        // This depends on your data structure
-        $classGroupId = $this->getClassGroupIdByStudentId($studentId);
-        
-        if (!$classGroupId) {
-            return collect([]);
+        $response = Http::get("{$this->baseUrl}/timetable");
+        if ($response->successful()) {
+            return $response->json()['data'] ?? [];
         }
-        
-        return $this->getTimetablesByClassGroupAndDateRange($classGroupId, $startOfWeek, $endOfWeek);
+        return [];
     }
     
-    protected function getClassGroupIdByStudentId($studentId)
+    public function getTimetableById(string $id)
     {
-        // Implement based on your user/student relationship
-        $user = \App\Models\User::find($studentId);
-        return $user->classGroupId ?? null;
+        $response = Http::get("{$this->baseUrl}/timetable/{$id}");
+        if ($response->successful()) {
+            return $response->json()['data'] ?? null;
+        }
+        return null;
     }
 }
