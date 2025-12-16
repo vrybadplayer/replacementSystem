@@ -6,12 +6,27 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Facades\CourseSubjectManagementFacade;
 use App\Models\Subject;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class SubjectController extends Controller
 {
-    public function subjectListView()
+    public function subjectListView(Request $request)
     {
-        $subjects = CourseSubjectManagementFacade::getSubjectsForViewFromApi();
+        $allSubjects = CourseSubjectManagementFacade::getSubjectsForViewFromApi();
+        
+        $perPage = 10;
+        $currentPage = $request->get('page', 1);
+        $total = count($allSubjects);
+        $items = array_slice($allSubjects, ($currentPage - 1) * $perPage, $perPage);
+        
+        $subjects = new LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+        
         return view('admin.courseModule.listSubject', compact('subjects'));
     }
 

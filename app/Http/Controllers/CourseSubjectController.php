@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Log;
 use App\Facades\CourseSubjectManagementFacade;
 use App\Models\CourseSubject;
 use App\Services\CourseSubjectService;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class CourseSubjectController extends Controller
 {
@@ -18,9 +19,23 @@ class CourseSubjectController extends Controller
         $this->courseSubjectService = $courseSubjectService;
     }
 
-    public function courseSubjectListView()
+    public function courseSubjectListView(Request $request)
     {
-        $courseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
+        $allCourseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
+        
+        $perPage = 10;
+        $currentPage = $request->get('page', 1);
+        $total = count($allCourseSubjects);
+        $items = array_slice($allCourseSubjects, ($currentPage - 1) * $perPage, $perPage);
+        
+        $courseSubjects = new LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+        
         return view('admin.courseModule.listCourseSubject', compact('courseSubjects'));
     }
 

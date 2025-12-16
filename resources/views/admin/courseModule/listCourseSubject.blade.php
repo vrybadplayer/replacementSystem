@@ -82,6 +82,12 @@
                         @endforelse
                     </tbody>
                 </table>
+
+                @if($courseSubjects->count() > 0)
+                    <div class="pagination-container">
+                        {{ $courseSubjects->links('pagination::bootstrap-4') }}
+                    </div>
+                @endif
             </div>
         </main>
     </div>
