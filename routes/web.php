@@ -43,7 +43,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     
     // Admin-specific routes
     Route::get('/timetableAssignment', [AdminTimetableController::class, 'viewTimetableAssignment'])->name('admin.timetableAssignment');
-    Route::get('/timeslotManagement', [AdminTimetableController::class, 'viewTimeslotManagement'])->name('admin.timeslotManagement');
     Route::get('/courses', [CourseController::class, 'courseListView'])->name('admin.courses');
     Route::get('/courses/create', [CourseController::class, 'create'])->name('admin.courses.create');
     Route::post('/courses/store', [CourseController::class, 'store'])->name('admin.courses.store');
@@ -56,8 +55,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/replacement/appeals/{appealId}/process', [ReplacementController::class, 'adminProcessAppeal'])->name('admin.replacement.process');
 
     // Admin Timetable Assignment Module
-    Route::get('/ajax/filter-subjects', [AdminTimetableController::class, 'ajaxFilterSubjects']);
     Route::post('/assignment/submit', [AdminTimetableController::class, 'storeTimetable'])->name('admin.assignment.submit');
+
+    // Admin Timeslot Management Module
+    Route::get('/timeslotManagement', [AdminTimetableController::class, 'viewTimeslotManagement'])->name('admin.timeslotManagement');
+    Route::post('/timeslotManagement', [AdminTimetableController::class, 'filterTimeslots'])->name('admin.timeslot.filter');
+    Route::post('/timeslotManagement/update', [AdminTimetableController::class, 'updateTimeslot'])->name('admin.timeslot.update');
+    Route::delete('/timeslotManagement/delete', [AdminTimetableController::class, 'deleteTimeslot'])->name('admin.timeslot.delete');
 });
 
 
