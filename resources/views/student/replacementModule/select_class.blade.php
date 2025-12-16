@@ -131,6 +131,9 @@
                                     {{ $class->subject->subjectId }} - {{ $class->subject->subjectName }}
                                 </div>
                                 <div class="class-info">
+                                    <strong>Subject Code:</strong> {{ $class->subject->subjectCode }}
+                                </div>
+                                <div class="class-info">
                                     <strong>Date:</strong> {{ date('D, d M Y', strtotime($class->classDate)) }}
                                 </div>
                                 <div class="class-info">
