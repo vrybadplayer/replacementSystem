@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use APp\Models\Timetable;
 
 class TimetableService
 {
@@ -16,13 +17,73 @@ class TimetableService
         }
         return [];
     }
-    
-    public function getTimetableById(string $id)
+
+    public function getTimetableById($id)
     {
         $response = Http::get("{$this->baseUrl}/timetable/{$id}");
         if ($response->successful()) {
             return $response->json()['data'] ?? null;
         }
         return null;
+    }
+
+    public function getOccupiedSlots($day, $venueId)
+    {
+        $response = Http::get($this->baseUrl . '/occupiedSlots', [
+            'day' => $day,
+            'venueId' => $venueId
+        ]);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            return collect($data['data'] ?? []);
+        }
+
+        return collect([]);
+    }
+
+    public function clashCheck($day, $venueId, $startTime, $endTime)
+    {
+        $response = Http::get($this->baseUrl . '/clashCheck', [
+            'day' => $day,
+            'venueId' => $venueId,
+            'startTime' => $startTime,
+            'endTime' => $endTime
+        ]);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['isOccupied'] ?? false;
+        }
+
+        return false;
+    }
+
+    public function createTimetable($data)
+    {
+        $response = Http::post($this->baseUrl . '/timetable/create', $data);
+
+        if ($response->successful()) {
+            $result = $response->json();
+            return $result['success'] ? $result['data'] : null;
+        }
+
+        return null;
+    }
+
+    public function getStudentWeekSchedule($classGroupId, $startOfWeek, $endOfWeek)
+    {
+        $response = Http::get($this->baseUrl . '/timetable/schedule', [
+            'classGroupId' => $classGroupId,
+            'startOfWeek' => $startOfWeek,
+            'endOfWeek' => $endOfWeek
+        ]);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            return collect($data['data'] ?? []);
+        }
+
+        return collect([]);
     }
 }
