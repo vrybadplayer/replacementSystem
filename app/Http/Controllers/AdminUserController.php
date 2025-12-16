@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class AdminUserController extends Controller
 {
@@ -134,6 +135,95 @@ class AdminUserController extends Controller
         $user->save();
         
         return back()->with('success', $message);
+    }
+
+    /**
+     * Reset user password
+     */
+    public function resetPassword($userId)
+    {
+        $user = $this->userService->getUserById($userId);
+
+        if (!$user) {
+            abort(404);
+        }
+
+        // Generate a random password
+        $newPassword = $this->generatePassword();
+        $user->password = bcrypt($newPassword);
+        $user->save();
+
+        // Send email with new password
+        try {
+            Mail::send('emails.password-reset', [
+                'userName' => $user->name,
+                'userEmail' => $user->email,
+                'newPassword' => $newPassword,
+                'userId' => $user->userId
+            ], function ($message) use ($user) {
+                $message->to($user->email)->subject('Your Password Has Been Reset');
+            });
+        } catch (\Exception $e) {
+            // Log the error but still show success message
+            \Log::error('Failed to send password reset email: ' . $e->getMessage());
+        }
+
+        return redirect()->route('admin.user.passwordResetConfirm', [
+            'userId' => $userId,
+            'password' => $newPassword,
+            'email' => $user->email
+        ]);
+    }
+
+    /**
+     * Generate a random password
+     */
+    private function generatePassword($length = 10)
+    {
+        $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $lowercase = 'abcdefghijklmnopqrstuvwxyz';
+        $numbers = '0123456789';
+        $special = '!@#$%^&*';
+        
+        $all = $uppercase . $lowercase . $numbers . $special;
+        $password = '';
+        
+        // Ensure at least one character from each category
+        $password .= $uppercase[rand(0, strlen($uppercase) - 1)];
+        $password .= $lowercase[rand(0, strlen($lowercase) - 1)];
+        $password .= $numbers[rand(0, strlen($numbers) - 1)];
+        $password .= $special[rand(0, strlen($special) - 1)];
+        
+        // Fill the rest with random characters
+        for ($i = 4; $i < $length; $i++) {
+            $password .= $all[rand(0, strlen($all) - 1)];
+        }
+        
+        // Shuffle the password
+        $password = str_shuffle($password);
+        
+        return $password;
+    }
+
+    /**
+     * Show password reset confirmation page
+     */
+    public function passwordResetConfirm(Request $request, $userId)
+    {
+        $user = $this->userService->getUserById($userId);
+        
+        if (!$user) {
+            abort(404);
+        }
+
+        $newPassword = $request->query('password');
+        $email = $request->query('email');
+
+        return view('admin.userModule.passwordResetConfirm', [
+            'user' => $user,
+            'newPassword' => $newPassword,
+            'email' => $email
+        ]);
     }
 
     /**
