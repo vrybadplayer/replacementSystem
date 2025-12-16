@@ -80,8 +80,13 @@ class TimetableService
         return null;
     }
 
-    public function getStudentWeekSchedule($classGroupId, $startOfWeek, $endOfWeek)
+    public function getStudentSchedule($classGroupId, $startOfWeek, $endOfWeek)
     {
+
+        //dd($classGroupId);
+        //dd($startOfWeek);
+        //dd($endOfWeek);
+
         $response = Http::get($this->baseUrl . '/timetable/schedule', [
             'classGroupId' => $classGroupId,
             'startOfWeek' => $startOfWeek,

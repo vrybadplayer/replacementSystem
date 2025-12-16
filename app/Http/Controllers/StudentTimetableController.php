@@ -45,7 +45,8 @@ class StudentTimetableController extends Controller
         // Get all the classes the user has (in the selected week)
         $weeklyClasses = $this->mediator->getCurrentWeekSchedule($userId, $selectedDate);
         
-
+        //dd($weeklyClasses);
+        
         // check if public holiday, then type the timeslot (hardcoded)
         $holidays = [
             '2025-12-25' => 'Christmas Day',
@@ -93,9 +94,8 @@ class StudentTimetableController extends Controller
         $replacementClassList = [];
 
         foreach($weeklyClasses as $class) {
-
             // Check if there is replacement classes
-            if ($class->classMode === 'replacement') {
+            if ($class['classType'] === 'replacement') {
                 $hasReplacement = true;
                 $replacementClassList[] = $class;
             }
@@ -105,25 +105,24 @@ class StudentTimetableController extends Controller
             $note = null;
 
             // If there is a holiday, what holiday is it?
-            if(array_key_exists($class->classDate, $holidays)){
+            if(array_key_exists($class['classDate'], $holidays)){
                 $type = "canceled";
-                $event = $holidays[$class->classDate];
+                $event = $holidays[$class['classDate']];
             }
 
             // After filtering normal/replacement/canceled, add the class to the list
-            $day = substr($class->dayOfWeek, 0, 3); 
-            $startTime = Carbon::parse($class->startTime);
-            $endTime = Carbon::parse($class->endTime);
+            $day = substr($class['dayOfWeek'], 0, 3); 
+            $startTime = Carbon::parse($class['startTime']);
+            $endTime = Carbon::parse($class['endTime']);
             $duration = $startTime->diffInHours($endTime);
 
             $transitiveSubjectList = $this->mediator->getTransitiveSubjectList();
 
-
             // [Mon][08:00]
             $timetableData[$day][$startTime->format('H:i')] = [
-                'timetableId' => $class->timetableId,
-                'subject' => $transitiveSubjectList[$class->courseSubjectId],
-                'venueId' => $class->venueId,
+                'timetableId' => $class['timetableId'],
+                'subject' => $transitiveSubjectList[$class['courseSubjectId']],
+                'venueId' => $class['venueId'],
                 'duration' => $duration,
                 'type' => $type,
                 'time_str' => $startTime->format('g:i A') . ' - ' . $endTime->format('g:i A'),

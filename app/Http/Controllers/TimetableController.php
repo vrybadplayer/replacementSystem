@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Timetable;
 use Illuminate\Http\Request;
 use App\Services\TimetableService;
+use Illuminate\Support\Facades\Log;
 
 class TimetableController extends Controller
 {
@@ -79,30 +80,6 @@ class TimetableController extends Controller
             'message' => 'Timetable created successfully',
             'data' => $timetable
         ], 201);
-    }
-
-    // GET /timetable/schedule
-    public function getStudentWeekSchedule(Request $request)
-    {
-        $classGroupId = $request->query('classGroupId');
-        $startOfWeek = $request->query('startOfWeek');
-        $endOfWeek = $request->query('endOfWeek');
-
-        $classes = Timetable::with(['venue', 'courseSubject'])
-            ->where(function ($query) use ($classGroupId) {
-                $query->where('classGroupId', $classGroupId)
-                    ->orWhereRaw("FIND_IN_SET(?, classGroupId) > 0", [$classGroupId]);
-            })
-            ->whereBetween('classDate', [$startOfWeek, $endOfWeek])
-            ->orderBy('classDate')
-            ->orderBy('startTime')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => $classes,
-            'count' => $classes->count()
-        ]);
     }
 
     public function getTimetableByClassGroupId($classGroupId)

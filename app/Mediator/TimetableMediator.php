@@ -48,24 +48,30 @@ class TimetableMediator implements TimetableMediatorInterface
     // ======================================================================================
     public function getCurrentWeekSchedule($studentId, $selectedDate)
     {
-        $selectedDate = Carbon::parse($selectedDate);
-        $startOfWeek = $selectedDate;
-        $endOfWeek = $selectedDate->copy()->addDays(6);
+        $date = Carbon::parse($selectedDate);
+
+        $startOfWeek = $date->copy()->startOfWeek();
+        $endOfWeek = $date->copy()->endOfWeek();
 
         // Get user details
         $studentProfile = $this->userApi->getUser($studentId);
 
-        // To get their classGroup
         if (!$studentProfile || empty($studentProfile['classGroupId'])) {
             return collect([]);
         }
 
-        // Fetch
         $classGroupId = $studentProfile['classGroupId'];
-        $startOfWeek = Carbon::parse($selectedDate)->startOfWeek()->format('Y-m-d');
-        $endOfWeek = Carbon::parse($selectedDate)->endOfWeek()->format('Y-m-d');
 
-        $classes = $this->timetableApi->getStudentWeekSchedule($classGroupId, $startOfWeek, $endOfWeek);
+        $classes = Timetable::with(['venue', 'courseSubject'])
+            ->where(function ($query) use ($classGroupId) {
+                $query->where('classGroupId', $classGroupId)
+                    ->orWhereRaw("FIND_IN_SET(?, classGroupId) > 0", [$classGroupId]);
+            })
+            ->whereBetween('classDate', [$startOfWeek, $endOfWeek])
+            ->orderBy('classDate')
+            ->orderBy('startTime')
+            ->get()
+            ->toArray();
 
         return $classes;
     }
@@ -79,7 +85,7 @@ class TimetableMediator implements TimetableMediatorInterface
         $subjectMap = [];
         if (is_array($subjectRecords)) {
             foreach ($subjectRecords as $subject) {
-                $subjectMap[$subject->subjectId] = $subject->subjectName;
+                $subjectMap[$subject['subjectId']] = $subject['subjectName'];
             }
         }
 
@@ -93,14 +99,14 @@ class TimetableMediator implements TimetableMediatorInterface
         foreach ($courseSubjectRecords as $courseSubject) {
 
             // S0001
-            $key = $courseSubject->subjectId;
+            $key = $courseSubject['subjectId'];
 
             // (CourseSubject) S0001 == S001 (Subject)
             if (array_key_exists($key, $subjectMap)) {
                 // CS0001 -> subjectName
-                $transitiveMap[$courseSubject->courseSubjectId] = $subjectMap[$key];
+                $transitiveMap[$courseSubject['courseSubjectId']] = $subjectMap[$key];
             } else {
-                $transitiveMap[$courseSubject->courseSubjectId] = $key;
+                $transitiveMap[$courseSubject['courseSubjectId']] = $key;
             }
         }
 
@@ -303,30 +309,33 @@ class TimetableMediator implements TimetableMediatorInterface
     // ======================================================================================================
 
 
-    public function getAllCourseCodes() {
-        $rawCourses = $this->courseApi->fetchCoursesFromApi(); 
-        
-        return collect($rawCourses)->map(function($course) {
+    public function getAllCourseCodes()
+    {
+        $rawCourses = $this->courseApi->fetchCoursesFromApi();
+
+        return collect($rawCourses)->map(function ($course) {
             $c = (array) $course;
             return [
                 'courseId' => $c['courseId'] ?? $c['courseCode'] ?? '',
-                'courseCode' => $c['courseCode'] ?? $c['courseId'] ?? 'N/A', 
+                'courseCode' => $c['courseCode'] ?? $c['courseId'] ?? 'N/A',
             ];
         })->toArray();
     }
 
-    public function getAllClassGroupCodes() {
+    public function getAllClassGroupCodes()
+    {
 
         $groups = $this->classGroupApi->getAllClassGroups();
-        
-        return collect($groups)->map(function($group) {
+
+        return collect($groups)->map(function ($group) {
             $g = (array) $group;
             return ['classGroupId' => $g['classGroupId'] ?? $g['id'] ?? ''];
         })->toArray();
     }
-    
 
-    public function getFilteredTimetableSlots(string $courseId, string $classGroupId): array {
+
+    public function getFilteredTimetableSlots(string $courseId, string $classGroupId): array
+    {
         $courseSubjects = \App\Models\CourseSubject::where('courseId', $courseId)->pluck('courseSubjectId')->toArray();
 
         $slots = \App\Models\Timetable::with(['venue'])
@@ -335,14 +344,14 @@ class TimetableMediator implements TimetableMediatorInterface
             ->orderBy('dayOfWeek')
             ->orderBy('startTime')
             ->get();
-            
-        return $slots->map(function($slot) {
+
+        return $slots->map(function ($slot) {
             $subject = DB::table('subject')
-                        ->join('course_subject', 'subject.subjectId', '=', 'course_subject.subjectId')
-                        ->where('course_subject.courseSubjectId', $slot->courseSubjectId)
-                        ->select('subject.subjectCode', 'subject.subjectName')
-                        ->first();
-                        
+                ->join('course_subject', 'subject.subjectId', '=', 'course_subject.subjectId')
+                ->where('course_subject.courseSubjectId', $slot->courseSubjectId)
+                ->select('subject.subjectCode', 'subject.subjectName')
+                ->first();
+
             return [
                 'timetableId' => $slot->timetableId,
                 'subjectCode' => $subject->subjectCode ?? 'N/A',
@@ -363,13 +372,13 @@ class TimetableMediator implements TimetableMediatorInterface
         }
 
         $newStart = Carbon::createFromFormat('H:i', $newData['newStartTime']);
-        $newEnd = $newStart->copy()->addHours(2)->format('H:i:s'); 
+        $newEnd = $newStart->copy()->addHours(2)->format('H:i:s');
         $newStartFormatted = $newStart->format('H:i:s');
         $newDay = $newData['newDay'];
         $newVenue = $newData['newVenueId'];
 
         $isOccupied = Timetable::where('timetableId', '!=', $originalTimetableId)
-            ->where('dayOfWeek', $newDay) 
+            ->where('dayOfWeek', $newDay)
             ->where('venueId', $newVenue)
             ->where('startTime', '<', $newEnd)
             ->where('endTime', '>', $newStartFormatted)
@@ -378,7 +387,7 @@ class TimetableMediator implements TimetableMediatorInterface
         if ($isOccupied) {
             return 'clash';
         }
-        
+
         try {
             $originalSlot->update([
                 'dayOfWeek' => $newDay,
@@ -388,7 +397,6 @@ class TimetableMediator implements TimetableMediatorInterface
             ]);
 
             return true;
-            
         } catch (\Exception $e) {
             Log::error('Update Timeslot DB Failure: ' . $e->getMessage());
             return 'error';
