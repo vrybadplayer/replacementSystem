@@ -51,11 +51,11 @@
                             <td><strong>{{ $cs['courseSubjectId'] ?? '' }}</strong></td>
                             <td>
                                 <strong>{{ $cs['courseId'] ?? '' }}</strong> - 
-                                {{ $cs['course']['courseName'] ?? 'N/A' }}
+                                {{ $cs['course']['courseCode'] ?? 'N/A' }}
                             </td>
                             <td>
                                 <strong>{{ $cs['subjectId'] ?? '' }}</strong> - 
-                                {{ $cs['subject']['subjectName'] ?? 'N/A' }}
+                                {{ $cs['subject']['subjectCode'] ?? 'N/A' }}
                             </td>
                             <td>
                                 <div class="action-buttons">

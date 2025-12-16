@@ -37,6 +37,7 @@ class CourseSubjectController extends Controller
                 'subjectId' => $courseSubject->subjectId,
                 'course' => $courseSubject->course ? [
                     'courseId' => $courseSubject->course->courseId,
+                    'courseCode' => $courseSubject->course->courseCode ?? '',
                     'courseName' => $courseSubject->course->courseName ?? '',
                 ] : null,
                 'subject' => $courseSubject->subject ? [
