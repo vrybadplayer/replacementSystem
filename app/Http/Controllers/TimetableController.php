@@ -104,4 +104,21 @@ class TimetableController extends Controller
             'count' => $classes->count()
         ]);
     }
+
+    public function getTimetableByClassGroupId($classGroupId)
+    {
+        $timetables = Timetable::with(['venue', 'courseSubject.subject', 'courseSubject.course'])
+            ->where(function ($query) use ($classGroupId) {
+                $query->where('classGroupId', $classGroupId)
+                    ->orWhereRaw("FIND_IN_SET(?, classGroupId) > 0", [$classGroupId]);
+            })
+            ->orderBy('classDate')
+            ->orderBy('startTime')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $$timetables
+        ]);
+    }
 }

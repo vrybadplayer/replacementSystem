@@ -1,52 +1,56 @@
-/* --- Page Titles --- */
+/* --- Global Variables (Consistency) --- */
+:root {
+    --primary-blue: #3b82f6; /* Selected State */
+    --primary-gray: #e5e5e5; /* Default Pill Color */
+    --text-color: #000;
+    --border-color: #9ca3af;
+    --shadow-main: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+/* --- Page Titles & Dividers --- */
 .page-title {
     font-size: 1.5rem;
     font-weight: bold;
     margin-bottom: 2rem;
-    color: #000;
+    color: var(--text-color);
 }
-
 .section-label {
     font-weight: bold;
     font-size: 1.1rem;
     margin-bottom: 1rem;
     margin-top: 2rem;
-    color: #000;
+    color: var(--text-color);
 }
-
 .divider {
-    border-bottom: 1px solid #9ca3af;
+    border-bottom: 1px solid var(--border-color);
     margin: 2rem 0;
 }
 
-/* --- Top Filters Row (Course & Group) --- */
+/* --- Top Filters Row --- */
 .filters-row {
     display: flex;
-    gap: 2rem;
+    gap: 1.5rem; /* Nice spacing */
     margin-bottom: 2rem;
 }
 
 .custom-dropdown {
     padding: 0.6rem 1rem;
     font-size: 1rem;
-    background-color: #e5e5e5;
+    background-color: var(--primary-gray);
     border: none;
     border-radius: 6px;
     box-shadow: 0 2px 3px rgba(0,0,0,0.1);
-    min-width: 200px;
+    min-width: 180px;
     cursor: pointer;
 }
 
-.custom-dropdown:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* --- "Modify From" Section --- */
+/* --- Modify From Section --- */
 .modify-section {
     margin-top: 2rem;
+    display: flex; /* Aligns the dropdown and delete button */
+    gap: 1rem;
+    align-items: flex-end;
 }
-
 .modify-label {
     font-weight: bold;
     font-size: 1.1rem;
@@ -54,47 +58,60 @@
     display: block;
 }
 
-/* --- The Pill Buttons (Reused Style) --- */
+/* --- The Pill Containers (Core Spacing Fix) --- */
 .options-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 1.5rem;
+    /* FIX: Standardize spacing */
+    gap: 0.8rem 1.5rem; 
+    margin-bottom: 1rem;
 }
 
+/* --- Core Pill Styling (Look and Feel) --- */
+/* This ensures the pill itself is the styling target */
 .pill-btn {
     padding: 0.8rem 2rem;
     min-width: 80px;
     text-align: center;
-    background-color: #e5e5e5;
-    border: none;
+    background-color: var(--primary-gray);
+    border: 1px solid #d1d5db;
     border-radius: 12px;
     font-weight: bold;
     font-size: 1rem;
-    color: #000;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-    transition: all 0.2s ease;
+    color: var(--text-color);
+    box-shadow: var(--shadow-main);
     cursor: pointer;
+    display: inline-block;
+    transition: all 0.2s ease;
 }
 
-.pill-btn:hover {
+/* --- RADIO/CHECKBOX LOGIC (CRITICAL FIX: Hides input and styles label) --- */
+
+/* Hide the actual input element */
+.pill-radio input[type="radio"],
+.pill-checkbox input[type="checkbox"] {
+    display: none; 
+}
+
+/* Apply hover effects to the visible pill (the span element) */
+.pill-radio span:hover,
+.pill-checkbox span:hover {
     transform: translateY(-2px);
     background-color: #d4d4d4;
+    box-shadow: 0 6px 8px rgba(0,0,0,0.2);
 }
 
-.pill-btn.selected {
-    background-color: #3b82f6; /* Blue */
+/* FIX: The SELECTED State (Applies to the span/pill when input is checked) */
+.pill-radio input[type="radio"]:checked + span,
+.pill-checkbox input[type="checkbox"]:checked + span {
+    background-color: var(--primary-blue);
     color: white;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+    box-shadow: var(--shadow-selected);
+    border-color: var(--primary-blue);
+    transform: translateY(0);
 }
 
-.pill-btn.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
-    box-shadow: none;
-}
-
-/* --- Save Button --- */
+/* --- Save/Submit Button --- */
 .footer-action {
     display: flex;
     justify-content: flex-end;
@@ -102,8 +119,8 @@
 }
 
 .save-btn {
-    background-color: #86efac; /* Green */
-    color: #000;
+    background-color: #86efac;
+    color: var(--text-color);
     font-weight: bold;
     font-size: 1.1rem;
     padding: 0.8rem 3rem;
@@ -114,5 +131,6 @@
     transition: background 0.2s;
 }
 
-.save-btn:hover { background-color: #4ade80; }
-.save-btn:disabled { background-color: #d1d5db; cursor: not-allowed; }
+.save-btn:hover {
+    background-color: #4ade80;
+}

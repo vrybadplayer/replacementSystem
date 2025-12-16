@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Mediator;
+
 use Carbon\Carbon;
 use App\Models\Timetable;
 use App\Services\ClassGroupService;
@@ -10,7 +11,8 @@ use App\Services\SubjectService;
 use App\Services\TimetableService;
 use App\Services\UserService;
 use App\Services\VenueService;
-use Illuminate\Support\Facades\DB; 
+use App\Models\CourseSubject;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TimetableMediator implements TimetableMediatorInterface
@@ -23,9 +25,15 @@ class TimetableMediator implements TimetableMediatorInterface
     protected $venueApi;
     protected $classGroupApi;
 
-    public function __construct(CourseService $courseApi, SubjectService $subjectApi, CourseSubjectService $courseSubjectApi, UserService $userApi
-    , TimetableService $timetableApi, VenueService $venueApi, ClassGroupService $classGroupApi)
-    {
+    public function __construct(
+        CourseService $courseApi,
+        SubjectService $subjectApi,
+        CourseSubjectService $courseSubjectApi,
+        UserService $userApi,
+        TimetableService $timetableApi,
+        VenueService $venueApi,
+        ClassGroupService $classGroupApi
+    ) {
         $this->courseApi = $courseApi;
         $this->subjectApi = $subjectApi;
         $this->courseSubjectApi = $courseSubjectApi;
@@ -38,7 +46,8 @@ class TimetableMediator implements TimetableMediatorInterface
     // ======================================================================================
     // =========================== FOR STUDENTS TIMETABLE PAGE ==============================
     // ======================================================================================
-    public function getCurrentWeekSchedule($studentId, $selectedDate) {
+    public function getCurrentWeekSchedule($studentId, $selectedDate)
+    {
         $selectedDate = Carbon::parse($selectedDate);
         $startOfWeek = $selectedDate;
         $endOfWeek = $selectedDate->copy()->addDays(6);
@@ -61,7 +70,8 @@ class TimetableMediator implements TimetableMediatorInterface
         return $classes;
     }
 
-    public function getTransitiveSubjectList() {
+    public function getTransitiveSubjectList()
+    {
         // subjectId, subjectName
         $subjectRecords = $this->subjectApi->fetchSubjectsFromApi();
 
@@ -98,20 +108,21 @@ class TimetableMediator implements TimetableMediatorInterface
 
         return $transitiveMap;
     }
-    
+
 
     // ===========================================================================================================
     // ================================ For Admin Timetable Assignment ===========================================
     // ===========================================================================================================
 
-    public function getAllCourses() {
+    public function getAllCourses()
+    {
         $rawCourses = $this->courseApi->fetchCoursesFromApi();
         $result = [];
-        
-        foreach($rawCourses as $course) {
+
+        foreach ($rawCourses as $course) {
             $result[$course['courseId']] = $course['courseCode'];
         }
-        
+
         return $result;
     }
 
@@ -121,10 +132,10 @@ class TimetableMediator implements TimetableMediatorInterface
         $subjects = $this->subjectApi->fetchSubjectsFromApi();
 
         $subjectsData = [];
-        
+
         foreach ($subjects as $subject) {
             $subjectsData[] = [
-                'subjectId' => $subject['subjectId'], 
+                'subjectId' => $subject['subjectId'],
                 'subjectCode' => $subject['subjectCode'],
                 'subjectName' => $subject['subjectName'],
             ];
@@ -133,17 +144,29 @@ class TimetableMediator implements TimetableMediatorInterface
         return $subjectsData;
     }
 
-    public function getAvailableTimeslots($day, $venueId, $duration) {
-        
+    public function getAvailableTimeslots($day, $venueId, $duration)
+    {
+
         // Hardcoded hours
         $hours = [
-            '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', 
-            '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', 
-            '20:00', '21:00'
+            '08:00',
+            '09:00',
+            '10:00',
+            '11:00',
+            '12:00',
+            '13:00',
+            '14:00',
+            '15:00',
+            '16:00',
+            '17:00',
+            '18:00',
+            '19:00',
+            '20:00',
+            '21:00'
         ];
 
         $availableSlots = [];
-        
+
         // Occupied timeslots
         $occupiedSlots = $this->timetableApi->getOccupiedSlots($day, $venueId);
 
@@ -179,7 +202,8 @@ class TimetableMediator implements TimetableMediatorInterface
         return $availableSlots;
     }
 
-    public function assignClass($data) {
+    public function assignClass($data)
+    {
 
         // Data Formatting
         $dayString = ucfirst(strtolower($data['day'])); // mOnDay => monday => Monday
@@ -193,22 +217,22 @@ class TimetableMediator implements TimetableMediatorInterface
 
         // If more than 1 ClassGroup, concat
         $classGroupIds = is_array($data['classGroupIds']) ? implode(',', $data['classGroupIds']) : $data['classGroupIds'];
-        
+
         // Get CourseSubject
         $courseSubject = $this->courseSubjectApi->fetchCourseSubjectWithForeignKeys($data['subjectId'], $data['courseId']);
-        
+
         if (!$courseSubject) {
             Log::error("Timetable Creation Failed: CourseSubject link missing for Subject {$data['subjectId']} and Course {$data['courseId']}");
-            return 'course_subject_link_missing'; 
+            return 'course_subject_link_missing';
         }
-        
-        $courseSubjectId = $courseSubject['courseSubjectId']; 
+
+        $courseSubjectId = $courseSubject['courseSubjectId'];
         $currentDate = Carbon::now()->next($fullDayName);
         $totalWeeks = 7;
 
         // Clash Checking
         $isOccupied = $this->timetableApi->clashCheck(
-            $fullDayName, 
+            $fullDayName,
             $data['venueId'],
             $startTimeFormatted,
             $endTime
@@ -221,11 +245,11 @@ class TimetableMediator implements TimetableMediatorInterface
         // Insert 7 records
         try {
             $logData = [];
-            
+
             for ($i = 0; $i < $totalWeeks; $i++) {
-                
+
                 $timetableData = [
-                    'timetableId' => $this->generateNextTimetableId(), 
+                    'timetableId' => $this->generateNextTimetableId(),
                     'classGroupId' => $classGroupIds,
                     'courseSubjectId' => $courseSubjectId,
                     'userId' => $data['lecturerId'],
@@ -242,49 +266,146 @@ class TimetableMediator implements TimetableMediatorInterface
 
                 // Create the record
                 $this->timetableApi->createTimetable($timetableData);
-                
+
                 $logData[] = $timetableData['timetableId'] . " on " . $timetableData['classDate'];
                 $currentDate->addWeek();
             }
-            
+
             return true;
-            
         } catch (\Exception $e) {
             return 'error';
         }
     }
 
-    protected function generateNextTimetableId() {
+    protected function generateNextTimetableId()
+    {
         // Get latest ID
         $latest = Timetable::latest('timetableId')->first();
 
         $lastId = $latest->timetableId;
 
         // Cast + Get number
-        $number = (int) substr($lastId, 1); 
+        $number = (int) substr($lastId, 1);
 
         $newNumber = $number + 1;
-        
-        return 'T' . str_pad($newNumber, 3, '0', STR_PAD_LEFT); 
+
+        return 'T' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
     }
 
-
+    // ======================================================================================================
+    // ==================================== Timeslot Management =============================================
     // ======================================================================================================
     // ======================================================================================================
+    // ==================================== Timeslot Management =============================================
+    // ======================================================================================================
+    // ======================================================================================================
+    // ==================================== Timeslot Management =============================================
     // ======================================================================================================
 
 
+    public function getAllCourseCodes() {
+        $rawCourses = $this->courseApi->fetchCoursesFromApi(); 
+        
+        return collect($rawCourses)->map(function($course) {
+            $c = (array) $course;
+            return [
+                'courseId' => $c['courseId'] ?? $c['courseCode'] ?? '',
+                'courseCode' => $c['courseCode'] ?? $c['courseId'] ?? 'N/A', 
+            ];
+        })->toArray();
+    }
 
+    public function getAllClassGroupCodes() {
+
+        $groups = $this->classGroupApi->getAllClassGroups();
+        
+        return collect($groups)->map(function($group) {
+            $g = (array) $group;
+            return ['classGroupId' => $g['classGroupId'] ?? $g['id'] ?? ''];
+        })->toArray();
+    }
+    
+
+    public function getFilteredTimetableSlots(string $courseId, string $classGroupId): array {
+        $courseSubjects = \App\Models\CourseSubject::where('courseId', $courseId)->pluck('courseSubjectId')->toArray();
+
+        $slots = \App\Models\Timetable::with(['venue'])
+            ->whereIn('courseSubjectId', $courseSubjects)
+            ->where('classGroupId', 'LIKE', "%{$classGroupId}%")
+            ->orderBy('dayOfWeek')
+            ->orderBy('startTime')
+            ->get();
+            
+        return $slots->map(function($slot) {
+            $subject = DB::table('subject')
+                        ->join('course_subject', 'subject.subjectId', '=', 'course_subject.subjectId')
+                        ->where('course_subject.courseSubjectId', $slot->courseSubjectId)
+                        ->select('subject.subjectCode', 'subject.subjectName')
+                        ->first();
+                        
+            return [
+                'timetableId' => $slot->timetableId,
+                'subjectCode' => $subject->subjectCode ?? 'N/A',
+                'classType' => $slot->classType,
+                'dayOfWeek' => $slot->dayOfWeek,
+                'startTime' => Carbon::parse($slot->startTime)->format('H:i'),
+                'venueId' => $slot->venueId,
+            ];
+        })->toArray();
+    }
+
+    public function updateTimeslot(string $originalTimetableId, array $newData): bool|string
+    {
+        $originalSlot = Timetable::find($originalTimetableId);
+
+        if (!$originalSlot) {
+            return 'not_found';
+        }
+
+        $newStart = Carbon::createFromFormat('H:i', $newData['newStartTime']);
+        $newEnd = $newStart->copy()->addHours(2)->format('H:i:s'); 
+        $newStartFormatted = $newStart->format('H:i:s');
+        $newDay = $newData['newDay'];
+        $newVenue = $newData['newVenueId'];
+
+        $isOccupied = Timetable::where('timetableId', '!=', $originalTimetableId)
+            ->where('dayOfWeek', $newDay) 
+            ->where('venueId', $newVenue)
+            ->where('startTime', '<', $newEnd)
+            ->where('endTime', '>', $newStartFormatted)
+            ->exists();
+
+        if ($isOccupied) {
+            return 'clash';
+        }
+        
+        try {
+            $originalSlot->update([
+                'dayOfWeek' => $newDay,
+                'venueId' => $newVenue,
+                'startTime' => $newStartFormatted,
+                'endTime' => $newEnd,
+            ]);
+
+            return true;
+            
+        } catch (\Exception $e) {
+            Log::error('Update Timeslot DB Failure: ' . $e->getMessage());
+            return 'error';
+        }
+    }
 
     // ======================================================================================================
     // ====================================== Helper Methods ================================================
     // ======================================================================================================
 
-    public function getAllClassGroups() {
+    public function getAllClassGroups()
+    {
         return $this->classGroupApi->getAllClassGroups();
     }
 
-    public function getAllVenues() {
+    public function getAllVenues()
+    {
         return $this->venueApi->getAllVenues();
     }
 }

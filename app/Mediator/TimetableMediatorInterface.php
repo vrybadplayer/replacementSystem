@@ -15,7 +15,6 @@ interface TimetableMediatorInterface {
     public function getAvailableTimeslots($day, $venueId, $duration);
     public function assignClass($data);
 
-
     // Helper Functions
     public function getAllClassGroups();
     public function getAllVenues();
