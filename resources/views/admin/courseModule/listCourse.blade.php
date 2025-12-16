@@ -18,8 +18,14 @@
             <div class="list-container">
                 <div class="list-header">
                     <h2>Course List</h2>
-                    <a href="#" class="btn-add">+ Add New Course</a>
+                    <a href="{{ route('admin.courses.create') }}" class="btn-add">+ Add New Course</a>
                 </div>
+
+                @if(session('success'))
+                <div style="background: #d4edda; color: #155724; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; border: 1px solid #c3e6cb;">
+                    {{ session('success') }}
+                </div>
+                @endif
 
                 <div class="search-container">
                     <div class="search-box">
@@ -56,7 +62,6 @@
                             <td>
                                 <div class="action-buttons">
                                     <a href="#" class="btn-edit">Edit</a>
-                                    <a href="#" class="btn-delete">Delete</a>
                                 </div>
                             </td>
                         </tr>
