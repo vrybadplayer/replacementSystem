@@ -56,7 +56,7 @@ class CourseSubjectManagementFacade extends Facade
      */
     protected static function getFacadeAccessor(): string
     {
-        return 'courseManagement.service';
+        return 'courseSubjectManagement.service';
     }
 }
 

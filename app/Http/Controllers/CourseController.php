@@ -9,17 +9,66 @@ use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
+    public function courseListView()
+    {
+        $courses = CourseSubjectManagementFacade::getCoursesForViewFromApi();
+        return view('admin.courseModule.listCourse', compact('courses'));
+    }
+
+    public function create()
+    {
+        return view('admin.courseModule.addCourse');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'courseId' => 'required|string',
+            'courseCode' => 'required|string',
+            'courseName' => 'required|string',
+            'faculty' => 'nullable|string',
+            'status' => 'required|string|in:active,inactive',
+        ]);
+
+        CourseSubjectManagementFacade::createOrUpdateCourse($validated);
+
+        return redirect()->route('admin.courses')
+            ->with('success', 'Course created successfully!');
+    }
+
+    public function edit(string $courseId)
+    {
+        $course = CourseSubjectManagementFacade::getCourseByIdFromApi($courseId);
+        return view('admin.courseModule.editCourse', compact('course'));
+    }
+
+    public function update(Request $request, string $courseId)
+    {
+        $validated = $request->validate([
+            'courseCode' => 'required|string',
+            'courseName' => 'required|string',
+            'faculty' => 'nullable|string',
+            'status' => 'required|string|in:active,inactive',
+        ]);
+
+        // Add courseId to validated data for the API call
+        $validated['courseId'] = $courseId;
+
+        CourseSubjectManagementFacade::createOrUpdateCourse($validated, $courseId);
+
+        return redirect()->route('admin.courses')
+            ->with('success', 'Course updated successfully!');
+    }
+
+
     /**
-     * REST API: GET /api/courses
-     * Get all courses data FROM DATABASE directly (to avoid circular API calls)
-     * This endpoint is called by the web view's API fetch
+     * REST API
      */
+
     public function index()
     {
-        // Get all courses FROM DATABASE directly (bypassing services to avoid circular calls)
         $courses = Course::all();
 
-        // Map to API response format
         $coursesData = $courses->map(function ($course) {
             return [
                 'courseId' => $course->courseId,
@@ -36,29 +85,8 @@ class CourseController extends Controller
             'count' => count($coursesData)
         ], 200);
     }
-    
-    /**
-     * Web View: GET /admin/courses
-     * Return view with courses list FROM EXTERNAL API
-     */
-    public function courseListView()
-    {
-        $courses = CourseSubjectManagementFacade::getCoursesForViewFromApi();
-        return view('admin.courseModule.listCourse', compact('courses'));
-    }
 
-    /**
-     * Show create course form
-     */
-    public function create()
-    {
-        return view('admin.courseModule.addCourse');
-    }
-
-    /**
-     * Store a new course
-     */
-    public function store(Request $request)
+    public function apiStore(Request $request)
     {
         $validated = $request->validate([
             'courseId' => 'required|string|unique:course,courseId',
@@ -68,20 +96,62 @@ class CourseController extends Controller
             'status' => 'required|string|in:active,inactive',
         ]);
 
-        try {
-            CourseSubjectManagementFacade::createOrUpdateCourse($validated);
 
-            return redirect()->route('admin.courses')
-                ->with('success', 'Course created successfully!');
-        } catch (\Exception $e) {
-            Log::error('Failed to create course', [
-                'error' => $e->getMessage(),
-                'data' => $validated
-            ]);
+        $course = Course::create($validated);
 
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['error' => 'Failed to create course. Please try again.']);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Course created successfully',
+            'data' => [
+                'courseId' => $course->courseId,
+                'courseCode' => $course->courseCode,
+                'courseName' => $course->courseName ?? '',
+                'faculty' => $course->faculty ?? '',
+                'status' => $course->status ?? 'active',
+            ]
+        ], 201);
+    }
+
+    public function apiShow(string $courseId)
+    {
+
+        $course = Course::findOrFail($courseId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'courseId' => $course->courseId,
+                'courseCode' => $course->courseCode,
+                'courseName' => $course->courseName ?? '',
+                'faculty' => $course->faculty ?? '',
+                'status' => $course->status ?? 'active',
+            ]
+        ], 200);
+    }
+
+    public function apiUpdate(Request $request, string $courseId)
+    {
+        $validated = $request->validate([
+            'courseCode' => 'nullable|string',
+            'courseName' => 'nullable|string',
+            'faculty' => 'nullable|string',
+            'status' => 'nullable|string|in:active,inactive',
+        ]);
+
+
+        $course = Course::findOrFail($courseId);
+        $course->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Course updated successfully',
+            'data' => [
+                'courseId' => $course->courseId,
+                'courseCode' => $course->courseCode,
+                'courseName' => $course->courseName ?? '',
+                'faculty' => $course->faculty ?? '',
+                'status' => $course->status ?? 'active',
+            ]
+        ], 200);
     }
 }

@@ -55,19 +55,25 @@ Route::get('/timetable/{classGroupId}', [TimetableController::class, 'getTimetab
 
 // --- Course Management API ---
 Route::get('/courses', [CourseController::class, 'index']);
+Route::get('/courses/{courseId}', [CourseController::class, 'apiShow']);
+Route::post('/courses', [CourseController::class, 'apiStore']);
+Route::put('/courses/{courseId}', [CourseController::class, 'apiUpdate']);
+Route::patch('/courses/{courseId}', [CourseController::class, 'apiUpdate']);
 
 // --- Course Subject Bridge REST API ---
 Route::get('/courseSubject', [CourseSubjectController::class, 'index']);
-Route::post('/courseSubject', [CourseSubjectController::class, 'store']);
-Route::put('/courseSubject/{id}', [CourseSubjectController::class, 'update']);
-Route::patch('/courseSubject/{id}', [CourseSubjectController::class, 'update']);
+Route::get('/courseSubject/{courseSubjectId}', [CourseSubjectController::class, 'apiShow']);
+Route::post('/courseSubject', [CourseSubjectController::class, 'apiStore']);
+Route::put('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate']);
+Route::patch('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate']);
 Route::get('/courseSubject/fetchCourseSubjectWithForeignKeys', [CourseSubjectController::class, 'fetchCourseSubjectWithForeignKeys']);
 
 // --- Subjects REST API ---
 Route::get('/subjects', [SubjectController::class, 'index']);
-Route::post('/subjects', [SubjectController::class, 'store']);
-Route::put('/subjects/{id}', [SubjectController::class, 'update']);
-Route::patch('/subjects/{id}', [SubjectController::class, 'update']);
+Route::get('/subjects/{subjectId}', [SubjectController::class, 'apiShow']);
+Route::post('/subjects', [SubjectController::class, 'apiStore']);
+Route::put('/subjects/{id}', [SubjectController::class, 'apiUpdate']);
+Route::patch('/subjects/{id}', [SubjectController::class, 'apiUpdate']);
 
 
 // --- User Management API ---

@@ -42,7 +42,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Register unified Course Subject Management Service
-        $this->app->singleton('courseManagement.service', function ($app) {
+        $this->app->singleton('courseSubjectManagement.service', function ($app) {
             return new CourseSubjectManagementService(
                 $app->make('course.service'),
                 $app->make('subject.service'),

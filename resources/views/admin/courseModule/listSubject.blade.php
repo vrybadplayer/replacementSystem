@@ -18,8 +18,14 @@
             <div class="list-container">
                 <div class="list-header">
                     <h2>Subject List</h2>
-                    <a href="#" class="btn-add">+ Add New Subject</a>
+                    <a href="{{ route('admin.subjects.create') }}" class="btn-add">+ Add New Subject</a>
                 </div>
+
+                @if(session('success'))
+                <div style="background: #d4edda; color: #155724; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; border: 1px solid #c3e6cb;">
+                    {{ session('success') }}
+                </div>
+                @endif
 
                 <div class="search-container">
                     <div class="search-box">
@@ -59,7 +65,7 @@
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <a href="#" class="btn-edit">Edit</a>
+                                    <a href="{{ route('admin.subjects.edit', $subject['subjectId']) }}" class="btn-edit">Edit</a>
                                 </div>
                             </td>
                         </tr>

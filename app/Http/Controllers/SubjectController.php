@@ -9,11 +9,56 @@ use App\Models\Subject;
 
 class SubjectController extends Controller
 {
+    public function subjectListView()
+    {
+        $subjects = CourseSubjectManagementFacade::getSubjectsForViewFromApi();
+        return view('admin.courseModule.listSubject', compact('subjects'));
+    }
+
+    public function create()
+    {
+        return view('admin.courseModule.addSubject');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'subjectId' => 'required|string',
+            'subjectCode' => 'nullable|string',
+            'subjectName' => 'required|string',
+            'creditHours' => 'nullable|integer',
+            'category' => 'nullable|string',
+            'status' => 'required|string|in:active,inactive',
+        ]);
+        CourseSubjectManagementFacade::createOrUpdateSubject($validated);
+        return redirect()->route('admin.subjects')
+            ->with('success', 'Subject created successfully!');
+    }
+
+    public function edit(string $subjectId)
+    {
+        $subject = CourseSubjectManagementFacade::getSubjectByIdFromApi($subjectId);
+        return view('admin.courseModule.editSubject', compact('subject'));
+    }
+
+    public function update(Request $request, string $subjectId)
+    {
+        $validated = $request->validate([
+            'subjectCode' => 'nullable|string',
+            'subjectName' => 'required|string',
+            'creditHours' => 'nullable|integer',
+            'category' => 'nullable|string',
+            'status' => 'required|string|in:active,inactive',
+        ]);
+        $validated['subjectId'] = $subjectId;
+        CourseSubjectManagementFacade::createOrUpdateSubject($validated, $subjectId);
+        return redirect()->route('admin.subjects')
+            ->with('success', 'Subject updated successfully!');
+    }
+
 
     /**
-     * REST API: GET /api/subjects
-     * Get all subjects data FROM DATABASE directly (to avoid circular API calls)
-     * This endpoint is called by the web view's API fetch
+     * REST API
      */
     public function index()
     {
@@ -39,21 +84,7 @@ class SubjectController extends Controller
         ], 200);
     }
 
-    /**
-     * Web View: GET /admin/subjects
-     * Return view with subjects list FROM EXTERNAL API
-     */
-    public function subjectListView()
-    {
-        $subjects = CourseSubjectManagementFacade::getSubjectsForViewFromApi();
-        return view('admin.courseModule.listSubject', compact('subjects'));
-    }
-
-    /**
-     * REST API: POST /api/subjects
-     * Create a new subject
-     */
-    public function store(Request $request)
+    public function apiStore(Request $request)
     {
         $validated = $request->validate([
             'subjectId' => 'required|string|unique:subject,subjectId',
@@ -64,35 +95,42 @@ class SubjectController extends Controller
             'status' => 'nullable|string',
         ]);
 
-        try {
-            $subject = CourseSubjectManagementFacade::createSubject($validated);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Subject created successfully',
-                'data' => [
-                    'subjectId' => $subject->subjectId,
-                    'subjectCode' => $subject->subjectCode ?? '',
-                    'subjectName' => $subject->subjectName ?? '',
-                    'creditHours' => $subject->creditHours ?? 0,
-                    'category' => $subject->category ?? '',
-                    'status' => $subject->status ?? 'active',
-                ]
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create subject',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        $subject = Subject::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Subject created successfully',
+            'data' => [
+                'subjectId' => $subject->subjectId,
+                'subjectCode' => $subject->subjectCode ?? '',
+                'subjectName' => $subject->subjectName ?? '',
+                'creditHours' => $subject->creditHours ?? 0,
+                'category' => $subject->category ?? '',
+                'status' => $subject->status ?? 'active',
+            ]
+        ], 201);
     }
 
-    /**
-     * REST API: PUT/PATCH /api/subjects/{id}
-     * Update a subject
-     */
-    public function update(Request $request, string $id)
+    public function apiShow(string $subjectId)
+    {
+
+        $subject = Subject::findOrFail($subjectId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'subjectId' => $subject->subjectId,
+                'subjectCode' => $subject->subjectCode ?? '',
+                'subjectName' => $subject->subjectName ?? '',
+                'creditHours' => $subject->creditHours ?? 0,
+                'category' => $subject->category ?? '',
+                'status' => $subject->status ?? 'active',
+            ]
+        ], 200);
+    }
+
+    public function apiUpdate(Request $request, string $id)
     {
         $validated = $request->validate([
             'subjectCode' => 'nullable|string',
@@ -102,32 +140,21 @@ class SubjectController extends Controller
             'status' => 'nullable|string',
         ]);
 
-        try {
-            $subject = CourseSubjectManagementFacade::updateSubject($id, $validated);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Subject updated successfully',
-                'data' => [
-                    'subjectId' => $subject->subjectId,
-                    'subjectCode' => $subject->subjectCode ?? '',
-                    'subjectName' => $subject->subjectName ?? '',
-                    'creditHours' => $subject->creditHours ?? 0,
-                    'category' => $subject->category ?? '',
-                    'status' => $subject->status ?? 'active',
-                ]
-            ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Subject not found'
-            ], 404);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update subject',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        $subject = Subject::findOrFail($id);
+        $subject->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Subject updated successfully',
+            'data' => [
+                'subjectId' => $subject->subjectId,
+                'subjectCode' => $subject->subjectCode ?? '',
+                'subjectName' => $subject->subjectName ?? '',
+                'creditHours' => $subject->creditHours ?? 0,
+                'category' => $subject->category ?? '',
+                'status' => $subject->status ?? 'active',
+            ]
+        ], 200);
     }
 }

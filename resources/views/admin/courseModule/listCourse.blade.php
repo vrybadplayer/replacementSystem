@@ -61,7 +61,7 @@
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <a href="#" class="btn-edit">Edit</a>
+                                    <a href="{{ route('admin.courses.edit', $course['courseId']) }}" class="btn-edit">Edit</a>
                                 </div>
                             </td>
                         </tr>
