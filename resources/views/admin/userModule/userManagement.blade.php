@@ -71,7 +71,10 @@
                                     <div class="action-buttons">
                                         <a href="{{ route('admin.user.show', $user->userId) }}" class="btn-view">View</a>
                                         <a href="{{ route('admin.user.edit', $user->userId) }}" class="btn-edit">Edit</a>
-                                        <form method="POST" action="{{ route('admin.user.delete', $user->userId) }}" style="display: inline;" onsubmit="return confirm('{{ $user->status === 'active' ? 'Ban this user?' : 'Unban this user?' }}');">
+                                        @php
+                                            $confirmMessage = $user->status === 'active' ? 'Are you sure you want to ban this user?' : 'Are you sure you want to unban this user?';
+                                        @endphp
+                                        <form method="POST" action="{{ route('admin.user.delete', $user->userId) }}" style="display: inline;" onsubmit="return confirm('{{ $confirmMessage }}');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn-delete">
