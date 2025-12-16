@@ -27,6 +27,15 @@ class TimetableService
         return null;
     }
 
+    public function getTimetableByClassGroupId($classGroupId)
+    {
+        $response = Http::get("{$this->baseUrl}/timetable/{$classGroupId}");
+        if ($response->successful()) {
+            return $response->json()['data'] ?? null;
+        }
+        return null;
+    }
+
     public function getOccupiedSlots($day, $venueId)
     {
         $response = Http::get($this->baseUrl . '/occupiedSlots', [
