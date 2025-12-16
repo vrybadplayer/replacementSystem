@@ -20,14 +20,16 @@ protected $mediator;
         $this->mediator = $mediator;
     }
 
+    // =========================================================================================
     // ============================= FOR TIMETABLE ASSIGNMENT PAGE =============================
+    // =========================================================================================
     public function viewTimetableAssignment() {
 
         $courses = $this->mediator->getAllCourses();
         $allSubjects = $this->mediator->getAllSubjects();
-        $classGroups = \App\Models\ClassGroup::select('classGroupId')->get()->toArray(); // Call API
+        $classGroups = $this->mediator->getAllClassGroups();
+        $venues = $this->mediator->getAllVenues();
         $daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        $venues = \App\Models\Venue::select('venueId', 'venueType')->get()->toArray(); // Call API
 
         // fixed 2hr interal (to simplify the module)
         $classType = 'Lecture';
@@ -45,6 +47,7 @@ protected $mediator;
     }
 
     public function storeTimetable(Request $request) {
+        
         $validator = Validator::make($request->all(), [
             'courseId' => 'required|string',
             'subjectId' => 'required|string',
@@ -55,7 +58,7 @@ protected $mediator;
             'selectedTimeslot' => 'required|date_format:H:i',
         ]);
 
-
+        // If empty
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput()->with('error', 'Invalid Submission: Please fill out all required fields.');
         }
@@ -63,16 +66,14 @@ protected $mediator;
         $data = $request->all();
         $data['lecturerId'] = Auth::id() ?? 'U001';
 
-
-
         $result = $this->mediator->assignClass($data);
 
         if ($result === 'clash') {
-            return back()->withInput()->with('error', 'Assignment Failed: The selected Venue/Timeslot is already occupied by another class.');
+            return back()->withInput()->with('error', 'The selected Venue/Timeslot is already occupied by another class.');
         } 
         
         if ($result === true) {
-            return redirect()->route('admin.dashboard')->with('success', 'SUCCESS: New Class Assignment created.');
+            return redirect()->route('admin.dashboard')->with('success', 'New Class Assignment created.');
         } 
         
         return back()->withInput()->with('error', 'Assignment Failed: An unknown system error occurred.');
@@ -80,6 +81,8 @@ protected $mediator;
 
 
 
+    // ===================================================================================================
+    // ===================================================================================================
     // ===================================================================================================
 
     public function viewTimeslotManagement()
