@@ -50,7 +50,6 @@ Route::get('/timetable/{id}', [TimetableController::class, 'getTimetableById']);
 Route::get('/occupiedSlots', [TimetableController::class, 'getOccupiedSlots']);
 Route::get('/clashCheck', [TimetableController::class, 'clashCheck']);
 Route::post('/timetable/create', [TimetableController::class, 'createTimetable']);
-Route::get('/timetable/schedule', [TimetableController::class, 'getSchedule']);
 Route::get('/timetable/{classGroupId}', [TimetableController::class, 'getTimetableByClassGroupId']);
 
 // --- Course Management API ---
