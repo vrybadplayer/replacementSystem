@@ -7,6 +7,7 @@ use App\Models\CourseEnrollment;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -286,6 +287,41 @@ class UserController extends Controller
     {
         $courses = $this->userService->getEnrolledCourses($userId);
         return response()->json(['courses' => $courses]);
+    }
+
+    /**
+     * Change password for authenticated user
+     */
+    public function changePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'regex:/[A-Z]/',
+                'regex:/[a-z]/',
+                'regex:/[0-9]/',
+                'confirmed'
+            ],
+        ], [
+            'password.regex' => 'Password must contain uppercase, lowercase, and numbers',
+            'password.min' => 'Password must be at least 8 characters',
+        ]);
+
+        $user = Auth::user();
+
+        // Verify current password
+        if (!\Hash::check($validated['current_password'], $user->password)) {
+            return redirect()->back()->withErrors(['current_password' => 'Current password is incorrect']);
+        }
+
+        // Update password
+        $user->password = \Hash::make($validated['password']);
+        $user->save();
+
+        return redirect()->route('student.profile')->with('success', 'Password changed successfully!');
     }
 }
 

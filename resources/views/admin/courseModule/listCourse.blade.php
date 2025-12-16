@@ -33,6 +33,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>Course ID</th>
                             <th>Course Code</th>
                             <th>Course Name</th>
                             <th>Faculty</th>
@@ -43,12 +44,13 @@
                     <tbody>
                         @forelse($courses as $course)
                         <tr>
-                            <td><strong>{{ $course['code'] }}</strong></td>
-                            <td>{{ $course['name'] }}</td>
-                            <td>{{ $course['faculty'] }}</td>
+                            <td><strong>{{ $course['courseId'] ?? '' }}</strong></td>
+                            <td><strong>{{ $course['courseCode'] ?? '' }}</strong></td>
+                            <td>{{ $course['courseName'] ?? '' }}</td>
+                            <td>{{ $course['faculty'] ?? 'N/A' }}</td>
                             <td>
-                                <span class="status-badge status-{{ $course['status'] }}">
-                                    {{ ucfirst($course['status']) }}
+                                <span class="status-badge status-{{ $course['status'] ?? 'active' }}">
+                                    {{ ucfirst($course['status'] ?? 'active') }}
                                 </span>
                             </td>
                             <td>
@@ -60,7 +62,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" style="text-align: center; padding: 2rem; color: #6b7280;">
+                            <td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">
                                 No courses found.
                             </td>
                         </tr>

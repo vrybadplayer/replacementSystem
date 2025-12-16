@@ -10,10 +10,10 @@ use App\Http\Controllers\CourseSubjectController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminUserController;
-use App\Http\Controllers\Api\ClassGroupController;
-use App\Http\Controllers\Api\VenueController;
+use App\Http\Controllers\ClassGroupController;
+use App\Http\Controllers\VenueController;
 use App\Http\Controllers\ReplacementController;
-
+use App\Http\Controllers\TimetableController;
 
 
 // This file is what ApiService files will call
@@ -41,12 +41,16 @@ Route::post('/user/profile/update', [UserController::class, 'updateProfile']);
 
 // Timetable Module API
 Route::get('/', [StudentTimetableController::class, '']);
-Route::get('/venues', [VenueController::class, 'getAllVenue']);
+Route::get('/venues', [VenueController::class, 'getAllVenues']);
 Route::get('/venues/{id}', [VenueController::class, 'getVenueById']);
 Route::get('/classgroups', [ClassGroupController::class, 'getAllClassGroups']);
 Route::get('/classgroups/{id}', [ClassGroupController::class, 'getClassGroupById']);
-Route::get('/timetable', [ReplacementController::class, 'getAllTimetableRecords']);
-Route::get('/timetable/{id}', [ReplacementController::class, 'getTimetableById']);
+Route::get('/timetable', [TimetableController::class, 'getAllTimetableRecords']);
+Route::get('/timetable/{id}', [TimetableController::class, 'getTimetableById']);
+Route::get('/occupiedSlots', [TimetableController::class, 'getOccupiedSlots']);
+Route::get('/clashCheck', [TimetableController::class, 'clashCheck']);
+Route::post('/timetable/create', [TimetableController::class, 'createTimetable']);
+Route::get('/timetable/schedule', [TimetableController::class, 'getStudentWeekSchedule']);
 
 // --- Course Management API ---
 Route::get('/courses', [CourseController::class, 'index']);
@@ -56,6 +60,7 @@ Route::get('/courseSubject', [CourseSubjectController::class, 'index']);
 Route::post('/courseSubject', [CourseSubjectController::class, 'store']);
 Route::put('/courseSubject/{id}', [CourseSubjectController::class, 'update']);
 Route::patch('/courseSubject/{id}', [CourseSubjectController::class, 'update']);
+Route::get('/courseSubject/fetchCourseSubjectWithForeignKeys', [CourseSubjectController::class, 'fetchCourseSubjectWithForeignKeys']);
 
 // --- Subjects REST API ---
 Route::get('/subjects', [SubjectController::class, 'index']);

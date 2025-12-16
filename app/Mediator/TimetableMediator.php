@@ -3,34 +3,41 @@
 namespace App\Mediator;
 use Carbon\Carbon;
 use App\Models\Timetable;
-use App\Models\Venue;
-use App\Models\ClassGroup;
-use App\Models\CourseSubject;
+use App\Services\ClassGroupService;
 use App\Services\CourseService;
 use App\Services\CourseSubjectService;
 use App\Services\SubjectService;
+use App\Services\TimetableService;
 use App\Services\UserService;
-use Dflydev\DotAccessData\Data;
+use App\Services\VenueService;
 use Illuminate\Support\Facades\DB; 
 use Illuminate\Support\Facades\Log;
 
 class TimetableMediator implements TimetableMediatorInterface
 {
-    // Assume the Course Service API is stored here
     protected $courseApi;
     protected $subjectApi;
     protected $courseSubjectApi;
     protected $userApi;
+    protected $timetableApi;
+    protected $venueApi;
+    protected $classGroupApi;
 
-    public function __construct(CourseService $courseApi, SubjectService $subjectApi, CourseSubjectService $courseSubjectApi, UserService $userApi)
+    public function __construct(CourseService $courseApi, SubjectService $subjectApi, CourseSubjectService $courseSubjectApi, UserService $userApi
+    , TimetableService $timetableApi, VenueService $venueApi, ClassGroupService $classGroupApi)
     {
         $this->courseApi = $courseApi;
         $this->subjectApi = $subjectApi;
         $this->courseSubjectApi = $courseSubjectApi;
         $this->userApi = $userApi;
+        $this->timetableApi = $timetableApi;
+        $this->venueApi = $venueApi;
+        $this->classGroupApi = $classGroupApi;
     }
 
+    // ======================================================================================
     // =========================== FOR STUDENTS TIMETABLE PAGE ==============================
+    // ======================================================================================
     public function getCurrentWeekSchedule($studentId, $selectedDate) {
         $selectedDate = Carbon::parse($selectedDate);
         $startOfWeek = $selectedDate;
@@ -49,44 +56,27 @@ class TimetableMediator implements TimetableMediatorInterface
         $startOfWeek = Carbon::parse($selectedDate)->startOfWeek()->format('Y-m-d');
         $endOfWeek = Carbon::parse($selectedDate)->endOfWeek()->format('Y-m-d');
 
-        $classes = Timetable::with(['venue', 'courseSubject'])
-            // get both solo class and joint class
-            ->where(function ($query) use ($classGroupId) {
-                                $query->where('classGroupId', $classGroupId)
-                      ->orWhereRaw("FIND_IN_SET(?, classGroupId) > 0", [$classGroupId]);
-            })
-            ->whereBetween('classDate', [$startOfWeek, $endOfWeek])
-            ->orderBy('classDate')
-            ->orderBy('startTime')
-            ->get();        
-
+        $classes = $this->timetableApi->getStudentWeekSchedule($classGroupId, $startOfWeek, $endOfWeek);
 
         return $classes;
     }
 
     public function getTransitiveSubjectList() {
         // subjectId, subjectName
-        //$subjectRecords = $this->courseApi->fetchSubjectsFromApi(); // !!!!! FLAWED !!!!!
-        $subjectRecords = DB::table('subject')->get()->toArray();
-
-        //dd($subjectRecords);
+        $subjectRecords = $this->subjectApi->fetchSubjectsFromApi();
 
         // subjectId -> subjectName
         $subjectMap = [];
         if (is_array($subjectRecords)) {
             foreach ($subjectRecords as $subject) {
-                //$subjectMap[$subject['subjectId']] = $subject['subjectName'];
                 $subjectMap[$subject->subjectId] = $subject->subjectName;
             }
         }
 
         // courseSubjectId, courseId, subjectId
-        //$courseSubjectRecords = $this->courseSubjectApi->getAllCourseSubjects(); // !!!!! FLAWED !!!!!!
-        $courseSubjectRecords = DB::table('course_subject')->get();
+        $courseSubjectRecords = $this->courseSubjectApi->fetchCourseSubjectsFromApi();
 
-        //dd($courseSubjectRecords);
-
-        // result is: courseSubjectId -> subjectName
+        // desired result: courseSubjectId -> subjectName
         $transitiveMap = [];
 
 
@@ -110,7 +100,9 @@ class TimetableMediator implements TimetableMediatorInterface
     }
     
 
+    // ===========================================================================================================
     // ================================ For Admin Timetable Assignment ===========================================
+    // ===========================================================================================================
 
     public function getAllCourses() {
         $rawCourses = $this->courseApi->fetchCoursesFromApi();
@@ -153,7 +145,7 @@ class TimetableMediator implements TimetableMediatorInterface
         $availableSlots = [];
         
         // Occupied timeslots
-        $occupiedSlots = Timetable::where('dayOfWeek', $day)->where('venueId', $venueId)->select('startTime', 'endTime')->get();
+        $occupiedSlots = $this->timetableApi->getOccupiedSlots($day, $venueId);
 
         // Check if timeslot is clashing
         foreach ($hours as $hour) {
@@ -188,56 +180,51 @@ class TimetableMediator implements TimetableMediatorInterface
     }
 
     public function assignClass($data) {
-        // --- 1. PREPARE DATA ---
 
-        // Day String Fix (Accepts Sat, Mon, Saturday, etc. and ensures it's the full name for Carbon/DB)
-        $dayString = ucfirst(strtolower($data['day']));
+        // Data Formatting
+        $dayString = ucfirst(strtolower($data['day'])); // mOnDay => monday => Monday
         $dayMap = ['Mon' => 'Monday', 'Tue' => 'Tuesday', 'Wed' => 'Wednesday', 'Thu' => 'Thursday', 'Fri' => 'Friday', 'Sat' => 'Saturday'];
         $fullDayName = $dayMap[substr($dayString, 0, 3)] ?? $dayString;
 
+        $duration = 2;
         $startTime = Carbon::createFromFormat('H:i', $data['selectedTimeslot']);
-        $duration = 2; // Fixed to 2 hours
         $endTime = $startTime->copy()->addHours($duration)->format('H:i:s');
         $startTimeFormatted = $startTime->format('H:i:s');
 
-        // Group ID String (e.g., "CG001,CG002")
+        // If more than 1 ClassGroup, concat
         $classGroupIds = is_array($data['classGroupIds']) ? implode(',', $data['classGroupIds']) : $data['classGroupIds'];
         
-        // Find the correct courseSubjectId (The Bridge)
-        $courseSubject = \App\Models\CourseSubject::where('subjectId', $data['subjectId']) // CALL FROM API
-            ->where('courseId', $data['courseId'])
-            ->first();
+        // Get CourseSubject
+        $courseSubject = $this->courseSubjectApi->fetchCourseSubjectWithForeignKeys($data['subjectId'], $data['courseId']);
         
         if (!$courseSubject) {
             Log::error("Timetable Creation Failed: CourseSubject link missing for Subject {$data['subjectId']} and Course {$data['courseId']}");
             return 'course_subject_link_missing'; 
         }
-        $courseSubjectId = $courseSubject->courseSubjectId; 
-
-        // Determine the start date: The first instance of that day in the future
+        
+        $courseSubjectId = $courseSubject['courseSubjectId']; 
         $currentDate = Carbon::now()->next($fullDayName);
-        $totalWeeks = 7; // Business rule: Create 7 records
+        $totalWeeks = 7;
 
-        // --- 2. CLASH CHECK (The Business Rule) ---
-        // Check ONLY the first occurrence against existing records for the same day/venue/time
-        $isOccupied = Timetable::where('dayOfWeek', $fullDayName) 
-            ->where('venueId', $data['venueId'])
-            ->where('startTime', '<', $endTime)
-            ->where('endTime', '>', $startTimeFormatted)
-            ->exists();
+        // Clash Checking
+        $isOccupied = $this->timetableApi->clashCheck(
+            $fullDayName, 
+            $data['venueId'],
+            $startTimeFormatted,
+            $endTime
+        );
 
         if ($isOccupied) {
-            return 'clash'; // Fail fast if the slot is busy in ANY week
+            return 'clash';
         }
 
-        // --- 3. CREATE LOGIC (LOOP) ---
+        // Insert 7 records
         try {
             $logData = [];
             
             for ($i = 0; $i < $totalWeeks; $i++) {
                 
                 $timetableData = [
-                    // Generate a unique ID for EACH record
                     'timetableId' => $this->generateNextTimetableId(), 
                     'classGroupId' => $classGroupIds,
                     'courseSubjectId' => $courseSubjectId,
@@ -246,7 +233,7 @@ class TimetableMediator implements TimetableMediatorInterface
                     'dayOfWeek' => $fullDayName,
                     'startTime' => $startTimeFormatted,
                     'endTime' => $endTime,
-                    'classDate' => $currentDate->format('Y-m-d'), // Use the specific date
+                    'classDate' => $currentDate->format('Y-m-d'),
                     'classType' => $data['classType'],
                     'classMode' => 'weekly',
                     'created_at' => Carbon::now(),
@@ -254,42 +241,50 @@ class TimetableMediator implements TimetableMediatorInterface
                 ];
 
                 // Create the record
-                Timetable::create($timetableData);
+                $this->timetableApi->createTimetable($timetableData);
                 
                 $logData[] = $timetableData['timetableId'] . " on " . $timetableData['classDate'];
-
-                // Move to the next week for the next loop iteration
                 $currentDate->addWeek();
             }
             
-            Log::info('Timetable created successfully for ' . $totalWeeks . ' weeks.', ['records' => $logData]);
             return true;
             
         } catch (\Exception $e) {
-            // Log the actual error for debugging
-            Log::error('Timetable Creation Failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            // Re-throw or return 'error'
             return 'error';
         }
     }
 
     protected function generateNextTimetableId() {
-        // 1. Get the latest ID
+        // Get latest ID
         $latest = Timetable::latest('timetableId')->first();
-        
-        if (!$latest) {
-            return 'T001'; // Start at T001 if the table is empty
-        }
 
-        // 2. Extract the number, increment it, and pad it
-        $lastId = $latest->timetableId; // e.g., T150
-        $number = (int) substr($lastId, 1); // Get 150
-        $newNumber = $number + 1; // Get 151
+        $lastId = $latest->timetableId;
+
+        // Cast + Get number
+        $number = (int) substr($lastId, 1); 
+
+        $newNumber = $number + 1;
         
-        // Pad the number back to 3 digits (e.g., 151 -> T151, 9 -> T009)
         return 'T' . str_pad($newNumber, 3, '0', STR_PAD_LEFT); 
-        // NOTE: If you have IDs T001 to T999, T1000 will be T1000, 
-        // so change padding from 3 to 4 if needed.
     }
 
+
+    // ======================================================================================================
+    // ======================================================================================================
+    // ======================================================================================================
+
+
+
+
+    // ======================================================================================================
+    // ====================================== Helper Methods ================================================
+    // ======================================================================================================
+
+    public function getAllClassGroups() {
+        return $this->classGroupApi->getAllClassGroups();
+    }
+
+    public function getAllVenues() {
+        return $this->venueApi->getAllVenues();
+    }
 }

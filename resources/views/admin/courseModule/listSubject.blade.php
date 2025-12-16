@@ -45,16 +45,16 @@
                     <tbody>
                         @forelse($subjects as $subject)
                         <tr>
-                            <td><strong>{{ $subject['code'] }}</strong></td>
-                            <td>{{ $subject['name'] }}</td>
-                            <td>{{ $subject['credits'] }}</td>
-                            <td>{{ $subject['course'] }}</td>
+                            <td><strong>{{ $subject['subjectCode'] ?? '' }}</strong></td>
+                            <td>{{ $subject['subjectName'] ?? '' }}</td>
+                            <td>{{ $subject['creditHours'] ?? 0 }}</td>
+                            <td>{{ $subject['course'] ?? 'N/A' }}</td>
                             <td>
-                                <span class="type-badge">{{ $subject['type'] }}</span>
+                                <span class="type-badge">{{ $subject['category'] ?? '' }}</span>
                             </td>
                             <td>
-                                <span class="status-badge status-{{ $subject['status'] }}">
-                                    {{ ucfirst($subject['status']) }}
+                                <span class="status-badge status-{{ $subject['status'] ?? 'active' }}">
+                                    {{ ucfirst($subject['status'] ?? 'active') }}
                                 </span>
                             </td>
                             <td>

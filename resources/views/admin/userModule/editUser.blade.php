@@ -106,6 +106,27 @@
         .btn-primary:hover {
             background: #0056b3;
         }
+
+        .btn-warning {
+            background: #fbbf24;
+            color: #78350f;
+        }
+
+        .btn-warning:hover {
+            background: #f59e0b;
+            color: #451a03;
+        }
+
+        .btn-reset-password {
+            background: #dc2626;
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
+        }
+
+        .btn-reset-password:hover {
+            background: #b91c1c;
+        }
         
         .btn-secondary {
             background: #6c757d;
@@ -132,6 +153,69 @@
             font-weight: 600;
             color: #333;
         }
+
+        /* Password Reset Section */
+        .password-reset-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 30px;
+            border: 2px solid #fee2e2;
+            border-left: 5px solid #dc2626;
+        }
+
+        .password-reset-section h3 {
+            color: #dc2626;
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+        }
+
+        .section-description {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .reset-info {
+            background: #fef2f2;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-icon {
+            font-size: 1.3rem;
+            margin-right: 12px;
+        }
+
+        .info-item div {
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .info-item strong {
+            display: inline-block;
+            min-width: 60px;
+            color: #666;
+        }
+
+        .reset-help-text {
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #666;
+            font-style: italic;
+        }
+
     </style>
 </head>
 <body>
@@ -184,6 +268,34 @@
                         <button type="submit" class="btn btn-primary">Save Changes</button>
                         <a href="{{ route('admin.user.index') }}" class="btn btn-secondary">Cancel</a>
                     </div>
+                </form>
+
+                <!-- Password Reset Section -->
+                <div class="password-reset-section">
+                    <h3>Reset User Password</h3>
+                    <p class="section-description">Generate a new temporary password for this user. An email notification will be sent automatically.</p>
+                    
+                    <form method="POST" action="{{ route('admin.user.resetPassword', $user->userId) }}" onsubmit="return confirm('Are you sure you want to reset the password for ' + '{{ $user->name }}' + '?');">
+                        @csrf
+                        <div class="reset-info">
+                            <div class="info-item">
+                                <span class="info-icon"></span>
+                                <div>
+                                    <strong>User:</strong> {{ $user->name }}
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-icon"></span>
+                                <div>
+                                    <strong>Email:</strong> {{ $user->email }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-reset-password">Reset Password</button>
+                        <p class="reset-help-text">The user will receive the new password via email and can change it after logging in.</p>
+                    </form>
+                </div>
                 </form>
             </div>
         </div>

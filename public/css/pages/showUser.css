@@ -1,0 +1,187 @@
+/* User Profile Page Styles */
+
+.profile-container {
+    background: white;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 1.5rem;
+}
+
+.profile-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-color);
+}
+
+.profile-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-action {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-action:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-action.btn-secondary {
+    background: #e5e7eb;
+    color: var(--text-color);
+}
+
+.btn-action.btn-secondary:hover {
+    background: #d1d5db;
+}
+
+.btn-action.btn-warning {
+    background: #fbbf24;
+    color: #78350f;
+}
+
+.btn-action.btn-warning:hover {
+    background: #f59e0b;
+    color: #451a03;
+}
+
+.profile-card {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 2rem;
+    border-left: 4px solid var(--primary-color);
+}
+
+.profile-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.info-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-group label {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.info-group span {
+    color: #6b7280;
+    font-size: 1rem;
+    padding: 0.5rem 0;
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 0.35rem 0.85rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.role-student {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.role-admin {
+    background: #fecdca;
+    color: #7f1d1d;
+}
+
+.role-lecturer {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.role-coordinator {
+    background: #fce7f3;
+    color: #831843;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 1.5rem;
+    }
+
+    .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .profile-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .profile-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .btn-action {
+        width: 100%;
+        text-align: center;
+    }
+
+    .profile-info {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .profile-card {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-container {
+        padding: 1rem;
+    }
+
+    .profile-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .profile-info {
+        gap: 1rem;
+    }
+
+    .info-group label {
+        font-size: 0.85rem;
+    }
+
+    .info-group span {
+        font-size: 0.9rem;
+    }
+}

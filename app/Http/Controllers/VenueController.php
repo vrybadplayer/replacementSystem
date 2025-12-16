@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Venue;
@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 class VenueController extends Controller
 {
     // GET /api/venues
-    public function getAllVenue() {
+    public function getAllVenues() {
         $venues = Venue::all();
         return response()->json(['data' => $venues]);
     }
