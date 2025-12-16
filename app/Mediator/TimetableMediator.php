@@ -110,8 +110,6 @@ class TimetableMediator implements TimetableMediatorInterface
             }
         }
 
-        //dd($transitiveMap);
-
         return $transitiveMap;
     }
 
@@ -308,44 +306,58 @@ class TimetableMediator implements TimetableMediatorInterface
     // ==================================== Timeslot Management =============================================
     // ======================================================================================================
 
-
     public function getAllCourseCodes()
     {
         $rawCourses = $this->courseApi->fetchCoursesFromApi();
-
-        return collect($rawCourses)->map(function ($course) {
-            $c = (array) $course;
-            return [
-                'courseId' => $c['courseId'] ?? $c['courseCode'] ?? '',
-                'courseCode' => $c['courseCode'] ?? $c['courseId'] ?? 'N/A',
+        $courses = [];
+        
+        foreach ($rawCourses as $course) {
+            // Convert object to array if JSON returns objects
+            if (is_object($course)) {
+                $course = (array) $course;
+            }
+            
+            $courses[] = [
+                'courseId' => $course['courseId'],
+                'courseCode' => $course['courseCode'],
             ];
-        })->toArray();
+        }
+        
+        return $courses;
     }
 
-    public function getAllClassGroupCodes()
-    {
-
-        $groups = $this->classGroupApi->getAllClassGroups();
-
-        return collect($groups)->map(function ($group) {
-            $g = (array) $group;
-            return ['classGroupId' => $g['classGroupId'] ?? $g['id'] ?? ''];
-        })->toArray();
+public function getAllClassGroupCodes()
+{
+    $groups = $this->classGroupApi->getAllClassGroups();
+    
+    $classGroupCodes = [];
+    
+    foreach ($groups as $group) {
+        if (is_object($group)) {
+            $group = (array) $group;
+        }
+        
+        $classGroupCodes[] = [
+            'classGroupId' => $group['classGroupId']
+        ];
     }
+    
+    return $classGroupCodes;
+}
 
 
-    public function getFilteredTimetableSlots(string $courseId, string $classGroupId): array
+    public function getFilteredTimetableSlots($courseId, $classGroupId)
     {
-        $courseSubjects = \App\Models\CourseSubject::where('courseId', $courseId)->pluck('courseSubjectId')->toArray();
+        $courseSubjects = \App\Models\CourseSubject::where('courseId', $courseId)->pluck('courseSubjectId')->toArray(); // Get From API
 
-        $slots = \App\Models\Timetable::with(['venue'])
+        $slots = Timetable::with(['venue'])
             ->whereIn('courseSubjectId', $courseSubjects)
             ->where('classGroupId', 'LIKE', "%{$classGroupId}%")
             ->orderBy('dayOfWeek')
             ->orderBy('startTime')
             ->get();
 
-        return $slots->map(function ($slot) {
+        return $slots->map(function ($slot) {  // GET FROM API
             $subject = DB::table('subject')
                 ->join('course_subject', 'subject.subjectId', '=', 'course_subject.subjectId')
                 ->where('course_subject.courseSubjectId', $slot->courseSubjectId)
@@ -363,7 +375,7 @@ class TimetableMediator implements TimetableMediatorInterface
         })->toArray();
     }
 
-    public function updateTimeslot(string $originalTimetableId, array $newData): bool|string
+    public function updateTimeslot($originalTimetableId, $newData)
     {
         $originalSlot = Timetable::find($originalTimetableId);
 

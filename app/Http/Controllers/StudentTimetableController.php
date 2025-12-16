@@ -130,67 +130,12 @@ class StudentTimetableController extends Controller
             ];
         }
 
-        //dd($timetableData);
-
-        // weeks for dropdownList
-        // timeSlots, days for UI
-        // timetableData, for table body
-        // hasReplacement for pop-up 
-        // replacementClassList for pop-up info
         return view('student.timetableModule.timetable', compact('weeks', 'timeSlots', 'days', 'timetableData', 'hasReplacement', 'replacementClassList'));
     }
-
-
-    public function viewOptions()
-    {
-        // 1. Hardcoded User Info (Simulating User Management Module)
-        // In the future, this will come from Auth::user()->course or similar.
-        $userInfo = [
-            'course' => 'RSD',
-            'group'  => 'G4'
-        ];
-
-        // 2. Hardcoded Replacement Options Data
-        // Grouped by Day to match your UI design
-        $groupedOptions = [
-            'Monday' => [
-                [
-                    'id' => 301,
-                    'subject' => 'BMIT3173(L)',
-                    'time' => '8:00a.m. - 10:00a.m.',
-                    'lecturer' => 'Malarvili',
-                    'venue' => 'DK4'
-                ],
-                [
-                    'id' => 302,
-                    'subject' => 'BMIT3173(L)',
-                    'time' => '8:00a.m. - 10:00a.m.',
-                    'lecturer' => 'Malarvili',
-                    'venue' => 'DK4'
-                ]
-            ],
-            'Wednesday' => [
-                [
-                    'id' => 303,
-                    'subject' => 'BMIT3173(L)',
-                    'time' => '8:00a.m. - 10:00a.m.',
-                    'lecturer' => 'Malarvili',
-                    'venue' => 'DK4'
-                ],
-                [
-                    'id' => 304,
-                    'subject' => 'BMIT3173(L)',
-                    'time' => '8:00a.m. - 10:00a.m.',
-                    'lecturer' => 'Malarvili',
-                    'venue' => 'DK4'
-                ]
-            ]
-        ];
-
-        return view('student.timetableModule.replacement_options', compact('userInfo', 'groupedOptions'));
-    }
     
-
+    // -------------------------------------------------------------------------------------------- (Undone)
+    // ----------------------------------- SELECT TIMESLOT PAGE -----------------------------------
+    // --------------------------------------------------------------------------------------------
     public function selectTimeslot(Request $request)
     {
         // 1. Get Parameters (passed from previous page)
@@ -208,7 +153,6 @@ class StudentTimetableController extends Controller
                 '10:00' => ['duration' => 2, 'subject' => 'BJEL2013(T)', 'venue' => 'K303', 'type' => 'existing'],
                 '13:00' => ['duration' => 2, 'subject' => 'BJEL2013(T)', 'venue' => 'Q207A', 'type' => 'existing'],
             ],
-            // ... add other existing classes if needed
         ];
 
         // 3. Logic: Mocking the "Filtered Valid Replacement Options"

@@ -88,13 +88,14 @@ class AdminTimetableController extends Controller
     // ===================================================================================================
 
     public function viewTimeslotManagement(Request $request) {
+       
         $data = $this->getInitialData();
         
-        // 1. Get initial dropdown data
+        // Populate Dropdown
         $data['courses'] = $this->mediator->getAllCourseCodes();
         $data['groups'] = $this->mediator->getAllClassGroupCodes();
 
-        // 2. Handle Flash Data (when a POST request redirects back)
+        // Session to record values
         $data['filteredSlots'] = session('filtered_slots', null);
         $data['selectedCourse'] = session('selected_course', null);
         $data['selectedGroup'] = session('selected_group', null);
@@ -103,6 +104,7 @@ class AdminTimetableController extends Controller
     }
 
     public function filterTimeslots(Request $request) {
+        
         $validated = $request->validate([
             'courseId' => 'required|string',
             'classGroupId' => 'required|string',
@@ -110,16 +112,17 @@ class AdminTimetableController extends Controller
         
         $slots = $this->mediator->getFilteredTimetableSlots($validated['courseId'], $validated['classGroupId']);
 
-        // Flash the results back to the GET route (viewTimeslotManagement)
+        // Refresh page, assign data to session array
         return redirect()->route('admin.timeslotManagement')->with([
             'filtered_slots' => $slots,
             'selected_course' => $validated['courseId'],
             'selected_group' => $validated['classGroupId'],
-        ])->withInput(); // Keep old form values
+        ])->withInput();
 
     }
     
     public function updateTimeslot(Request $request) {
+
         $validated = $request->validate([
             'originalTimetableId' => 'required|string|exists:timetable,timetableId',
             'newDay' => 'required|string|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
@@ -147,7 +150,7 @@ class AdminTimetableController extends Controller
     protected function getInitialData() {
         $daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         $timeSlots = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
-        $venues = Venue::select('venueId', 'venueType')->get()->toArray(); // FROM API
+        $venues = Venue::select('venueId', 'venueType')->get()->toArray();
         return compact('daysOfWeek', 'timeSlots', 'venues');
     }
 }
