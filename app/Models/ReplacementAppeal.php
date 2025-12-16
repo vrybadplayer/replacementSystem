@@ -14,8 +14,8 @@ class ReplacementAppeal extends Model
     protected $fillable = [
         'appealId',
         'userId',
-        'originalClassId',
-        'requestedClassId',
+        'originalClassGroupId',
+        'requestedClassGroupId',
         'originalTimeslot',
         'requestedTimeslot',
         'reason',
@@ -42,12 +42,12 @@ class ReplacementAppeal extends Model
 
     public function originalClass()
     {
-        return $this->belongsTo(Timetable::class, 'originalClassId', 'timetableId');
+        return $this->belongsTo(\App\Models\ClassGroup::class, 'originalClassGroupId', 'classGroupId');
     }
 
     public function requestedClass()
     {
-        return $this->belongsTo(Timetable::class, 'requestedClassId', 'timetableId');
+        return $this->belongsTo(\App\Models\ClassGroup::class, 'requestedClassGroupId', 'classGroupId');
     }
 
     public function adminUser()

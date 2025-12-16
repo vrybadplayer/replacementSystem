@@ -59,19 +59,30 @@ class ReplacementAppealObserver
     {
         // When appeal is approved, create replacement record
         if ($replacementAppeal->status === 'Approved' && !$replacementAppeal->replacement) {
-            // Get the requested class to extract classGroupId
-            $requestedClass = $replacementAppeal->requestedClass;
+            // Load relationships needed
+            $replacementAppeal->load('user', 'requestedClass.timetables', 'originalClass.timetables');
+            $user = $replacementAppeal->user;
+            $requestedTimetable = $replacementAppeal->requestedClass->timetables->first();
+            $originalTimetable = $replacementAppeal->originalClass->timetables->first();
             
-            Replacement::create([
-                'replacementId' => 'REP' . str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT),
-                'appealId' => $replacementAppeal->appealId,
-                'userId' => $replacementAppeal->userId,
-                'classGroupId' => $requestedClass->classGroupId,
-                'date' => $requestedClass->classDate,
-                'timeSlot' => $replacementAppeal->requestedTimeslot,
-            ]);
+            if ($user && $requestedTimetable && $originalTimetable) {
+                Replacement::create([
+                    'replacementId' => 'REP' . str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT),
+                    'appealId' => $replacementAppeal->appealId,
+                    'userId' => $replacementAppeal->userId,
+                    'requestedClassGroupId' => $replacementAppeal->requestedClassGroupId,
+                    'originalTimetableId' => $originalTimetable->timetableId,
+                    'originalDate' => $originalTimetable->classDate,
+                    'requestedDate' => $requestedTimetable->classDate,
+                    'originalStartTime' => $originalTimetable->startTime,
+                    'startTime' => $requestedTimetable->startTime,
+                    'endTime' => $requestedTimetable->endTime,
+                ]);
 
-            Log::info("Replacement created for approved appeal: {$replacementAppeal->appealId}");
+                Log::info("Replacement created for approved appeal: {$replacementAppeal->appealId}");
+            } else {
+                Log::error("Could not find user or timetable data for appeal: {$replacementAppeal->appealId}");
+            }
         }
 
         // When appeal is rejected

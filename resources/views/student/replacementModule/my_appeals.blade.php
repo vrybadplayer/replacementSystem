@@ -42,35 +42,35 @@
                                     <div class="class-section">
                                         <h4>📅 Original Class (Missed)</h4>
                                         <div class="class-info">
-                                            <strong>{{ $appeal->originalClass->subject->subjectId }} - {{ $appeal->originalClass->subject->subjectName }}</strong>
+                                            📚 Subject: <strong>{{ $appeal->originalClass->subject->subjectId }} - {{ $appeal->originalClass->subject->subjectName }}</strong>
                                         </div>
                                         <div class="class-info">
-                                            📍 {{ $appeal->originalClass->venue->venueId }}
+                                            📍 Venue: {{ $appeal->originalClass->venue->venueId }}
                                         </div>
                                         <div class="class-info">
-                                            📅 {{ date('D, d M Y', strtotime($appeal->originalClass->date)) }}
+                                            📅 Date: {{ date('D, d M Y', strtotime($appeal->originalClass->date)) }}
                                         </div>
                                         <div class="class-info">
-                                            ⏰ {{ $appeal->originalClass->startTime }} - {{ $appeal->originalClass->endTime }}
+                                            ⏰ Time: {{ $appeal->originalClass->startTime }} - {{ $appeal->originalClass->endTime }}
                                         </div>
                                     </div>
 
                                     <div class="class-section">
                                         <h4>✅ Replacement Class (Requested)</h4>
                                         <div class="class-info">
-                                            <strong>{{ $appeal->requestedClass->subject->subjectId }} - {{ $appeal->requestedClass->subject->subjectName }}</strong>
+                                            📚 Subject: <strong>{{ $appeal->requestedClass->subject->subjectId }} - {{ $appeal->requestedClass->subject->subjectName }}</strong>
                                         </div>
                                         <div class="class-info">
-                                            📍 {{ $appeal->requestedClass->venue->venueId }}
+                                            📍 Venue: {{ $appeal->requestedClass->venue->venueId }}
                                         </div>
                                         <div class="class-info">
-                                            📅 {{ date('D, d M Y', strtotime($appeal->requestedClass->date)) }}
+                                            📅 Date: {{ date('D, d M Y', strtotime($appeal->requestedClass->date)) }}
                                         </div>
                                         <div class="class-info">
-                                            ⏰ {{ $appeal->requestedClass->startTime }} - {{ $appeal->requestedClass->endTime }}
+                                            ⏰ Time: {{ $appeal->requestedClass->startTime }} - {{ $appeal->requestedClass->endTime }}
                                         </div>
                                         <div class="class-info">
-                                            👥 Group {{ $appeal->requestedClass->classGroup->classGroupId ?? 'N/A' }}
+                                            👥 Group: {{ $appeal->requestedClass->classGroup->classGroupId ?? 'N/A' }}
                                         </div>
                                     </div>
                                 </div>
@@ -79,6 +79,21 @@
                                     <strong>Reason:</strong>
                                     {{ $appeal->reason }}
                                 </div>
+
+                                @if($appeal->proof)
+                                    <div class="reason-section">
+                                        <strong>Proof/Evidence:</strong>
+                                        <div style="margin-top: 10px;">
+                                            <img src="{{ asset('storage/' . $appeal->proof) }}" 
+                                                 alt="Appeal Proof" 
+                                                 style="max-width: 100%; max-height: 400px; border-radius: 8px; border: 1px solid #ddd;"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                            <div style="display: none; padding: 10px; background: #f8d7da; color: #721c24; border-radius: 5px;">
+                                                Unable to load image. Path: {{ $appeal->proof }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
 
                                 @if($appeal->status === 'Approved' || $appeal->status === 'Rejected')
                                     <div class="decision-section {{ $appeal->status === 'Rejected' ? 'rejected' : '' }}">

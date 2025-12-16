@@ -64,16 +64,16 @@
                                 <h4>📅 Original Class (Missed)</h4>
                                 <div class="info-row" style="margin-bottom: 10px;">
                                     <div class="info-label">Subject</div>
-                                    <div class="info-value">{{ $appeal->originalClass->subject->subjectId }} - {{ $appeal->originalClass->subject->subjectName }}</div>
+                                    <div class="info-value">{{ $appeal->originalClass->subject->subjectId ?? 'N/A' }} - {{ $appeal->originalClass->subject->subjectName ?? 'N/A' }}</div>
                                 </div>
                                 <div class="info-row" style="margin-bottom: 10px;">
                                     <div class="info-label">Date & Time</div>
-                                    <div class="info-value">{{ date('d M Y', strtotime($appeal->originalClass->date)) }}</div>
+                                    <div class="info-value">{{ $appeal->originalClass->date ? date('d M Y', strtotime($appeal->originalClass->date)) : 'N/A' }}</div>
                                     <div class="info-value">{{ $appeal->originalClass->startTime }} - {{ $appeal->originalClass->endTime }}</div>
                                 </div>
                                 <div class="info-row" style="margin-bottom: 10px;">
                                     <div class="info-label">Venue</div>
-                                    <div class="info-value">{{ $appeal->originalClass->venue->venueId }}</div>
+                                    <div class="info-value">{{ $appeal->originalClass->venue->venueId ?? 'N/A' }}</div>
                                 </div>
                                 <div class="info-row">
                                     <div class="info-label">Group</div>
@@ -85,16 +85,16 @@
                                 <h4>✅ Replacement Class (Requested)</h4>
                                 <div class="info-row" style="margin-bottom: 10px;">
                                     <div class="info-label">Subject</div>
-                                    <div class="info-value">{{ $appeal->requestedClass->subject->subjectId }} - {{ $appeal->requestedClass->subject->subjectName }}</div>
+                                    <div class="info-value">{{ $appeal->requestedClass->subject->subjectId ?? 'N/A' }} - {{ $appeal->requestedClass->subject->subjectName ?? 'N/A' }}</div>
                                 </div>
                                 <div class="info-row" style="margin-bottom: 10px;">
                                     <div class="info-label">Date & Time</div>
-                                    <div class="info-value">{{ date('d M Y', strtotime($appeal->requestedClass->date)) }}</div>
+                                    <div class="info-value">{{ $appeal->requestedClass->date ? date('d M Y', strtotime($appeal->requestedClass->date)) : 'N/A' }}</div>
                                     <div class="info-value">{{ $appeal->requestedClass->startTime }} - {{ $appeal->requestedClass->endTime }}</div>
                                 </div>
                                 <div class="info-row" style="margin-bottom: 10px;">
                                     <div class="info-label">Venue</div>
-                                    <div class="info-value">{{ $appeal->requestedClass->venue->venueId }}</div>
+                                    <div class="info-value">{{ $appeal->requestedClass->venue->venueId ?? 'N/A' }}</div>
                                 </div>
                                 <div class="info-row" style="margin-bottom: 10px;">
                                     <div class="info-label">Group</div>
@@ -111,13 +111,17 @@
                             {{ $appeal->reason }}
                         </div>
                         
-                        @if($appeal->proofFile)
+                        @if($appeal->proof)
                             <div class="proof-section">
                                 <strong>Supporting Document:</strong>
                                 <div style="margin-top: 10px;">
-                                    <a href="{{ Storage::url($appeal->proofFile) }}" target="_blank" class="proof-link">
-                                        📎 {{ basename($appeal->proofFile) }}
-                                    </a>
+                                    <img src="{{ asset('storage/' . $appeal->proof) }}" 
+                                         alt="Appeal Proof" 
+                                         style="max-width: 100%; max-height: 400px; border-radius: 8px; border: 1px solid #ddd;"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                    <div style="display: none; padding: 10px; background: #f8d7da; color: #721c24; border-radius: 5px;">
+                                        Unable to load image. Path: {{ $appeal->proof }}
+                                    </div>
                                 </div>
                             </div>
                         @else

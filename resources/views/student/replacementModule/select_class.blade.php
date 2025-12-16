@@ -131,32 +131,35 @@
                                     {{ $class->subject->subjectId }} - {{ $class->subject->subjectName }}
                                 </div>
                                 <div class="class-info">
-                                    <strong>📅 Date:</strong> {{ date('D, d M Y', strtotime($class->classDate)) }}
+                                    <strong>Date:</strong> {{ date('D, d M Y', strtotime($class->classDate)) }}
                                 </div>
                                 <div class="class-info">
-                                    <strong>⏰ Time:</strong> {{ $class->startTime }} - {{ $class->endTime }}
+                                    <strong>Type:</strong> {{ $class->classType }}
                                 </div>
                                 <div class="class-info">
-                                    <strong>📍 Venue:</strong> {{ $class->venue->venueId }}
+                                    <strong>Time:</strong> {{ $class->startTime }} - {{ $class->endTime }}
                                 </div>
                                 <div class="class-info">
-                                    <strong>👥 Group:</strong> {{ $class->classGroup->classGroupId ?? 'N/A' }}
+                                    <strong>Venue:</strong> {{ $class->venue->venueId }}
+                                </div>
+                                <div class="class-info">
+                                    <strong>Group:</strong> {{ $class->classGroupId }}
                                 </div>
                                 <a href="{{ route('replacement.appeal', ['class_id' => $class->timetableId]) }}" class="btn-select">
                                     Select This Class
                                 </a>
                             </div>
                         @endforeach
-                    </div>
-                @else
-                    <div class="no-classes">
-                        <h3>No Available Classes</h3>
-                        <p style="color: #95a5a6;">There are no upcoming classes available for replacement appeals.</p>
-                        <p style="margin-top: 20px;">
-                            <a href="{{ route('replacement.myAppeals') }}" style="color: #3498db;">View My Appeals</a>
-                        </p>
-                    </div>
-                @endif
+                    @else
+                        <div class="no-classes">
+                            <h3>No Available Classes</h3>
+                            <p style="color: #95a5a6;">There are no upcoming classes available for replacement appeals.</p>
+                            <p style="margin-top: 20px;">
+                                <a href="{{ route('replacement.myAppeals') }}" style="color: #3498db;">View My Appeals</a>
+                            </p>
+                        </div>
+                    @endif
+                </div>
             </div>
         </main>
     </div>

@@ -10,9 +10,10 @@ use App\Http\Controllers\CourseSubjectController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminUserController;
-use App\Http\Controllers\TimetableController;
-use App\Http\Controllers\ClassGroupController;
-use App\Http\Controllers\VenueController;
+use App\Http\Controllers\Api\ClassGroupController;
+use App\Http\Controllers\Api\VenueController;
+use App\Http\Controllers\ReplacementController;
+
 
 
 // This file is what ApiService files will call
@@ -44,8 +45,8 @@ Route::get('/venues', [VenueController::class, 'getAllVenue']);
 Route::get('/venues/{id}', [VenueController::class, 'getVenueById']);
 Route::get('/classgroups', [ClassGroupController::class, 'getAllClassGroups']);
 Route::get('/classgroups/{id}', [ClassGroupController::class, 'getClassGroupById']);
-Route::get('/timetable', [TimetableController::class, 'getAllTimetableRecords']);
-Route::get('/timetable/{id}', [TimetableController::class, 'getTimetableById']);
+Route::get('/timetable', [ReplacementController::class, 'getAllTimetableRecords']);
+Route::get('/timetable/{id}', [ReplacementController::class, 'getTimetableById']);
 
 // --- Course Management API ---
 Route::get('/courses', [CourseController::class, 'index']);
@@ -74,3 +75,18 @@ Route::middleware('auth')->group(function () {
 });
 
 // --- Replacement Module API ---
+Route::prefix('replacement')->group(function () {
+    // Appeals
+    Route::get('/appeals', [ReplacementController::class, 'getAllAppeals']);
+    Route::get('/appeals/pending', [ReplacementController::class, 'getPendingAppeals']);
+    Route::get('/appeals/user/{userId}', [ReplacementController::class, 'getUserAppeals']);
+    Route::get('/appeals/{appealId}', [ReplacementController::class, 'getAppeal']);
+    Route::post('/appeals', [ReplacementController::class, 'createAppeal']);
+    Route::post('/appeals/{appealId}/process', [ReplacementController::class, 'processAppeal']);
+    
+    // Replacements
+    Route::get('/replacements/user/{userId}', [ReplacementController::class, 'getUserReplacements']);
+    
+    // Statistics
+    Route::get('/statistics', [ReplacementController::class, 'getStatistics']);
+});

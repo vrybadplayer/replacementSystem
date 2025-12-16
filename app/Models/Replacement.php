@@ -15,14 +15,21 @@ class Replacement extends Model
         'replacementId',
         'appealId',
         'userId',
-        'classGroupId',
-        'date',
-        'timeSlot'
+        'requestedClassGroupId',
+        'originalTimetableId',
+        'originalDate',
+        'requestedDate',
+        'originalStartTime',
+        'startTime',
+        'endTime'
     ];
 
     protected $casts = [
-        'date' => 'date',
-        'timeSlot' => 'datetime:H:i',
+        'originalDate' => 'date',
+        'requestedDate' => 'date',
+        'originalStartTime' => 'datetime:H:i',
+        'startTime' => 'datetime:H:i',
+        'endTime' => 'datetime:H:i',
     ];
 
     // Relationships
@@ -36,8 +43,13 @@ class Replacement extends Model
         return $this->belongsTo(User::class, 'userId', 'userId');
     }
 
-    public function classGroup()
+    public function requestedClassGroup()
     {
-        return $this->belongsTo(ClassGroup::class, 'classGroupId', 'classGroupId');
+        return $this->belongsTo(ClassGroup::class, 'requestedClassGroupId', 'classGroupId');
+    }
+
+    public function originalTimetable()
+    {
+        return $this->belongsTo(Timetable::class, 'originalTimetableId', 'timetableId');
     }
 }
