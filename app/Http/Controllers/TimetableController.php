@@ -6,16 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\Timetable;
 use Illuminate\Http\Request;
 use App\Services\TimetableService;
+use App\Services\UserService;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class TimetableController extends Controller
 {
 
     protected $timetableService;
+    protected $userService;
 
-    public function __construct(TimetableService $timetableService)
+    public function __construct(TimetableService $timetableService, UserService $userService)
     {
         $this->timetableService = $timetableService;
+        $this->userService = $userService;
     }
 
     // GET /api/timetable
@@ -98,4 +102,30 @@ class TimetableController extends Controller
             'data' => $$timetables
         ]);
     }
+
+    // GET /timetable/future/{userId}    For Appeals UI
+    public function getFutureClasses($userId)
+    {
+        $studentProfile = $this->userService->getUser($userId); 
+        
+        $classGroupId = $studentProfile['classGroupId'];
+        $today = Carbon::today()->format('Y-m-d');
+        
+        $classes = Timetable::with(['venue', 'courseSubject.subject'])
+            // Lecture + Tutorial
+            ->where(function ($query) use ($classGroupId) {
+                $query->where('classGroupId', $classGroupId)
+                    ->orWhereRaw("FIND_IN_SET(?, classGroupId) > 0", [$classGroupId]);
+            })
+            ->where('classDate', '>', $today)
+            ->orderBy('classDate')
+            ->orderBy('startTime')
+            ->get();
+
+        return response()->json([
+            'data' => $classes,
+            'count' => $classes->count()
+        ]);
+    }
+
 }

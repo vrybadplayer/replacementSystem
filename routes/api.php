@@ -51,6 +51,7 @@ Route::get('/occupiedSlots', [TimetableController::class, 'getOccupiedSlots']);
 Route::get('/clashCheck', [TimetableController::class, 'clashCheck']);
 Route::post('/timetable/create', [TimetableController::class, 'createTimetable']);
 Route::get('/timetable/{classGroupId}', [TimetableController::class, 'getTimetableByClassGroupId']);
+Route::get('/timetable/future/{userId}', [TimetableController::class, 'getFutureClasses']);
 
 // --- Course Management API ---
 Route::get('/courses', [CourseController::class, 'index']);
@@ -97,6 +98,7 @@ Route::prefix('replacement')->group(function () {
     
     // Replacements
     Route::get('/replacements/user/{userId}', [ReplacementController::class, 'getUserReplacements']);
+    Route::get('/validOptions', [ReplacementController::class, 'validReplacementOptions']);
     
     // Statistics
     Route::get('/statistics', [ReplacementController::class, 'getStatistics']);
