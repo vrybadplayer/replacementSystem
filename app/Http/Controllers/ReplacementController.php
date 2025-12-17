@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\ReplacementAppeal;
 use App\Models\Timetable;
+use App\Services\TimetableService;
 use App\Models\User;
 use App\Services\ReplacementService;
 use Illuminate\Support\Facades\Auth;
@@ -15,10 +16,12 @@ use Illuminate\Support\Facades\Log;
 class ReplacementController extends Controller
 {
     protected $replacementService;
+    protected $timetableService;
 
-    public function __construct(ReplacementService $replacementService)
+    public function __construct(ReplacementService $replacementService, TimetableService $timetableService)
     {
         $this->replacementService = $replacementService;
+        $this->timetableService = $timetableService;
     }
 
     /**
@@ -30,12 +33,12 @@ class ReplacementController extends Controller
     {
         // Get the requested class from timetable
         $requestedClassId = $request->input('class_id');
-        
+
         if (!$requestedClassId) {
             // If no class selected, show available classes for appeal
             // Call service to get available classes from API
             $availableClasses = $this->replacementService->getAvailableClassesFromApi();
-            
+
             return view('student.replacementModule.select_class', compact('availableClasses'));
         }
 
@@ -106,7 +109,7 @@ class ReplacementController extends Controller
     {
         $userId = Auth::user()->userId;
         $appeals = $this->replacementService->getUserAppealsFromApi($userId);
-        
+
         return view('student.replacementModule.my_appeals', compact('appeals'));
     }
 
@@ -121,14 +124,14 @@ class ReplacementController extends Controller
         // Get all appeals and statistics from service
         $allAppeals = $this->replacementService->getAllAppealsFromApi();
         $stats = $this->replacementService->getStatisticsFromApi();
-        
+
         // Filter appeals based on status
         if ($filterStatus !== 'all') {
             $appeals = $allAppeals->where('status', $filterStatus)->values();
         } else {
             $appeals = $allAppeals;
         }
-        
+
         return view('admin.replacementModule.appeal_list', compact('appeals', 'stats', 'filterStatus'));
     }
 
@@ -139,7 +142,7 @@ class ReplacementController extends Controller
     {
         // Get appeal from API
         $appeal = $this->replacementService->getAppealFromApi($appealId);
-        
+
         if (!$appeal) {
             abort(404, 'Appeal not found');
         }
@@ -151,7 +154,7 @@ class ReplacementController extends Controller
             'no_clash' => true, // Check for time clashes
             'has_capacity' => true, // Check if class has capacity
             'valid_account' => $appeal->user->role === 'student', // Check user is student
-            'same_subject' => $appeal->originalClass->subject && $appeal->requestedClass->subject ? 
+            'same_subject' => $appeal->originalClass->subject && $appeal->requestedClass->subject ?
                 $appeal->originalClass->subject->subjectId === $appeal->requestedClass->subject->subjectId : false
         ];
 
@@ -179,8 +182,8 @@ class ReplacementController extends Controller
 
         // Observer will automatically create Replacement record if approved
 
-        $message = $validated['decision'] === 'approve' 
-            ? "Appeal #$appealId has been approved successfully! Replacement record created automatically." 
+        $message = $validated['decision'] === 'approve'
+            ? "Appeal #$appealId has been approved successfully! Replacement record created automatically."
             : "Appeal #$appealId has been rejected.";
 
         return redirect()->route('admin.replacement.appeals')->with('success', $message);
@@ -205,46 +208,46 @@ class ReplacementController extends Controller
                 'adminUser',
                 'replacement'
             ])->orderBy('submissionDate', 'desc')
-            ->get()
-            ->map(function($appeal) {
-                // Flatten the structure for easier view access
-                $originalTimetable = $appeal->originalClass->timetables->first();
-                $requestedTimetable = $appeal->requestedClass->timetables->first();
-                
-                return [
-                    'appealId' => $appeal->appealId,
-                    'userId' => $appeal->userId,
-                    'status' => $appeal->status,
-                    'reason' => $appeal->reason,
-                    'proof' => $appeal->proof,
-                    'submissionDate' => $appeal->submissionDate ? $appeal->submissionDate->format('Y-m-d H:i:s') : null,
-                    'decisionDate' => $appeal->decisionDate ? $appeal->decisionDate->format('Y-m-d H:i:s') : null,
-                    'adminRemarks' => $appeal->adminRemarks,
-                    'user' => $appeal->user,
-                    'adminUser' => $appeal->adminUser,
-                    'originalClass' => [
-                        'subject' => $originalTimetable->subject ?? null,
-                        'venue' => $originalTimetable->venue ?? null,
-                        'date' => $originalTimetable->classDate ?? null,
-                        'startTime' => $originalTimetable && $originalTimetable->startTime ? date('H:i', strtotime($originalTimetable->startTime)) : null,
-                        'endTime' => $originalTimetable && $originalTimetable->endTime ? date('H:i', strtotime($originalTimetable->endTime)) : null,
-                        'classGroup' => [
-                            'classGroupId' => $appeal->originalClass->classGroupId ?? null,
+                ->get()
+                ->map(function ($appeal) {
+                    // Flatten the structure for easier view access
+                    $originalTimetable = $appeal->originalClass->timetables->first();
+                    $requestedTimetable = $appeal->requestedClass->timetables->first();
+
+                    return [
+                        'appealId' => $appeal->appealId,
+                        'userId' => $appeal->userId,
+                        'status' => $appeal->status,
+                        'reason' => $appeal->reason,
+                        'proof' => $appeal->proof,
+                        'submissionDate' => $appeal->submissionDate ? $appeal->submissionDate->format('Y-m-d H:i:s') : null,
+                        'decisionDate' => $appeal->decisionDate ? $appeal->decisionDate->format('Y-m-d H:i:s') : null,
+                        'adminRemarks' => $appeal->adminRemarks,
+                        'user' => $appeal->user,
+                        'adminUser' => $appeal->adminUser,
+                        'originalClass' => [
+                            'subject' => $originalTimetable->subject ?? null,
+                            'venue' => $originalTimetable->venue ?? null,
+                            'date' => $originalTimetable->classDate ?? null,
+                            'startTime' => $originalTimetable && $originalTimetable->startTime ? date('H:i', strtotime($originalTimetable->startTime)) : null,
+                            'endTime' => $originalTimetable && $originalTimetable->endTime ? date('H:i', strtotime($originalTimetable->endTime)) : null,
+                            'classGroup' => [
+                                'classGroupId' => $appeal->originalClass->classGroupId ?? null,
+                            ],
                         ],
-                    ],
-                    'requestedClass' => [
-                        'subject' => $requestedTimetable->subject ?? null,
-                        'venue' => $requestedTimetable->venue ?? null,
-                        'date' => $requestedTimetable->classDate ?? null,
-                        'startTime' => $requestedTimetable && $requestedTimetable->startTime ? date('H:i', strtotime($requestedTimetable->startTime)) : null,
-                        'endTime' => $requestedTimetable && $requestedTimetable->endTime ? date('H:i', strtotime($requestedTimetable->endTime)) : null,
-                        'classGroup' => [
-                            'classGroupId' => $appeal->requestedClass->classGroupId ?? null,
+                        'requestedClass' => [
+                            'subject' => $requestedTimetable->subject ?? null,
+                            'venue' => $requestedTimetable->venue ?? null,
+                            'date' => $requestedTimetable->classDate ?? null,
+                            'startTime' => $requestedTimetable && $requestedTimetable->startTime ? date('H:i', strtotime($requestedTimetable->startTime)) : null,
+                            'endTime' => $requestedTimetable && $requestedTimetable->endTime ? date('H:i', strtotime($requestedTimetable->endTime)) : null,
+                            'classGroup' => [
+                                'classGroupId' => $appeal->requestedClass->classGroupId ?? null,
+                            ],
                         ],
-                    ],
-                    'replacement' => $appeal->replacement,
-                ];
-            });
+                        'replacement' => $appeal->replacement,
+                    ];
+                });
 
             return response()->json([
                 'success' => true,
@@ -274,48 +277,48 @@ class ReplacementController extends Controller
                 'adminUser',
                 'replacement'
             ])
-            ->where('userId', $userId)
-            ->orderBy('submissionDate', 'desc')
-            ->get()
-            ->map(function($appeal) {
-                // Flatten the structure for easier view access
-                $originalTimetable = $appeal->originalClass->timetables->first();
-                $requestedTimetable = $appeal->requestedClass->timetables->first();
-                
-                return [
-                    'appealId' => $appeal->appealId,
-                    'userId' => $appeal->userId,
-                    'status' => $appeal->status,
-                    'reason' => $appeal->reason,
-                    'proof' => $appeal->proof,
-                    'submissionDate' => $appeal->submissionDate ? $appeal->submissionDate->format('Y-m-d H:i:s') : null,
-                    'decisionDate' => $appeal->decisionDate ? $appeal->decisionDate->format('Y-m-d H:i:s') : null,
-                    'adminRemarks' => $appeal->adminRemarks,
-                    'user' => $appeal->user,
-                    'adminUser' => $appeal->adminUser,
-                    'originalClass' => [
-                        'subject' => $originalTimetable->subject ?? null,
-                        'venue' => $originalTimetable->venue ?? null,
-                        'date' => $originalTimetable->classDate ?? null,
-                        'startTime' => $originalTimetable && $originalTimetable->startTime ? date('H:i', strtotime($originalTimetable->startTime)) : null,
-                        'endTime' => $originalTimetable && $originalTimetable->endTime ? date('H:i', strtotime($originalTimetable->endTime)) : null,
-                        'classGroup' => [
-                            'classGroupId' => $appeal->originalClass->classGroupId ?? null,
+                ->where('userId', $userId)
+                ->orderBy('submissionDate', 'desc')
+                ->get()
+                ->map(function ($appeal) {
+                    // Flatten the structure for easier view access
+                    $originalTimetable = $appeal->originalClass->timetables->first();
+                    $requestedTimetable = $appeal->requestedClass->timetables->first();
+
+                    return [
+                        'appealId' => $appeal->appealId,
+                        'userId' => $appeal->userId,
+                        'status' => $appeal->status,
+                        'reason' => $appeal->reason,
+                        'proof' => $appeal->proof,
+                        'submissionDate' => $appeal->submissionDate ? $appeal->submissionDate->format('Y-m-d H:i:s') : null,
+                        'decisionDate' => $appeal->decisionDate ? $appeal->decisionDate->format('Y-m-d H:i:s') : null,
+                        'adminRemarks' => $appeal->adminRemarks,
+                        'user' => $appeal->user,
+                        'adminUser' => $appeal->adminUser,
+                        'originalClass' => [
+                            'subject' => $originalTimetable->subject ?? null,
+                            'venue' => $originalTimetable->venue ?? null,
+                            'date' => $originalTimetable->classDate ?? null,
+                            'startTime' => $originalTimetable && $originalTimetable->startTime ? date('H:i', strtotime($originalTimetable->startTime)) : null,
+                            'endTime' => $originalTimetable && $originalTimetable->endTime ? date('H:i', strtotime($originalTimetable->endTime)) : null,
+                            'classGroup' => [
+                                'classGroupId' => $appeal->originalClass->classGroupId ?? null,
+                            ],
                         ],
-                    ],
-                    'requestedClass' => [
-                        'subject' => $requestedTimetable->subject ?? null,
-                        'venue' => $requestedTimetable->venue ?? null,
-                        'date' => $requestedTimetable->classDate ?? null,
-                        'startTime' => $requestedTimetable && $requestedTimetable->startTime ? date('H:i', strtotime($requestedTimetable->startTime)) : null,
-                        'endTime' => $requestedTimetable && $requestedTimetable->endTime ? date('H:i', strtotime($requestedTimetable->endTime)) : null,
-                        'classGroup' => [
-                            'classGroupId' => $appeal->requestedClass->classGroupId ?? null,
+                        'requestedClass' => [
+                            'subject' => $requestedTimetable->subject ?? null,
+                            'venue' => $requestedTimetable->venue ?? null,
+                            'date' => $requestedTimetable->classDate ?? null,
+                            'startTime' => $requestedTimetable && $requestedTimetable->startTime ? date('H:i', strtotime($requestedTimetable->startTime)) : null,
+                            'endTime' => $requestedTimetable && $requestedTimetable->endTime ? date('H:i', strtotime($requestedTimetable->endTime)) : null,
+                            'classGroup' => [
+                                'classGroupId' => $appeal->requestedClass->classGroupId ?? null,
+                            ],
                         ],
-                    ],
-                    'replacement' => $appeal->replacement,
-                ];
-            });
+                        'replacement' => $appeal->replacement,
+                    ];
+                });
 
             return response()->json([
                 'success' => true,
@@ -349,7 +352,7 @@ class ReplacementController extends Controller
             // Flatten the structure for easier view access
             $originalTimetable = $appeal->originalClass->timetables->first();
             $requestedTimetable = $appeal->requestedClass->timetables->first();
-            
+
             $appealData = [
                 'appealId' => $appeal->appealId,
                 'userId' => $appeal->userId,
@@ -450,7 +453,7 @@ class ReplacementController extends Controller
             ]);
 
             $appeal = ReplacementAppeal::findOrFail($appealId);
-            
+
             $appeal->status = $validated['decision'] === 'approve' ? 'Approved' : 'Rejected';
             $appeal->decisionDate = now();
             $appeal->adminId = $validated['admin_id'];
@@ -482,11 +485,11 @@ class ReplacementController extends Controller
                 'requestedClass.subject',
                 'replacement'
             ])
-            ->where('userId', $userId)
-            ->where('status', 'Approved')
-            ->whereHas('replacement')
-            ->orderBy('decisionDate', 'desc')
-            ->get();
+                ->where('userId', $userId)
+                ->where('status', 'Approved')
+                ->whereHas('replacement')
+                ->orderBy('decisionDate', 'desc')
+                ->get();
 
             return response()->json([
                 'success' => true,
@@ -525,5 +528,62 @@ class ReplacementController extends Controller
                 'message' => 'Unable to retrieve statistics. Please try again later.'
             ], 500);
         }
+    }
+
+
+    public function validReplacementOptions(Request $request)
+    {
+        $originalClassId = $request->query('originalClassId');
+        $originalDate = $request->query('originalDate');
+        $myClassGroupId = $request->query('classGroupId');
+
+        $originalClass = Timetable::with('courseSubject')->find($originalClassId); // Fetch From API
+        $subjectId = $originalClass->courseSubject->subjectId;
+        $classType = $originalClass->classType;
+
+        if (!$originalClass) {
+            return response()->json(['data' => [], 'error' => 'Original class not found'], 404);
+        }
+
+        // After today, in same week
+        $startOfWeek = Carbon::parse($originalDate)->startOfWeek()->format('Y-m-d');
+        $endOfWeek = Carbon::parse($originalDate)->endOfWeek()->format('Y-m-d');
+
+        // Consider using API
+        $validSlots = Timetable::with(['venue', 'courseSubject.subject'])
+            // courseSubject -> subjectId
+            ->whereHas('courseSubject', function ($query) use ($subjectId) {
+                $query->where('subjectId', $subjectId);
+            })
+            ->where('classType', $classType)
+            ->where('classMode', 'weekly')             
+            ->where('timetableId', '!=', $originalClassId) // != same class
+            ->where('classDate', '>', Carbon::today()->format('Y-m-d')) 
+            ->whereBetween('classDate', [$startOfWeek, $endOfWeek])
+            // != same group
+            ->where(function ($query) use ($myClassGroupId) {
+                $query->where('classGroupId', 'NOT LIKE', "%{$myClassGroupId}%");
+            })
+            ->orderBy('classDate')
+            ->orderBy('startTime')
+            ->get();
+
+        $finalData = $validSlots->map(function ($slot) {
+            return [
+                'timetableId' => $slot->timetableId,
+                'subjectCode' => $slot->courseSubject->subject->subjectCode ?? 'N/A',
+                'dayOfWeek' => $slot->dayOfWeek,
+                'startTime' => $slot->startTime,
+                'endTime' => $slot->endTime,
+                'venueId' => $slot->venueId,
+                'classDate' => $slot->classDate,
+                'type' => $slot->classType,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $finalData
+        ]);
     }
 }

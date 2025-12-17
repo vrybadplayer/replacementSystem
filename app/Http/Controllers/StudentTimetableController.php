@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Mediator\TimetableMediatorInterface; 
+use App\Mediator\TimetableMediatorInterface;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -28,7 +28,7 @@ class StudentTimetableController extends Controller
         // Get the weeks for dropdown (from start of semester, monday)
         $weeks = [];
         $semesterSession = Carbon::create(2025, 11, 3);
-        for($i = 1; $i < 8; $i++) {
+        for ($i = 1; $i < 8; $i++) {
             // Short sem
             $week = $semesterSession->addWeek();
             $label = "Week " . $i;
@@ -44,9 +44,9 @@ class StudentTimetableController extends Controller
 
         // Get all the classes the user has (in the selected week)
         $weeklyClasses = $this->mediator->getCurrentWeekSchedule($userId, $selectedDate);
-        
+
         //dd($weeklyClasses);
-        
+
         // check if public holiday, then type the timeslot (hardcoded)
         $holidays = [
             '2025-12-25' => 'Christmas Day',
@@ -76,24 +76,23 @@ class StudentTimetableController extends Controller
         // Column 1 for UI
         $days = [];
         // Make into easily manipulated Laravel Carbon date object
-        $movingWeek = Carbon::parse($selectedDate); 
+        $movingWeek = Carbon::parse($selectedDate);
 
-        for($i = 0; $i < 7; $i++) {
-            if($i != 0)
+        for ($i = 0; $i < 7; $i++) {
+            if ($i != 0)
                 $movingWeek->addDay();
 
             // $movingWeek is a manipulatable Laravel Carbon date object
             $days[] = ['name' => $movingWeek->format('D'), 'date' => $movingWeek->format('Y-m-d')];
-
         }
 
-        
+
         // Check if Replacement Reminder is needed
         $timetableData = [];
-        $hasReplacement = false; 
+        $hasReplacement = false;
         $replacementClassList = [];
 
-        foreach($weeklyClasses as $class) {
+        foreach ($weeklyClasses as $class) {
             // Check if there is replacement classes
             if ($class['classType'] === 'replacement') {
                 $hasReplacement = true;
@@ -105,13 +104,13 @@ class StudentTimetableController extends Controller
             $note = null;
 
             // If there is a holiday, what holiday is it?
-            if(array_key_exists($class['classDate'], $holidays)){
+            if (array_key_exists($class['classDate'], $holidays)) {
                 $type = "canceled";
                 $event = $holidays[$class['classDate']];
             }
 
             // After filtering normal/replacement/canceled, add the class to the list
-            $day = substr($class['dayOfWeek'], 0, 3); 
+            $day = substr($class['dayOfWeek'], 0, 3);
             $startTime = Carbon::parse($class['startTime']);
             $endTime = Carbon::parse($class['endTime']);
             $duration = $startTime->diffInHours($endTime);
@@ -132,78 +131,27 @@ class StudentTimetableController extends Controller
 
         return view('student.timetableModule.timetable', compact('weeks', 'timeSlots', 'days', 'timetableData', 'hasReplacement', 'replacementClassList'));
     }
-    
+
     // -------------------------------------------------------------------------------------------- (Undone)
     // ----------------------------------- SELECT TIMESLOT PAGE -----------------------------------
     // --------------------------------------------------------------------------------------------
-    public function selectTimeslot(Request $request)
+    public function viewSelectTimeslot(Request $request)
     {
-        // 1. Get Parameters (passed from previous page)
-        // In a real app, you'd use $request->input('subject_code') etc.
-        $selectedSubject = "BMIT3173(L)";
-        $selectedDay = "Monday";
+        $userId = Auth::user()->userId;
 
-        // 2. Logic: Mocking the "Student's Existing Timetable"
-        // These will be displayed as GREYED OUT to show the user their busy slots.
-        $existingSchedule = [
-            'Mon' => [
-                '08:00' => ['duration' => 2, 'subject' => 'BMIT3173(L)', 'venue' => 'DK 4', 'type' => 'existing'],
-            ],
-            'Wed' => [
-                '10:00' => ['duration' => 2, 'subject' => 'BJEL2013(T)', 'venue' => 'K303', 'type' => 'existing'],
-                '13:00' => ['duration' => 2, 'subject' => 'BJEL2013(T)', 'venue' => 'Q207A', 'type' => 'existing'],
-            ],
-        ];
+        $originalClassId = $request->input('original_class_id');
 
-        // 3. Logic: Mocking the "Filtered Valid Replacement Options"
-        // These are the specific slots the Algorithm found for BMIT3173(L).
-        // These will be GREEN and CLICKABLE.
-        $replacementOptions = [
-            'Thu' => [
-                '10:00' => [
-                    'id' => 501, 
-                    'duration' => 2, 
-                    'subject' => 'BMIT3173(L)', 
-                    'venue' => 'DK 4', 
-                    'lecturer' => 'Malarvili',
-                    'type' => 'candidate' // Special type for this page
-                ]
-            ],
-            'Sat' => [
-                '12:00' => [
-                    'id' => 502, 
-                    'duration' => 2, 
-                    'subject' => 'BMIT3173(P)', 
-                    'venue' => 'D203F', 
-                    'lecturer' => 'Ng Yi Ling', 
-                    'type' => 'candidate'
-                ]
-            ]
-        ];
-
-        // 4. Merge Data for the View
-        // We combine them into one $scheduleData array. 
-        // If a collision happens, usually the 'candidate' logic would handle it, 
-        // but here we assume the algorithm already filtered out clashes.
-        $scheduleData = array_merge_recursive($existingSchedule, $replacementOptions);
-
-        // 5. Standard Grid Data
-        $timeSlots = [];
-        for ($hour = 8; $hour <= 22; $hour++) {
-            $timeSlots[] = sprintf("%02d:00", $hour);
+        if (!$originalClassId) {
+            return redirect()->route('replacement.appeal')->with('error', 'No class was selected for replacement.');
         }
-        
-        $days = [
-            ['name' => 'Mon', 'date' => '2025-12-22'],
-            ['name' => 'Tue', 'date' => '2025-12-23'],
-            ['name' => 'Wed', 'date' => '2025-12-24'],
-            ['name' => 'Thu', 'date' => '2025-12-25'],
-            ['name' => 'Fri', 'date' => '2025-12-26'],
-            ['name' => 'Sat', 'date' => '2025-12-27'],
-            ['name' => 'Sun', 'date' => '2025-12-28'],
-        ];
 
-        return view('student.timetableModule.select_timeslot', compact('scheduleData', 'timeSlots', 'days', 'selectedSubject', 'selectedDay'));
+        $validSlots = $this->mediator->getValidReplacementOptions($userId, $originalClassId);
+
+        // For UI
+        $timeSlots = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
+        $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        $originalClass = $this->mediator->getClassDetails($originalClassId);
+
+        return view('student.select_replacement_slot', compact('validSlots', 'timeSlots', 'days', 'originalClass'));
     }
-
 }

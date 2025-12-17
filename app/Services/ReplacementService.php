@@ -25,22 +25,22 @@ class ReplacementService
         try {
             $url = "{$this->baseUrl}/timetable/{$timetableId}";
             Log::info('Fetching timetable by ID from API', ['url' => $url, 'id' => $timetableId]);
-            
+
             $response = Http::timeout(5)->get($url);
 
             if ($response->successful()) {
                 $data = $response->json();
                 $classData = $data['data'] ?? null;
-                
+
                 if ($classData && isset($classData['timetableId'])) {
                     // Load full Eloquent model with relationships from database
                     return Timetable::with(['subject', 'venue', 'classGroup'])
                         ->find($classData['timetableId']);
                 }
-                
+
                 return null;
             }
-            
+
             throw new \Exception('API returned unsuccessful response: ' . $response->status());
         } catch (\Exception $e) {
             Log::error('Failed to fetch timetable by ID from API', [
@@ -63,19 +63,19 @@ class ReplacementService
             // Call the Timetable API instead of replacement-specific endpoint
             $url = "{$this->baseUrl}/timetable";
             Log::info('Fetching timetable from Timetable API', ['url' => $url]);
-            
+
             $response = Http::timeout(5)->get($url);
 
             if ($response->successful()) {
                 $data = $response->json();
                 $classesData = collect($data['data'] ?? []);
-                
+
                 // Filter for future classes only
-                $futureClasses = $classesData->filter(function($class) {
+                $futureClasses = $classesData->filter(function ($class) {
                     $classDate = is_array($class) ? ($class['classDate'] ?? null) : ($class->classDate ?? null);
                     return $classDate && $classDate >= now()->format('Y-m-d');
                 });
-                
+
                 // If we have data, load full Eloquent models with relationships from database
                 if ($futureClasses->isNotEmpty()) {
                     $classIds = $futureClasses->pluck('timetableId')->toArray();
@@ -86,10 +86,10 @@ class ReplacementService
                         ->orderBy('startTime')
                         ->get();
                 }
-                
+
                 return collect([]);
             }
-            
+
             throw new \Exception('API returned unsuccessful response: ' . $response->status());
         } catch (\Exception $e) {
             Log::error('Failed to fetch timetable from API', [
@@ -109,19 +109,19 @@ class ReplacementService
         try {
             $url = "{$this->baseUrl}/replacement/appeals/user/{$userId}";
             Log::info('Fetching user appeals from API', ['url' => $url, 'userId' => $userId]);
-            
+
             $response = Http::timeout(5)->get($url);
 
             if ($response->successful()) {
                 $data = $response->json();
                 $appealsData = $data['data'] ?? [];
-                
+
                 // Convert arrays to objects recursively for view compatibility
-                return collect($appealsData)->map(function($appeal) {
+                return collect($appealsData)->map(function ($appeal) {
                     return $this->arrayToObject($appeal);
                 });
             }
-            
+
             throw new \Exception('API returned unsuccessful response: ' . $response->status());
         } catch (\Exception $e) {
             Log::error('Failed to fetch user appeals from API', [
@@ -140,11 +140,11 @@ class ReplacementService
     {
         try {
             $response = Http::get($this->baseUrl . '/replacement/appeals/' . $appealId);
-            
+
             if ($response->successful() && $response->json('success')) {
                 return $this->arrayToObject($response->json('data'));
             }
-            
+
             return null;
         } catch (\Exception $e) {
             return null;
@@ -160,19 +160,19 @@ class ReplacementService
         try {
             $url = "{$this->baseUrl}/replacement/appeals";
             Log::info('Fetching all appeals from API', ['url' => $url]);
-            
+
             $response = Http::timeout(5)->get($url);
 
             if ($response->successful()) {
                 $data = $response->json();
                 $appealsData = $data['data'] ?? [];
-                
+
                 // Convert arrays to objects recursively for view compatibility
-                return collect($appealsData)->map(function($appeal) {
+                return collect($appealsData)->map(function ($appeal) {
                     return $this->arrayToObject($appeal);
                 });
             }
-            
+
             throw new \Exception('API returned unsuccessful response: ' . $response->status());
         } catch (\Exception $e) {
             Log::error('Failed to fetch appeals from API', [
@@ -212,13 +212,13 @@ class ReplacementService
         try {
             $url = "{$this->baseUrl}/replacement/statistics";
             Log::info('Fetching statistics from API', ['url' => $url]);
-            
+
             $response = Http::timeout(5)->get($url);
 
             if ($response->successful()) {
                 $data = $response->json();
                 $statsData = $data['data'] ?? [];
-                
+
                 return [
                     'total' => $statsData['total_appeals'] ?? 0,
                     'pending' => $statsData['pending_appeals'] ?? 0,
@@ -226,7 +226,7 @@ class ReplacementService
                     'rejected' => $statsData['rejected_appeals'] ?? 0
                 ];
             }
-            
+
             throw new \Exception('API returned unsuccessful response: ' . $response->status());
         } catch (\Exception $e) {
             Log::error('Failed to fetch statistics from API', [
@@ -235,5 +235,20 @@ class ReplacementService
             ]);
             throw new \Exception('Failed to connect to API. Please ensure the API server is running on port 8001.');
         }
+    }
+
+    public function getValidReplacementOptions($filterData)
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
+        $response = Http::get("{$this->baseUrl}/replacement/validOptions", $filterData);
+
+        if ($response->successful()) {
+            return $response->json()['data'] ?? [];
+        }
+
+        return [];
     }
 }

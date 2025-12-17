@@ -12,6 +12,7 @@ use App\Services\TimetableService;
 use App\Services\UserService;
 use App\Services\VenueService;
 use App\Models\CourseSubject;
+use App\Services\ReplacementService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -24,6 +25,7 @@ class TimetableMediator implements TimetableMediatorInterface
     protected $timetableApi;
     protected $venueApi;
     protected $classGroupApi;
+    protected $replacementApi;
 
     public function __construct(
         CourseService $courseApi,
@@ -32,7 +34,8 @@ class TimetableMediator implements TimetableMediatorInterface
         UserService $userApi,
         TimetableService $timetableApi,
         VenueService $venueApi,
-        ClassGroupService $classGroupApi
+        ClassGroupService $classGroupApi,
+        ReplacementService $replacementApi
     ) {
         $this->courseApi = $courseApi;
         $this->subjectApi = $subjectApi;
@@ -41,6 +44,7 @@ class TimetableMediator implements TimetableMediatorInterface
         $this->timetableApi = $timetableApi;
         $this->venueApi = $venueApi;
         $this->classGroupApi = $classGroupApi;
+        $this->replacementApi = $replacementApi;
     }
 
     // ======================================================================================
@@ -406,6 +410,32 @@ class TimetableMediator implements TimetableMediatorInterface
     }
 
     // ======================================================================================================
+    // ====================================== Select Timeslot ===============================================
+    // ======================================================================================================
+    
+    public function getValidReplacementOptions($userId, $originalClassId)
+    {
+        $studentProfile = $this->userApi->getUser($userId);
+        $originalClass = $this->timetableApi->getTimetableById($originalClassId);
+
+        if (!$studentProfile || !$originalClass) {
+            return collect([]);
+        }
+        
+        $filterData = [
+            'userId' => $userId,
+            'originalClassId' => $originalClassId,
+            'originalDate' => $originalClass->classDate,
+            'classGroupId' => $studentProfile['classGroupId'],
+        ];
+
+        // ReplacementController (validReplacementOptions)
+        $validSlots = $this->replacementApi->getValidReplacementOptions($filterData);
+
+        return $validSlots;
+    }
+
+    // ======================================================================================================
     // ====================================== Helper Methods ================================================
     // ======================================================================================================
 
@@ -417,5 +447,9 @@ class TimetableMediator implements TimetableMediatorInterface
     public function getAllVenues()
     {
         return $this->venueApi->getAllVenues();
+    }
+
+    public function getClassDetails($originalClassId) {
+        return $this->timetableApi->getTimetableById($originalClassId);
     }
 }
