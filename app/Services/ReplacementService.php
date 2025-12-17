@@ -242,9 +242,9 @@ class ReplacementService
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_write_close();
         }
-
+        
         $response = Http::get("{$this->baseUrl}/replacement/validOptions", $filterData);
-
+        
         if ($response->successful()) {
             return $response->json()['data'] ?? [];
         }

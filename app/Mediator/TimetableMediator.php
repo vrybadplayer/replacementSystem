@@ -417,7 +417,6 @@ class TimetableMediator implements TimetableMediatorInterface
     {
         $studentProfile = $this->userApi->getUser($userId);
         $originalClass = $this->timetableApi->getTimetableById($originalClassId);
-
         if (!$studentProfile || !$originalClass) {
             return collect([]);
         }
@@ -431,7 +430,6 @@ class TimetableMediator implements TimetableMediatorInterface
 
         // ReplacementController (validReplacementOptions)
         $validSlots = $this->replacementApi->getValidReplacementOptions($filterData);
-
         return $validSlots;
     }
 
