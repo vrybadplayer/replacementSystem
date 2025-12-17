@@ -21,6 +21,10 @@ interface TimetableMediatorInterface {
     public function getFilteredTimetableSlots($courseId, $classGroupId);
     public function updateTimeslot($originalTimetableId, $newData);
 
+    // For Student Select Timeslot Page
+    public function getValidReplacementOptions($userId, $originalClassId);
+    public function getClassDetails($originalClassId);
+
     // Helper Functions
     public function getAllClassGroups();
     public function getAllVenues();
