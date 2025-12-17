@@ -1,0 +1,96 @@
+-- Clean up any test data first
+DELETE FROM timetable WHERE timetableId LIKE 'TT_%';
+
+-- Set base dates
+SET @today = '2025-12-17';  -- Today's date
+SET @original_date = '2025-12-22';  -- The original class date from your image (Monday)
+SET @start_of_week = '2025-12-22';  -- Monday of that week
+SET @end_of_week = '2025-12-28';    -- Sunday of that week
+
+-- 2. VALID REPLACEMENT SLOTS (should appear as GREEN in UI)
+-- These must meet ALL conditions:
+-- 1. Same courseSubjectId (CS0013)
+-- 2. Same classType (Lecture)
+-- 3. Same week (2025-12-22 to 2025-12-28)
+-- 4. After today (2025-12-17)
+-- 5. Different classGroupId (NOT containing "CG006")
+-- 6. Same classMode (weekly)
+
+-- Monday (same day, different group, different time)
+INSERT INTO timetable (timetableId, classGroupId, courseSubjectId, classType, userId, venueId, dayOfWeek, startTime, endTime, classDate, classMode, created_at, updated_at)
+VALUES 
+('T201', 'CG001,CG002,CG003', 'CS0013', 'Lecture', 'U002', 'V003', 'Monday', '14:00:00', '16:00:00', '2025-12-22', 'weekly', NOW(), NOW());
+
+-- Tuesday (next day, different group)
+INSERT INTO timetable (timetableId, classGroupId, courseSubjectId, classType, userId, venueId, dayOfWeek, startTime, endTime, classDate, classMode, created_at, updated_at)
+VALUES 
+('T202', 'CG009,CG010', 'CS0013', 'Lecture', 'U002', 'V004', 'Tuesday', '08:00:00', '10:00:00', '2025-12-23', 'weekly', NOW(), NOW());
+
+-- Wednesday
+INSERT INTO timetable (timetableId, classGroupId, courseSubjectId, classType, userId, venueId, dayOfWeek, startTime, endTime, classDate, classMode, created_at, updated_at)
+VALUES 
+('T203', 'CG011,CG012', 'CS0013', 'Lecture', 'U002', 'V005', 'Wednesday', '16:00:00', '18:00:00', '2025-12-24', 'weekly', NOW(), NOW());
+
+-- Thursday
+INSERT INTO timetable (timetableId, classGroupId, courseSubjectId, classType, userId, venueId, dayOfWeek, startTime, endTime, classDate, classMode, created_at, updated_at)
+VALUES 
+('T204', 'CG013', 'CS0013', 'Lecture', 'U002', 'V006', 'Thursday', '12:00:00', '14:00:00', '2025-12-25', 'weekly', NOW(), NOW());
+
+-- Friday
+INSERT INTO timetable (timetableId, classGroupId, courseSubjectId, classType, userId, venueId, dayOfWeek, startTime, endTime, classDate, classMode, created_at, updated_at)
+VALUES 
+('T205', 'CG014,CG015', 'CS0013', 'Lecture', 'U002', 'V007', 'Friday', '10:00:00', '12:00:00', '2025-12-26', 'weekly', NOW(), NOW());
+
+-- 3. INVALID SLOTS (should NOT appear or appear as GRAY in UI)
+-- These fail one or more conditions:
+
+-- Same group (contains CG006) - should be filtered out
+INSERT INTO timetable (timetableId, classGroupId, courseSubjectId, classType, userId, venueId, dayOfWeek, startTime, endTime, classDate, classMode, created_at, updated_at)
+VALUES 
+('T301', 'CG004,CG005,CG006', 'CS0013', 'Lecture', 'U002', 'V008', 'Tuesday', '10:00:00', '12:00:00', '2025-12-23', 'weekly', NOW(), NOW());
+
+-- Different subject - should be filtered out
+INSERT INTO timetable (timetableId, classGroupId, courseSubjectId, classType, userId, venueId, dayOfWeek, startTime, endTime, classDate, classMode, created_at, updated_at)
+VALUES 
+('T302', 'CG016,CG017', 'CS0014', 'Lecture', 'U002', 'V009', 'Wednesday', '14:00:00', '16:00:00', '2025-12-24', 'weekly', NOW(), NOW());
+
+-- Different class type - should be filtered out
+INSERT INTO timetable (timetableId, classGroupId, courseSubjectId, classType, userId, venueId, dayOfWeek, startTime, endTime, classDate, classMode, created_at, updated_at)
+VALUES 
+('T303', 'CG018,CG019', 'CS0013', 'Tutorial', 'U002', 'V010', 'Thursday', '08:00:00', '10:00:00', '2025-12-25', 'weekly', NOW(), NOW());
+
+-- Different week (next week) - should be filtered out
+INSERT INTO timetable (timetableId, classGroupId, courseSubjectId, classType, userId, venueId, dayOfWeek, startTime, endTime, classDate, classMode, created_at, updated_at)
+VALUES 
+('T304', 'CG020,CG021', 'CS0013', 'Lecture', 'U002', 'V011', 'Monday', '10:00:00', '12:00:00', '2025-12-29', 'weekly', NOW(), NOW());
+
+-- Past date (before today) - should be filtered out
+INSERT INTO timetable (timetableId, classGroupId, courseSubjectId, classType, userId, venueId, dayOfWeek, startTime, endTime, classDate, classMode, created_at, updated_at)
+VALUES 
+('T305', 'CG022,CG023', 'CS0013', 'Lecture', 'U002', 'V012', 'Monday', '10:00:00', '12:00:00', '2025-12-15', 'weekly', NOW(), NOW());
+
+-- 4. OTHER CLASSES FOR THE STUDENT (CG006) - to show in select_class.blade.php
+-- These would appear as available classes to select for replacement appeal
+INSERT INTO timetable (timetableId, classGroupId, courseSubjectId, classType, userId, venueId, dayOfWeek, startTime, endTime, classDate, classMode, created_at, updated_at)
+VALUES 
+-- Another class for CG006 (different subject)
+('T401', 'CG005,CG006,CG007', 'CS0010', 'Lecture', 'U002', 'V013', 'Tuesday', '08:00:00', '10:00:00', '2025-12-23', 'weekly', NOW(), NOW()),
+
+-- Another class for CG006 (different subject)
+('T402', 'CG006,CG007,CG008', 'CS0015', 'Tutorial', 'U002', 'V014', 'Wednesday', '14:00:00', '16:00:00', '2025-12-24', 'weekly', NOW(), NOW()),
+
+-- Another class for CG006 (different subject, different week)
+('T403', 'CG005,CG006', 'CS0020', 'Lecture', 'U002', 'V015', 'Monday', '10:00:00', '12:00:00', '2025-12-29', 'weekly', NOW(), NOW());
+
+-- 5. REPLACEMENT OPTIONS FOR OTHER SUBJECTS (to test different scenarios)
+-- Valid replacements for CS0010 (if student selects T301)
+INSERT INTO timetable (timetableId, classGroupId, courseSubjectId, classType, userId, venueId, dayOfWeek, startTime, endTime, classDate, classMode, created_at, updated_at)
+VALUES 
+('T501', 'CG009,CG010', 'CS0010', 'Lecture', 'U002', 'V016', 'Thursday', '10:00:00', '12:00:00', '2025-12-25', 'weekly', NOW(), NOW()),
+
+('T502', 'CG011,CG012', 'CS0010', 'Lecture', 'U002', 'V017', 'Friday', '14:00:00', '16:00:00', '2025-12-26', 'weekly', NOW(), NOW());
+
+-- Valid replacements for CS0015 (tutorial - if student selects T302)
+INSERT INTO timetable (timetableId, classGroupId, courseSubjectId, classType, userId, venueId, dayOfWeek, startTime, endTime, classDate, classMode, created_at, updated_at)
+VALUES 
+('T601', 'CG013,CG014', 'CS0015', 'Tutorial', 'U002', 'V018', 'Thursday', '16:00:00', '18:00:00', '2025-12-25', 'weekly', NOW(), NOW());
