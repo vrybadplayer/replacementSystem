@@ -7,8 +7,8 @@ use Carbon\Carbon;
 use App\Models\ReplacementAppeal;
 use App\Models\Timetable;
 use App\Services\TimetableService;
-use App\Models\User;
 use App\Services\ReplacementService;
+use App\Services\UserService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -17,11 +17,13 @@ class ReplacementController extends Controller
 {
     protected $replacementService;
     protected $timetableService;
+    protected $userService;
 
-    public function __construct(ReplacementService $replacementService, TimetableService $timetableService)
+    public function __construct(ReplacementService $replacementService, TimetableService $timetableService, UserService $userService)
     {
         $this->replacementService = $replacementService;
         $this->timetableService = $timetableService;
+        $this->userService = $userService;
     }
 
     /**
@@ -36,9 +38,7 @@ class ReplacementController extends Controller
 
         if (!$requestedClassId) {
             // If no class selected, show available classes for appeal
-            // Call service to get available classes from API
-            $availableClasses = $this->replacementService->getAvailableClassesFromApi();
-
+            $availableClasses = $this->getFutureClassesDirectly(Auth::user()->userId);
             return view('student.replacementModule.select_class', compact('availableClasses'));
         }
 
@@ -61,6 +61,26 @@ class ReplacementController extends Controller
 
         return view('student.replacementModule.appeal_form', compact('originalClass', 'replacementClass', 'student'));
     }
+
+    // Helper function for showAppealForm 
+    private function getFutureClassesDirectly($userId)
+    {
+        $studentProfile = $this->userService->getUser($userId);
+
+        $classGroupId = $studentProfile['classGroupId'];
+        $today = Carbon::today()->format('Y-m-d');
+
+        return Timetable::with(['venue', 'courseSubject.subject'])
+            ->where(function ($query) use ($classGroupId) {
+                $query->where('classGroupId', $classGroupId)
+                    ->orWhereRaw("FIND_IN_SET(?, classGroupId) > 0", [$classGroupId]);
+            })
+            ->where('classDate', '>', $today)
+            ->orderBy('classDate')
+            ->orderBy('startTime')
+            ->get();
+    }
+
 
     /**
      * Submit the replacement appeal
@@ -556,9 +576,9 @@ class ReplacementController extends Controller
                 $query->where('subjectId', $subjectId);
             })
             ->where('classType', $classType)
-            ->where('classMode', 'weekly')             
+            ->where('classMode', 'weekly')
             ->where('timetableId', '!=', $originalClassId) // != same class
-            ->where('classDate', '>', Carbon::today()->format('Y-m-d')) 
+            ->where('classDate', '>', Carbon::today()->format('Y-m-d'))
             ->whereBetween('classDate', [$startOfWeek, $endOfWeek])
             // != same group
             ->where(function ($query) use ($myClassGroupId) {

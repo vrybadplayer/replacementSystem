@@ -128,22 +128,35 @@
                         @foreach($availableClasses as $class)
                             <div class="class-card">
                                 <div class="class-header">
-                                    {{ $class->subject->subjectId }} - {{ $class->subject->subjectName }}
+                                    {{-- Fixed: Access subject through courseSubject --}}
+                                    @if($class->courseSubject && $class->courseSubject->subject)
+                                        {{ $class->courseSubject->subject->subjectCode }} - 
+                                        {{ $class->courseSubject->subject->subjectName }}
+                                    @else
+                                        Subject Not Available
+                                    @endif
                                 </div>
                                 <div class="class-info">
-                                    <strong>Subject Code:</strong> {{ $class->subject->subjectCode }}
+                                    <strong>Subject Code:</strong> 
+                                    {{ $class->courseSubject->subject->subjectCode ?? 'N/A' }}
                                 </div>
                                 <div class="class-info">
-                                    <strong>Date:</strong> {{ date('D, d M Y', strtotime($class->classDate)) }}
+                                    {{-- Fixed: Format date properly --}}
+                                    <strong>Date:</strong> 
+                                    {{ \Carbon\Carbon::parse($class->classDate)->format('D, d M Y') }}
                                 </div>
                                 <div class="class-info">
                                     <strong>Type:</strong> {{ $class->classType }}
                                 </div>
                                 <div class="class-info">
-                                    <strong>Time:</strong> {{ $class->startTime }} - {{ $class->endTime }}
+                                    {{-- Fixed: Format time properly (remove date) --}}
+                                    <strong>Time:</strong> 
+                                    {{ \Carbon\Carbon::parse($class->startTime)->format('H:i') }} - 
+                                    {{ \Carbon\Carbon::parse($class->endTime)->format('H:i') }}
                                 </div>
                                 <div class="class-info">
-                                    <strong>Venue:</strong> {{ $class->venue->venueId }}
+                                    <strong>Venue:</strong> 
+                                    {{ $class->venue->venueId ?? 'N/A' }} 
                                 </div>
                                 <div class="class-info">
                                     <strong>Group:</strong> {{ $class->classGroupId }}
@@ -153,16 +166,16 @@
                                 </a>
                             </div>
                         @endforeach
-                    @else
-                        <div class="no-classes">
-                            <h3>No Available Classes</h3>
-                            <p style="color: #95a5a6;">There are no upcoming classes available for replacement appeals.</p>
-                            <p style="margin-top: 20px;">
-                                <a href="{{ route('replacement.myAppeals') }}" style="color: #3498db;">View My Appeals</a>
-                            </p>
-                        </div>
-                    @endif
-                </div>
+                    </div>
+                @else
+                    <div class="no-classes">
+                        <h3>No Available Classes</h3>
+                        <p style="color: #95a5a6;">There are no upcoming classes available for replacement appeals.</p>
+                        <p style="margin-top: 20px;">
+                            <a href="{{ route('replacement.myAppeals') }}" style="color: #3498db;">View My Appeals</a>
+                        </p>
+                    </div>
+                @endif
             </div>
         </main>
     </div>
