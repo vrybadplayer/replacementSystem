@@ -132,26 +132,139 @@ class StudentTimetableController extends Controller
         return view('student.timetableModule.timetable', compact('weeks', 'timeSlots', 'days', 'timetableData', 'hasReplacement', 'replacementClassList'));
     }
 
-    // -------------------------------------------------------------------------------------------- (Undone)
+    // --------------------------------------------------------------------------------------------
     // ----------------------------------- SELECT TIMESLOT PAGE -----------------------------------
     // --------------------------------------------------------------------------------------------
     public function viewSelectTimeslot(Request $request)
     {
         $userId = Auth::user()->userId;
 
-        $originalClassId = $request->input('original_class_id');
+        // Get data from session instead of request parameter
+        $selectedClass = session('replacement_selected_class');
 
-        if (!$originalClassId) {
+        if (!$selectedClass) {
             return redirect()->route('replacement.appeal')->with('error', 'No class was selected for replacement.');
         }
+
+        $originalClassId = $selectedClass['timetableId'];
 
         $validSlots = $this->mediator->getValidReplacementOptions($userId, $originalClassId);
 
         // For UI
         $timeSlots = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
-        $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        $originalClass = $this->mediator->getClassDetails($originalClassId);
+        $days = [];
+        $startDate = Carbon::tomorrow();
+        for ($i = 0; $i < 7; $i++) {
+            $date = $startDate->copy()->addDays($i);
+            $days[] = [
+                'name' => $date->format('D'), // 'Mon', 'Tue', etc
+                'date' => $date->format('Y-m-d') // Full date
+            ];
+        }
+        $originalClass = (object) $selectedClass; // Convert to object for easy access in view
 
-        return view('student.select_replacement_slot', compact('validSlots', 'timeSlots', 'days', 'originalClass'));
+        // Fix: Add the missing variables that the view expects
+        $selectedSubject = $originalClass->subjectName ?? 'Unknown Subject';
+        $selectedDay = date('l', strtotime($originalClass->classDate)) ?? 'Unknown Day';
+
+        // Fix: Create scheduleData structure for the timetable grid
+        // Transform $validSlots into the $scheduleData format
+        $scheduleData = [];
+
+        // Get next 7 days starting from tomorrow
+        $startDate = Carbon::tomorrow();
+        $daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+        // Initialize empty schedule for next 7 days
+        for ($i = 0; $i < 7; $i++) {
+            $date = $startDate->copy()->addDays($i);
+            $dayName = $date->format('D');
+            $shortDayName = substr($dayName, 0, 3); // Get "Mon", "Tue", etc
+
+            // Initialize time slots for this day
+            foreach ($timeSlots as $time) {
+                $scheduleData[$shortDayName][$time] = null;
+            }
+        }
+
+        // Mark existing/occupied slots (you might need to get these from your mediator)
+        // For now, we'll mark the original class slot as existing
+        $originalDay = Carbon::parse($originalClass->classDate)->format('D');
+        $originalShortDay = substr($originalDay, 0, 3);
+        $originalTime = date('H:i', strtotime($originalClass->startTime));
+
+        if (isset($scheduleData[$originalShortDay][$originalTime])) {
+            $scheduleData[$originalShortDay][$originalTime] = [
+                'subject' => $originalClass->subjectName,
+                'venue' => $originalClass->venueId ?? 'N/A',
+                'duration' => 1,
+                'type' => 'existing',
+                'id' => $originalClass->timetableId
+            ];
+        }
+
+        // Mark valid replacement slots as candidates
+        if ($validSlots && is_iterable($validSlots)) {
+            foreach ($validSlots as $slot) {
+                if (isset($slot['classDate']) && isset($slot['startTime'])) {
+                    $slotDay = Carbon::parse($slot['classDate'])->format('D');
+                    $shortSlotDay = substr($slotDay, 0, 3);
+                    $slotTime = date('H:i', strtotime($slot['startTime']));
+
+                    // Find matching time slot (closest match)
+                    $closestTime = null;
+                    foreach ($timeSlots as $timeSlot) {
+                        if (abs(strtotime($timeSlot) - strtotime($slotTime)) < 3600) { // Within 1 hour
+                            $closestTime = $timeSlot;
+                            break;
+                        }
+                    }
+
+                    if ($closestTime && isset($scheduleData[$shortSlotDay][$closestTime])) {
+                        $scheduleData[$shortSlotDay][$closestTime] = [
+                            'subject' => $slot['subjectName'] ?? $originalClass->subjectName,
+                            'venue' => $slot['venueId'] ?? 'N/A',
+                            'duration' => 1,
+                            'type' => 'candidate',
+                            'id' => $slot['timetableId'] ?? null,
+                            'lecturer' => $slot['lecturerName'] ?? null
+                        ];
+                    }
+                }
+            }
+        }
+
+        return view('student.timetableModule.select_timeslot', compact(
+            'validSlots',
+            'timeSlots',
+            'days',
+            'originalClass',
+            'selectedSubject',    // Add this
+            'selectedDay',        // Add this
+            'scheduleData'        // Add this (now populated)
+        ));
+    }
+
+    // Store selected class data in session
+    public function storeSelectedClass(Request $request)
+    {
+        session([
+            'replacement_selected_class' => [
+                'timetableId' => $request->timetableId,
+                'courseSubjectId' => $request->courseSubjectId,
+                'classType' => $request->classType,
+                'classDate' => $request->classDate,
+                'startTime' => $request->startTime,
+                'endTime' => $request->endTime,
+                'venueId' => $request->venueId,
+                'classGroupId' => $request->classGroupId,
+                'subjectCode' => $request->subjectCode,
+                'subjectName' => $request->subjectName,
+                'selected_at' => now()->toDateTimeString()
+            ]
+        ]);
+
+        // Go back
+        return redirect()->route('student.selectTimeslot');
     }
 }

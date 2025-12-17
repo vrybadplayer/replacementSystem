@@ -29,7 +29,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', function () {
         return view('admin_dashboard');
     })->name('admin.dashboard');
-    
+
     // User Management
     Route::get('/users', [AdminUserController::class, 'index'])->name('admin.user.index');
     Route::get('/users/create', [AdminUserController::class, 'create'])->name('admin.user.create');
@@ -40,7 +40,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::delete('/users/{userId}', [AdminUserController::class, 'delete'])->name('admin.user.delete');
     Route::post('/users/{userId}/reset-password', [AdminUserController::class, 'resetPassword'])->name('admin.user.resetPassword');
     Route::get('/users/{userId}/password-reset-confirm', [AdminUserController::class, 'passwordResetConfirm'])->name('admin.user.passwordResetConfirm');
-    
+
     // Admin-specific routes
     Route::get('/timetableAssignment', [AdminTimetableController::class, 'viewTimetableAssignment'])->name('admin.timetableAssignment');
     Route::get('/courses', [CourseController::class, 'courseListView'])->name('admin.courses');
@@ -81,15 +81,15 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->group(function (
     Route::get('/dashboard', function () {
         return view('student_dashboard');
     })->name('student.dashboard');
-    
+
     // Student Profile module
     Route::get('/profile', [UserController::class, 'showProfile'])->name('student.profile');
     Route::post('/change-password', [UserController::class, 'changePassword'])->name('student.changePassword');
-    
+
     // Timetable module
     Route::get('/timetable', [StudentTimetableController::class, 'index'])->name('student.timetable');
-    Route::get('/replacementOptions', [StudentTimetableController::class, 'viewOptions'])->name('student.replacementOptions');
-    Route::get('/selectTimeslot', [StudentTimetableController::class, 'selectTimeslot'])->name('student.selectTimeslot');
+    Route::get('/selectTimeslot', [StudentTimetableController::class, 'viewSelectTimeslot'])->name('student.selectTimeslot');
+    Route::post('/selectTimeslot/store', [StudentTimetableController::class, 'storeSelectedClass'])->name('student.selectTimeslot.store');
     
     // Replacement Appeal module
     Route::get('/replacement/appeal', [ReplacementController::class, 'showAppealForm'])->name('replacement.appeal');

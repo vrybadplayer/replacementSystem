@@ -28,14 +28,6 @@
             <span class="menu-text">My Timetable</span>
         </a>
 
-        <!-- Select Timeslot -->
-        <a href="{{ route('student.selectTimeslot') }}" class="menu-item {{ request()->routeIs('student.selectTimeslot') ? 'active' : '' }}">
-            <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span class="menu-text">Select Timeslot</span>
-        </a>
-
         <!-- Appeals -->
         <a href="{{ route('replacement.appeal') }}" class="menu-item {{ request()->routeIs('replacement.appeal') ? 'active' : '' }}">
             <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">

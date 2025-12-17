@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -50,7 +51,7 @@
         }
 
         .class-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             transform: translateY(-2px);
         }
 
@@ -100,6 +101,7 @@
         }
     </style>
 </head>
+
 <body>
     <x-header title="Student Portal" />
 
@@ -114,9 +116,9 @@
                 </div>
 
                 @if(session('error'))
-                    <div class="alert alert-error">
-                        ✗ {{ session('error') }}
-                    </div>
+                <div class="alert alert-error">
+                    ✗ {{ session('error') }}
+                </div>
                 @endif
 
                 <div class="alert alert-info">
@@ -124,57 +126,68 @@
                 </div>
 
                 @if($availableClasses->count() > 0)
-                    <div class="classes-grid">
-                        @foreach($availableClasses as $class)
-                            <div class="class-card">
-                                <div class="class-header">
-                                    {{-- Fixed: Access subject through courseSubject --}}
-                                    @if($class->courseSubject && $class->courseSubject->subject)
-                                        {{ $class->courseSubject->subject->subjectCode }} - 
-                                        {{ $class->courseSubject->subject->subjectName }}
-                                    @else
-                                        Subject Not Available
-                                    @endif
-                                </div>
-                                <div class="class-info">
-                                    <strong>Subject Code:</strong> 
-                                    {{ $class->courseSubject->subject->subjectCode ?? 'N/A' }}
-                                </div>
-                                <div class="class-info">
-                                    {{-- Fixed: Format date properly --}}
-                                    <strong>Date:</strong> 
-                                    {{ \Carbon\Carbon::parse($class->classDate)->format('D, d M Y') }}
-                                </div>
-                                <div class="class-info">
-                                    <strong>Type:</strong> {{ $class->classType }}
-                                </div>
-                                <div class="class-info">
-                                    {{-- Fixed: Format time properly (remove date) --}}
-                                    <strong>Time:</strong> 
-                                    {{ \Carbon\Carbon::parse($class->startTime)->format('H:i') }} - 
-                                    {{ \Carbon\Carbon::parse($class->endTime)->format('H:i') }}
-                                </div>
-                                <div class="class-info">
-                                    <strong>Venue:</strong> 
-                                    {{ $class->venue->venueId ?? 'N/A' }} 
-                                </div>
-                                <div class="class-info">
-                                    <strong>Group:</strong> {{ $class->classGroupId }}
-                                </div>
-                                <a href="{{ route('replacement.appeal', ['class_id' => $class->timetableId]) }}" class="btn-select">
-                                    Select This Class
-                                </a>
-                            </div>
-                        @endforeach
+                <div class="classes-grid">
+                    @foreach($availableClasses as $class)
+                    <div class="class-card">
+                        <div class="class-header">
+                            {{-- Fixed: Access subject through courseSubject --}}
+                            @if($class->courseSubject && $class->courseSubject->subject)
+                            {{ $class->courseSubject->subject->subjectCode }} -
+                            {{ $class->courseSubject->subject->subjectName }}
+                            @else
+                            Subject Not Available
+                            @endif
+                        </div>
+                        <div class="class-info">
+                            <strong>Subject Code:</strong>
+                            {{ $class->courseSubject->subject->subjectCode ?? 'N/A' }}
+                        </div>
+                        <div class="class-info">
+                            {{-- Fixed: Format date properly --}}
+                            <strong>Date:</strong>
+                            {{ \Carbon\Carbon::parse($class->classDate)->format('D, d M Y') }}
+                        </div>
+                        <div class="class-info">
+                            <strong>Type:</strong> {{ $class->classType }}
+                        </div>
+                        <div class="class-info">
+                            {{-- Fixed: Format time properly (remove date) --}}
+                            <strong>Time:</strong>
+                            {{ \Carbon\Carbon::parse($class->startTime)->format('H:i') }} -
+                            {{ \Carbon\Carbon::parse($class->endTime)->format('H:i') }}
+                        </div>
+                        <div class="class-info">
+                            <strong>Venue:</strong>
+                            {{ $class->venue->venueId ?? 'N/A' }}
+                        </div>
+                        <div class="class-info">
+                            <strong>Group:</strong> {{ $class->classGroupId }}
+                        </div>
+                        <form method="POST" action="{{ route('student.selectTimeslot.store') }}" style="display: inline;">
+                            @csrf
+                            <input type="hidden" name="timetableId" value="{{ $class->timetableId }}">
+                            <input type="hidden" name="courseSubjectId" value="{{ $class->courseSubjectId }}">
+                            <input type="hidden" name="classType" value="{{ $class->classType }}">
+                            <input type="hidden" name="classDate" value="{{ $class->classDate }}">
+                            <input type="hidden" name="startTime" value="{{ $class->startTime }}">
+                            <input type="hidden" name="endTime" value="{{ $class->endTime }}">
+                            <input type="hidden" name="venueId" value="{{ $class->venueId }}">
+                            <input type="hidden" name="classGroupId" value="{{ $class->classGroupId }}">
+                            <input type="hidden" name="subjectCode" value="{{ $class->courseSubject->subject->subjectCode ?? '' }}">
+                            <input type="hidden" name="subjectName" value="{{ $class->courseSubject->subject->subjectName ?? '' }}">
+                            <button type="submit" class="btn-select">Select This Class</button>
+                        </form>
                     </div>
+                    @endforeach
+                </div>
                 @else
-                    <div class="no-classes">
-                        <h3>No Available Classes</h3>
-                        <p style="color: #95a5a6;">There are no upcoming classes available for replacement appeals.</p>
-                        <p style="margin-top: 20px;">
-                            <a href="{{ route('replacement.myAppeals') }}" style="color: #3498db;">View My Appeals</a>
-                        </p>
-                    </div>
+                <div class="no-classes">
+                    <h3>No Available Classes</h3>
+                    <p style="color: #95a5a6;">There are no upcoming classes available for replacement appeals.</p>
+                    <p style="margin-top: 20px;">
+                        <a href="{{ route('replacement.myAppeals') }}" style="color: #3498db;">View My Appeals</a>
+                    </p>
+                </div>
                 @endif
             </div>
         </main>
@@ -182,4 +195,5 @@
 
     <script src="{{ asset('js/sidebar.js') }}"></script>
 </body>
+
 </html>

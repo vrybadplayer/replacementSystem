@@ -412,7 +412,7 @@ class TimetableMediator implements TimetableMediatorInterface
     // ======================================================================================================
     // ====================================== Select Timeslot ===============================================
     // ======================================================================================================
-    
+
     public function getValidReplacementOptions($userId, $originalClassId)
     {
         $studentProfile = $this->userApi->getUser($userId);
@@ -421,11 +421,11 @@ class TimetableMediator implements TimetableMediatorInterface
         if (!$studentProfile || !$originalClass) {
             return collect([]);
         }
-        
+
         $filterData = [
             'userId' => $userId,
             'originalClassId' => $originalClassId,
-            'originalDate' => $originalClass->classDate,
+            'originalDate' => $originalClass['classDate'],
             'classGroupId' => $studentProfile['classGroupId'],
         ];
 
@@ -449,7 +449,8 @@ class TimetableMediator implements TimetableMediatorInterface
         return $this->venueApi->getAllVenues();
     }
 
-    public function getClassDetails($originalClassId) {
+    public function getClassDetails($originalClassId)
+    {
         return $this->timetableApi->getTimetableById($originalClassId);
     }
 }

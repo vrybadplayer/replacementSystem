@@ -28,6 +28,8 @@
                 <div class="selection-details">
                     <span>Subject: <strong>{{ $selectedSubject }}</strong></span>
                     <span>Day of Week: <strong>{{ $selectedDay }}</strong></span>
+                    <span>Date: <strong>{{ \Carbon\Carbon::parse($originalClass->classDate)->format('d M Y') }}</strong></span>
+                    <span>Time: <strong>{{ \Carbon\Carbon::parse($originalClass->startTime)->format('H:i') }} - {{ \Carbon\Carbon::parse($originalClass->endTime)->format('H:i') }}</strong></span>
                 </div>
             </div>
 
@@ -57,39 +59,41 @@
                                         @continue
                                     @endif
 
-                                    @if(isset($scheduleData[$day['name']][$time]))
+                                    @if(isset($scheduleData[$day['name']][$time]) && is_array($scheduleData[$day['name']][$time]) && !empty($scheduleData[$day['name']][$time]))
                                         @php 
                                             $event = $scheduleData[$day['name']][$time];
-                                            // Handle cases where multiple classes might define the same slot in array_merge
-                                            // For this mock, we assume simple structure.
-                                            if(is_array($event) && isset($event[0])) $event = $event[0]; 
                                             
-                                            $skipNext = $event['duration'] - 1; 
+                                            // Handle cases where multiple classes might define the same slot
+                                            if (isset($event[0]) && is_array($event[0])) {
+                                                $event = $event[0];
+                                            }
+                                            
+                                            $skipNext = isset($event['duration']) ? ($event['duration'] - 1) : 0;
 
                                             // Determine Class based on 'type' set in Controller
-                                            $cssClass = match($event['type']) {
+                                            $cssClass = match($event['type'] ?? 'existing') {
                                                 'existing' => 'slot-existing',
                                                 'candidate' => 'slot-candidate',
                                                 default => 'slot-existing'
                                             };
                                         @endphp
 
-                                        <td colspan="{{ $event['duration'] }}">
+                                        <td colspan="{{ $event['duration'] ?? 1 }}">
                                             <!-- Logic: Only Candidates are links -->
-                                            @if($event['type'] === 'candidate')
-                                                <a href="{{ route('replacement.appeal', ['class_id' => $event['id']]) }}" class="class-slot {{ $cssClass }}">
+                                            @if(($event['type'] ?? 'existing') === 'candidate')
+                                                <a href="{{ route('replacement.appeal', ['class_id' => $event['id'] ?? '']) }}" class="class-slot {{ $cssClass }}">
                                             @else
                                                 <div class="class-slot {{ $cssClass }}">
                                             @endif
                                                 
-                                                <div class="slot-subject">{{ $event['subject'] }}</div>
-                                                <div class="slot-info">{{ $event['venue'] }}</div>
+                                                <div class="slot-subject">{{ $event['subject'] ?? 'N/A' }}</div>
+                                                <div class="slot-info">{{ $event['venue'] ?? 'N/A' }}</div>
                                                 
                                                 @if(isset($event['lecturer']))
                                                 <div class="slot-info">{{ $event['lecturer'] }}</div>
                                                 @endif
 
-                                            @if($event['type'] === 'candidate')
+                                            @if(($event['type'] ?? 'existing') === 'candidate')
                                                 </a>
                                             @else
                                                 </div>
@@ -105,11 +109,32 @@
                 </table>
             </div>
 
+            <!-- Debug Info (remove in production) -->
+            <div style="margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+                <h3>Debug Information:</h3>
+                <p><strong>Valid Slots Count:</strong> {{ is_countable($validSlots) ? count($validSlots) : 'N/A' }}</p>
+                <p><strong>Original Class ID:</strong> {{ $originalClass->timetableId ?? 'N/A' }}</p>
+                <p><strong>Schedule Data Structure:</strong> 
+                    @foreach($days as $day)
+                        {{ $day['name'] }}: 
+                        @php
+                            $slotCount = 0;
+                            foreach($timeSlots as $time) {
+                                if(isset($scheduleData[$day['name']][$time]) && is_array($scheduleData[$day['name']][$time])) {
+                                    $slotCount++;
+                                }
+                            }
+                        @endphp
+                        {{ $slotCount }} slots |
+                    @endforeach
+                </p>
+            </div>
+
             <!-- Simple Legend -->
             <div style="margin-top: 1.5rem; display: flex; gap: 1.5rem; font-size: 0.9rem;">
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <div style="width:20px; height:20px; background-color:#15803d; border-radius:4px;"></div>
-                    <span>Valid Option</span>
+                    <span>Valid Option (Clickable)</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <div style="width:20px; height:20px; background-color:#9ca3af; border-radius:4px;"></div>
