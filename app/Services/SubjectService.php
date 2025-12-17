@@ -105,4 +105,16 @@ class SubjectService
 
         return $response->json()['data'] ?? $response->json();
     }
+
+    public function getSubjectByCourseSubject($courseSubjectId)
+    {
+        $response = Http::get($this->baseUrl . '/subject/byCourseSubject/' . $courseSubjectId);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'] ?? null;
+        }
+
+        return null;
+    }
 }

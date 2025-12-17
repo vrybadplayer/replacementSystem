@@ -22,12 +22,12 @@ class CourseSubjectController extends Controller
     public function courseSubjectListView(Request $request)
     {
         $allCourseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
-        
+
         $perPage = 10;
         $currentPage = $request->get('page', 1);
         $total = count($allCourseSubjects);
         $items = array_slice($allCourseSubjects, ($currentPage - 1) * $perPage, $perPage);
-        
+
         $courseSubjects = new LengthAwarePaginator(
             $items,
             $total,
@@ -35,7 +35,7 @@ class CourseSubjectController extends Controller
             $currentPage,
             ['path' => $request->url(), 'query' => $request->query()]
         );
-        
+
         return view('admin.courseModule.listCourseSubject', compact('courseSubjects'));
     }
 
@@ -190,5 +190,20 @@ class CourseSubjectController extends Controller
 
         // Return just the data
         return response()->json($courseSubject, 200);
+    }
+
+    // GET /api/courseSubjects/byCourse/{courseId}
+    public function getCourseSubjectsByCourse($courseId)
+    {
+        // Direct database query in controller
+        $courseSubjectIds = CourseSubject::where('courseId', $courseId)
+            ->pluck('courseSubjectId')
+            ->toArray();
+
+        return response()->json([
+            'success' => true,
+            'data' => $courseSubjectIds,
+            'count' => count($courseSubjectIds)
+        ]);
     }
 }

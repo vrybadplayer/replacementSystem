@@ -11,7 +11,7 @@ class CourseSubjectService
 {
     protected $baseUrl = 'http://127.0.0.1:8001/api';
 
-    
+
     function fetchFromApi(string $endpoint): array
     {
         $url = "{$this->baseUrl}/{$endpoint}";
@@ -68,22 +68,34 @@ class CourseSubjectService
 
         return $response->json()['data'] ?? $response->json();
     }
-    
+
 
     public function fetchCourseSubjectWithForeignKeys($subjectId, $courseId)
     {
         $courseSubject = CourseSubject::where('subjectId', $subjectId)
             ->where('courseId', $courseId)
             ->first();
-        
+
         if (!$courseSubject) {
             return null;
         }
-        
+
         return [
             'courseSubjectId' => $courseSubject->courseSubjectId,
             'courseId' => $courseSubject->courseId,
             'subjectId' => $courseSubject->subjectId,
         ];
+    }
+
+    public function getCourseSubjectsByCourse($courseId)
+    {
+        $response = Http::get($this->baseUrl . '/courseSubjects/byCourse/' . $courseId);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'] ?? [];
+        }
+
+        return [];
     }
 }

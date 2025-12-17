@@ -6,19 +6,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Facades\CourseSubjectManagementFacade;
 use App\Models\Subject;
+use App\Models\CourseSubject;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class SubjectController extends Controller
 {
+    
     public function subjectListView(Request $request)
     {
         $allSubjects = CourseSubjectManagementFacade::getSubjectsForViewFromApi();
-        
+
         $perPage = 10;
         $currentPage = $request->get('page', 1);
         $total = count($allSubjects);
         $items = array_slice($allSubjects, ($currentPage - 1) * $perPage, $perPage);
-        
+
         $subjects = new LengthAwarePaginator(
             $items,
             $total,
@@ -26,7 +28,7 @@ class SubjectController extends Controller
             $currentPage,
             ['path' => $request->url(), 'query' => $request->query()]
         );
-        
+
         return view('admin.courseModule.listSubject', compact('subjects'));
     }
 
@@ -171,5 +173,28 @@ class SubjectController extends Controller
                 'status' => $subject->status ?? 'active',
             ]
         ], 200);
+    }
+
+    // GET /api/subject/byCourseSubject/{courseSubjectId}
+    public function getSubjectByCourseSubject($courseSubjectId)
+    {
+        $courseSubject = CourseSubject::where('courseSubjectId', $courseSubjectId)->first();
+
+        $subject = Subject::where('subjectId', $courseSubject->subjectId)
+        ->select('subjectCode', 'subjectName')
+        ->first();
+
+        if (!$subject) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Subject not found',
+                'data' => null
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $subject
+        ]);
     }
 }

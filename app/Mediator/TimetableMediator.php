@@ -310,45 +310,45 @@ class TimetableMediator implements TimetableMediatorInterface
     {
         $rawCourses = $this->courseApi->fetchCoursesFromApi();
         $courses = [];
-        
+
         foreach ($rawCourses as $course) {
             // Convert object to array if JSON returns objects
             if (is_object($course)) {
                 $course = (array) $course;
             }
-            
+
             $courses[] = [
                 'courseId' => $course['courseId'],
                 'courseCode' => $course['courseCode'],
             ];
         }
-        
+
         return $courses;
     }
 
-public function getAllClassGroupCodes()
-{
-    $groups = $this->classGroupApi->getAllClassGroups();
-    
-    $classGroupCodes = [];
-    
-    foreach ($groups as $group) {
-        if (is_object($group)) {
-            $group = (array) $group;
+    public function getAllClassGroupCodes()
+    {
+        $groups = $this->classGroupApi->getAllClassGroups();
+
+        $classGroupCodes = [];
+
+        foreach ($groups as $group) {
+            if (is_object($group)) {
+                $group = (array) $group;
+            }
+
+            $classGroupCodes[] = [
+                'classGroupId' => $group['classGroupId']
+            ];
         }
-        
-        $classGroupCodes[] = [
-            'classGroupId' => $group['classGroupId']
-        ];
+
+        return $classGroupCodes;
     }
-    
-    return $classGroupCodes;
-}
 
 
     public function getFilteredTimetableSlots($courseId, $classGroupId)
     {
-        $courseSubjects = \App\Models\CourseSubject::where('courseId', $courseId)->pluck('courseSubjectId')->toArray(); // Get From API
+        $courseSubjects = $this->courseSubjectApi->getCourseSubjectsByCourse($courseId);
 
         $slots = Timetable::with(['venue'])
             ->whereIn('courseSubjectId', $courseSubjects)
@@ -357,13 +357,9 @@ public function getAllClassGroupCodes()
             ->orderBy('startTime')
             ->get();
 
-        return $slots->map(function ($slot) {  // GET FROM API
-            $subject = DB::table('subject')
-                ->join('course_subject', 'subject.subjectId', '=', 'course_subject.subjectId')
-                ->where('course_subject.courseSubjectId', $slot->courseSubjectId)
-                ->select('subject.subjectCode', 'subject.subjectName')
-                ->first();
-
+        return $slots->map(function ($slot) {
+            $subject = $this->subjectApi->getSubjectByCourseSubject($slot->courseSubjectId);
+            
             return [
                 'timetableId' => $slot->timetableId,
                 'subjectCode' => $subject->subjectCode ?? 'N/A',
