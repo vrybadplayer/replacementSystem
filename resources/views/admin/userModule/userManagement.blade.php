@@ -40,6 +40,37 @@
                     <div class="alert alert-error">{{ session('error') }}</div>
                 @endif
 
+                <!-- Filters and Search Section -->
+                <div class="filters-container" style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; align-items: end;">
+                        <div>
+                            <label for="searchInput" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Search</label>
+                            <input type="text" id="searchInput" placeholder="Search by name, email, or ID..." 
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem;">
+                        </div>
+                        <div>
+                            <label for="roleFilter" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Role</label>
+                            <select id="roleFilter" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem;">
+                                <option value="">All Roles</option>
+                                <option value="student">Student</option>
+                                <option value="lecturer">Lecturer</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="statusFilter" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">Status</label>
+                            <select id="statusFilter" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem;">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="banned">Banned</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="button" id="refreshBtn" class="btn-add" style="flex: 1; background: #10b981; margin: 0;">🔄 Refresh</button>
+                            <button type="button" id="resetBtn" class="btn-add" style="flex: 1; background: #6b7280; margin: 0;">Reset</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="batch-actions" id="batchActionsContainer" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: #f0f4ff; border: 1px solid #4f46e5; border-radius: 4px;">
                     <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                         <span id="selectedCount" style="font-weight: 600; color: #4f46e5;">0 users selected</span>
@@ -68,7 +99,7 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="userTableBody">
                         @forelse($users as $user)
                             <tr class="user-row" data-user-id="{{ $user->userId }}">
                                 <td style="width: 30px;"><input type="checkbox" class="user-checkbox" data-user-id="{{ $user->userId }}" style="cursor: pointer;"></td>
@@ -113,7 +144,7 @@
                 </table>
 
                 @if($users->count() > 0)
-                    <div class="pagination-container">
+                    <div class="pagination-container" id="paginationContainer">
                         {{ $users->links('pagination::bootstrap-4') }}
                     </div>
                 @endif
@@ -125,7 +156,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-            const userCheckboxes = document.querySelectorAll('.user-checkbox');
             const batchActionsContainer = document.getElementById('batchActionsContainer');
             const selectedCountSpan = document.getElementById('selectedCount');
             const selectAllBtn = document.getElementById('selectAllBtn');
@@ -136,8 +166,24 @@
             const batchUserIds = document.getElementById('batchUserIds');
             const batchAction = document.getElementById('batchAction');
 
+            // Filter elements
+            const searchInput = document.getElementById('searchInput');
+            const roleFilter = document.getElementById('roleFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const resetBtn = document.getElementById('resetBtn');
+
+            // Initialize batch UI
+            updateBatchUI();
+
+            // Get user checkboxes function
+            function getUserCheckboxes() {
+                return document.querySelectorAll('.user-checkbox');
+            }
+
             // Update selected count and show/hide batch actions
             function updateBatchUI() {
+                const userCheckboxes = getUserCheckboxes();
                 const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
                 const count = selectedCheckboxes.length;
                 selectedCountSpan.textContent = `${count} user(s) selected`;
@@ -153,22 +199,103 @@
                     document.querySelectorAll('.user-checkbox:not(:checked)').length === 0;
             }
 
-            // Individual checkbox change
-            userCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', updateBatchUI);
+            // Set up event listeners for checkboxes and filters
+            function setupEventListeners() {
+                const userCheckboxes = getUserCheckboxes();
+                
+                userCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', updateBatchUI);
+                });
+
+                selectAllCheckbox.addEventListener('change', function() {
+                    userCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                    updateBatchUI();
+                });
+            }
+
+            setupEventListeners();
+
+            // Load filtered users via AJAX
+            function loadFilteredUsers(page = 1) {
+                const params = new URLSearchParams({
+                    search: searchInput.value,
+                    role: roleFilter.value,
+                    status: statusFilter.value,
+                    page: page
+                });
+
+                fetch(`{{ route('admin.user.filter') }}?${params}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Update table body
+                    document.getElementById('userTableBody').innerHTML = data.html;
+
+                    // Update pagination
+                    document.getElementById('paginationContainer').innerHTML = data.pagination;
+
+                    // Re-attach event listeners to new checkboxes
+                    setupEventListeners();
+                    updateBatchUI();
+
+                    // Re-attach pagination click handlers
+                    attachPaginationHandlers();
+                })
+                .catch(error => {
+                    console.error('Error loading users:', error);
+                    alert('Error loading users. Please try again.');
+                });
+            }
+
+            // Attach pagination click handlers
+            function attachPaginationHandlers() {
+                const paginationLinks = document.querySelectorAll('.pagination a');
+                paginationLinks.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const url = new URL(this.href);
+                        const page = url.searchParams.get('page');
+                        if (page) {
+                            loadFilteredUsers(page);
+                            window.scrollTo(0, 0);
+                        }
+                    });
+                });
+            }
+
+            // Event listeners for filters
+            searchInput.addEventListener('input', () => {
+                loadFilteredUsers(1);
             });
 
-            // Select all checkbox
-            selectAllCheckbox.addEventListener('change', function() {
-                userCheckboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
-                });
-                updateBatchUI();
+            roleFilter.addEventListener('change', () => {
+                loadFilteredUsers(1);
+            });
+
+            statusFilter.addEventListener('change', () => {
+                loadFilteredUsers(1);
+            });
+
+            refreshBtn.addEventListener('click', () => {
+                loadFilteredUsers(1);
+            });
+
+            resetBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                roleFilter.value = '';
+                statusFilter.value = '';
+                loadFilteredUsers(1);
             });
 
             // Select all button
             selectAllBtn.addEventListener('click', function() {
-                userCheckboxes.forEach(checkbox => {
+                getUserCheckboxes().forEach(checkbox => {
                     checkbox.checked = true;
                 });
                 updateBatchUI();
@@ -176,7 +303,7 @@
 
             // Deselect all button
             deselectAllBtn.addEventListener('click', function() {
-                userCheckboxes.forEach(checkbox => {
+                getUserCheckboxes().forEach(checkbox => {
                     checkbox.checked = false;
                 });
                 updateBatchUI();
@@ -217,5 +344,8 @@
                 batchAction.value = 'unban';
                 batchActionForm.submit();
             });
+
+            // Attach initial pagination handlers
+            attachPaginationHandlers();
         });
     </script>

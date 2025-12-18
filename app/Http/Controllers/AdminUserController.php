@@ -22,8 +22,107 @@ class AdminUserController extends Controller
      */
     public function index()
     {
-        $users = User::where('role', '!=', 'admin')->paginate(10);
-        return view('admin.userModule.userManagement', ['users' => $users]);
+        try {
+            // Query database directly for list view with pagination
+            $users = User::where('role', '!=', 'admin')->paginate(10);
+            
+            return view('admin.userModule.userManagement', ['users' => $users]);
+        } catch (\Exception $e) {
+            \Log::error('Error in AdminUserController::index: ' . $e->getMessage());
+            return view('admin.userModule.userManagement', ['users' => collect([]), 'error' => 'Unable to load users']);
+        }
+    }
+
+    /**
+     * Get filtered users for AJAX requests
+     */
+    public function getFilteredUsers(Request $request)
+    {
+        try {
+            $query = User::where('role', '!=', 'admin');
+
+            // Filter by role
+            if ($request->has('role') && !empty($request->input('role'))) {
+                $query->where('role', $request->input('role'));
+            }
+
+            // Filter by status
+            if ($request->has('status') && !empty($request->input('status'))) {
+                $query->where('status', $request->input('status'));
+            }
+
+            // Search by name or email
+            if ($request->has('search') && !empty($request->input('search'))) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%")
+                      ->orWhere('userId', 'like', "%{$search}%");
+                });
+            }
+
+            // Paginate
+            $page = $request->input('page', 1);
+            $users = $query->paginate(10, ['*'], 'page', $page);
+
+            // Return HTML table rows
+            $html = '';
+            if ($users->count() > 0) {
+                foreach ($users as $user) {
+                    $statusBadge = $user->status;
+                    $roleBadge = $user->role;
+                    $confirmMessage = $user->status === 'active' ? 'Are you sure you want to ban this user?' : 'Are you sure you want to unban this user?';
+                    $actionLabel = $user->status === 'active' ? 'Ban' : 'Unban';
+                    
+                    $html .= '<tr class="user-row" data-user-id="' . $user->userId . '">
+                        <td style="width: 30px;"><input type="checkbox" class="user-checkbox" data-user-id="' . $user->userId . '" style="cursor: pointer;"></td>
+                        <td><strong>' . $user->userId . '</strong></td>
+                        <td>' . $user->name . '</td>
+                        <td>' . $user->email . '</td>
+                        <td>
+                            <span class="role-badge role-' . $roleBadge . '">
+                                ' . ucfirst($roleBadge) . '
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-' . $statusBadge . '">
+                                ' . ucfirst($user->status) . '
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="' . route('admin.user.show', $user->userId) . '" class="btn-view">View</a>
+                                <a href="' . route('admin.user.edit', $user->userId) . '" class="btn-edit">Edit</a>
+                                <form method="POST" action="' . route('admin.user.delete', $user->userId) . '" style="display: inline;" onsubmit="return confirm(\'' . $confirmMessage . '\');">
+                                    ' . csrf_field() . '
+                                    ' . method_field('DELETE') . '
+                                    <button type="submit" class="btn-delete">
+                                        ' . $actionLabel . '
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>';
+                }
+            } else {
+                $html = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">No users found.</td></tr>';
+            }
+
+            // Get pagination links
+            $paginationHtml = $users->links('pagination::bootstrap-4')->render();
+
+            return response()->json([
+                'html' => $html,
+                'pagination' => $paginationHtml,
+                'count' => $users->total(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in AdminUserController::getFilteredUsers: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Unable to load users',
+                'html' => '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #d32f2f;">Error loading users</td></tr>'
+            ], 500);
+        }
     }
 
     /**
@@ -41,22 +140,58 @@ class AdminUserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string',
-            'email' => 'required|email|unique:users',
+            'email' => 'required|email',
             'role' => 'required|string|in:student,lecturer',
         ]);
 
-        // Generate userId using UserFactory's pattern
-        $lastUser = User::orderBy('userId', 'desc')->first();
+        // Generate userId
+        $allUsers = $this->userService->getAllUsersFromDb();
         $nextNumber = 1;
-        if ($lastUser && preg_match('/U(\d+)/', $lastUser->userId, $matches)) {
-            $nextNumber = (int)$matches[1] + 1;
+        if (!empty($allUsers)) {
+            $lastUserId = max(array_map(function ($user) {
+                if (isset($user['userId']) && preg_match('/U(\d+)/', $user['userId'], $matches)) {
+                    return (int)$matches[1];
+                }
+                return 0;
+            }, is_array($allUsers) ? $allUsers : [$allUsers]));
+            $nextNumber = $lastUserId + 1;
         }
         $validated['userId'] = 'U' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-
-        // Use UserFactory to create user with all defaults
-        User::factory()->create($validated);
+        $validated['status'] = 'active';
         
-        return redirect()->route('admin.user.index')->with('success', 'User created successfully');
+        // Create user using factory based on role
+        $role = $validated['role'];
+        if ($role === 'lecturer') {
+            $user = User::factory()->lecturer()->create($validated);
+        } else {
+            $user = User::factory()->student()->create($validated);
+        }
+        
+        // Log user creation by admin
+        \Log::info('User created by admin', [
+            'created_user_id' => $validated['userId'],
+            'created_user_email' => $validated['email'],
+            'created_user_role' => $validated['role'],
+            'admin_user_id' => auth()->user()->userId,
+            'admin_email' => auth()->user()->email,
+            'timestamp' => now()
+        ]);
+        
+        // Send email with credentials
+        try {
+            Mail::send('emails.user-created', [
+                'userName' => $validated['name'],
+                'userEmail' => $validated['email'],
+                'userId' => $validated['userId'],
+                'password' => '123456',
+            ], function ($message) use ($validated) {
+                $message->to($validated['email'])->subject('Your Account Has Been Created');
+            });
+        } catch (\Exception $e) {
+            \Log::error('Failed to send user creation email: ' . $e->getMessage());
+        }
+        
+        return redirect()->route('admin.user.index')->with('success', 'User created successfully. Login credentials have been sent to ' . $validated['email']);
     }
 
     /**
@@ -64,7 +199,7 @@ class AdminUserController extends Controller
      */
     public function show($userId)
     {
-        $user = $this->userService->getUserById($userId);
+        $user = User::find($userId);
         
         if (!$user) {
             abort(404);
@@ -72,70 +207,54 @@ class AdminUserController extends Controller
 
         $enrolledCourses = $this->userService->getEnrolledCourses($userId);
         
-        // Get all course subjects with error handling
+        // Get all course subjects from DATABASE with relationships
         $subjects = [];
         if (!empty($enrolledCourses)) {
             try {
                 $courseIds = array_column($enrolledCourses, 'courseID');
                 
-                // Get all course subjects from API (one call for all)
-                $allCourseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
+                \Log::info('Admin viewing user details - fetching subjects', [
+                    'admin_user_id' => auth()->user()->userId,
+                    'viewed_user_id' => $userId,
+                    'course_ids' => $courseIds
+                ]);
                 
-                // Filter by enrolled courses
-                $enrolledCourseSubjects = array_filter($allCourseSubjects, function($cs) use ($courseIds) {
-                    return in_array($cs['courseId'] ?? null, $courseIds);
-                });
+                // Get all course subjects from DATABASE with relationships
+                $courseSubjects = \App\Models\CourseSubject::with(['course', 'subject'])
+                    ->whereIn('courseId', $courseIds)
+                    ->get();
+                
+                \Log::info('Retrieved course subjects from database', [
+                    'count' => count($courseSubjects)
+                ]);
                 
                 // Build subjects list
-                foreach ($enrolledCourseSubjects as $courseSubject) {
-                    $subjectId = $courseSubject['subjectId'] ?? null;
-                    if ($subjectId) {
-                        // Get subject details from API using Facade
-                        $subjectDetails = CourseSubjectManagementFacade::getSubjectByIdFromApi($subjectId);
-                        
-                        // Find course info
-                        $courseInfo = array_values(array_filter($enrolledCourses, function($c) use ($courseSubject) {
-                            return $c['courseID'] === ($courseSubject['courseId'] ?? null);
-                        }));
-                        
-                        if (!empty($courseInfo)) {
-                            $course = $courseInfo[0];
-                            $subjects[] = [
-                                'subjectId' => $subjectDetails['subjectId'] ?? $subjectId,
-                                'subjectCode' => $subjectDetails['subjectCode'] ?? '',
-                                'subjectName' => $subjectDetails['subjectName'] ?? '',
-                                'creditHours' => $subjectDetails['creditHours'] ?? 0,
-                                'category' => $subjectDetails['category'] ?? '',
-                                'courseName' => $course['courseName'],
-                                'courseCode' => $course['courseCode'],
-                            ];
-                        }
-                    }
-                }
-            } catch (\Exception $e) {
-                // Fall back to database if API is unavailable
-                foreach ($enrolledCourses as $course) {
-                    $courseId = $course['courseID'];
-                    
-                    $courseSubjects = \App\Models\CourseSubject::where('courseId', $courseId)
-                        ->with('subject')
-                        ->get();
-                    
-                    foreach ($courseSubjects as $courseSubject) {
+                foreach ($courseSubjects as $courseSubject) {
+                    if ($courseSubject->subject) {
                         $subject = $courseSubject->subject;
-                        if ($subject) {
-                            $subjects[] = [
-                                'subjectId' => $subject->subjectId,
-                                'subjectCode' => $subject->subjectCode,
-                                'subjectName' => $subject->subjectName,
-                                'creditHours' => $subject->creditHours,
-                                'category' => $subject->category,
-                                'courseName' => $course['courseName'],
-                                'courseCode' => $course['courseCode'],
-                            ];
-                        }
+                        $course = $courseSubject->course;
+                        
+                        $subjects[] = [
+                            'subjectId' => $subject->subjectId,
+                            'subjectCode' => $subject->subjectCode,
+                            'subjectName' => $subject->subjectName,
+                            'creditHours' => $subject->creditHours,
+                            'category' => $subject->category,
+                            'courseName' => $course->courseName,
+                            'courseCode' => $course->courseCode,
+                        ];
                     }
                 }
+                
+                \Log::info('Admin user details - subjects prepared', [
+                    'viewed_user_id' => $userId,
+                    'subjects_count' => count($subjects)
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Error fetching subjects in admin show', [
+                    'error' => $e->getMessage(),
+                    'viewed_user_id' => $userId
+                ]);
             }
         }
         
@@ -147,7 +266,7 @@ class AdminUserController extends Controller
      */
     public function edit($userId)
     {
-        $user = $this->userService->getUserById($userId);
+        $user = User::find($userId);
         
         if (!$user) {
             abort(404);
@@ -188,23 +307,37 @@ class AdminUserController extends Controller
      */
     public function delete($userId)
     {
-        $user = $this->userService->getUserById($userId);
+        try {
+            $user = User::find($userId);
 
-        if (!$user) {
-            abort(404);
+            if (!$user) {
+                abort(404);
+            }
+            
+            $currentStatus = $user->status ?? 'active';
+            $newStatus = $currentStatus === 'active' ? 'banned' : 'active';
+            $message = $newStatus === 'banned' ? 'User banned successfully' : 'User unbanned successfully';
+            
+            // Log user status change
+            $action = $newStatus === 'banned' ? 'banned' : 'unbanned';
+            \Log::warning('User status changed by admin', [
+                'action' => $action,
+                'affected_user_id' => $userId,
+                'affected_user_email' => $user->email,
+                'previous_status' => $currentStatus,
+                'new_status' => $newStatus,
+                'admin_user_id' => auth()->user()->userId,
+                'admin_email' => auth()->user()->email,
+                'timestamp' => now()
+            ]);
+            
+            $this->userService->updateUser($userId, ['status' => $newStatus]);
+            
+            return back()->with('success', $message);
+        } catch (\Exception $e) {
+            \Log::error('Error in AdminUserController::delete: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update user status: ' . $e->getMessage());
         }
-        
-        if ($user->status === 'active') {
-            $user->status = 'banned';
-            $message = 'User banned successfully';
-        } else {
-            $user->status = 'active';
-            $message = 'User unbanned successfully';
-        }
-        
-        $user->save();
-        
-        return back()->with('success', $message);
     }
 
     /**
@@ -212,7 +345,7 @@ class AdminUserController extends Controller
      */
     public function resetPassword($userId)
     {
-        $user = $this->userService->getUserById($userId);
+        $user = User::find($userId);
 
         if (!$user) {
             abort(404);
@@ -220,18 +353,28 @@ class AdminUserController extends Controller
 
         // Generate a random password
         $newPassword = $this->generatePassword();
-        $user->password = bcrypt($newPassword);
-        $user->save();
+
+        // Log password reset action
+        \Log::warning('User password reset by admin', [
+            'affected_user_id' => $userId,
+            'affected_user_email' => $user->email,
+            'admin_user_id' => auth()->user()->userId,
+            'admin_email' => auth()->user()->email,
+            'timestamp' => now()
+        ]);
+
+        // Update user with new password
+        $this->userService->updateUser($userId, ['password' => bcrypt($newPassword)]);
 
         // Send email with new password
         try {
             Mail::send('emails.password-reset', [
-                'userName' => $user->name,
-                'userEmail' => $user->email,
+                'userName' => $user->name ?? '',
+                'userEmail' => $user->email ?? '',
                 'newPassword' => $newPassword,
-                'userId' => $user->userId
+                'userId' => $user->userId ?? $userId
             ], function ($message) use ($user) {
-                $message->to($user->email)->subject('Your Password Has Been Reset');
+                $message->to($user->email ?? '')->subject('Your Password Has Been Reset');
             });
         } catch (\Exception $e) {
             // Log the error but still show success message
@@ -241,7 +384,7 @@ class AdminUserController extends Controller
         return redirect()->route('admin.user.passwordResetConfirm', [
             'userId' => $userId,
             'password' => $newPassword,
-            'email' => $user->email
+            'email' => $user->email ?? ''
         ]);
     }
 
@@ -280,7 +423,7 @@ class AdminUserController extends Controller
      */
     public function passwordResetConfirm(Request $request, $userId)
     {
-        $user = $this->userService->getUserById($userId);
+        $user = User::find($userId);
         
         if (!$user) {
             abort(404);
@@ -302,17 +445,16 @@ class AdminUserController extends Controller
     public function getUsersJson()
     {
         $users = $this->userService->getAllUsersFromDb();
+        $mappedUsers = array_map(function ($user) {
+            return [
+                'userId' => $user['userId'] ?? '',
+                'name' => $user['name'] ?? '',
+                'email' => $user['email'] ?? '',
+                'role' => $user['role'] ?? '',
+            ];
+        }, is_array($users) ? $users : [$users]);
         
-        return response()->json([
-            'users' => $users->map(function ($user) {
-                return [
-                    'userId' => $user->userId,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                ];
-            }),
-        ]);
+        return response()->json(['users' => $mappedUsers]);
     }
 
     /**
@@ -331,13 +473,47 @@ class AdminUserController extends Controller
         ]);
 
         // Validate that all user IDs exist
-        $existingUsers = User::whereIn('userId', $userIdArray)->count();
-        if ($existingUsers === 0) {
+        $allUsers = $this->userService->getAllUsersFromDb();
+        $existingIds = array_map(function ($user) {
+            return $user['userId'] ?? '';
+        }, is_array($allUsers) ? $allUsers : [$allUsers]);
+        
+        $validIds = array_intersect($userIdArray, $existingIds);
+        if (empty($validIds)) {
             return redirect()->route('admin.user.index')->with('error', 'No valid users selected');
         }
 
         $newStatus = $action === 'ban' ? 'banned' : 'active';
-        $updated = User::whereIn('userId', $userIdArray)->update(['status' => $newStatus]);
+        $updated = 0;
+        
+        // Update each user via API
+        foreach ($validIds as $userId) {
+            $user = User::find($userId);
+            $result = $this->userService->updateUser($userId, ['status' => $newStatus]);
+            if ($result) {
+                // Log batch action for each user
+                \Log::warning('User status changed by admin (batch operation)', [
+                    'action' => $action,
+                    'affected_user_id' => $userId,
+                    'affected_user_email' => $user->email ?? 'N/A',
+                    'previous_status' => $user->status ?? 'N/A',
+                    'new_status' => $newStatus,
+                    'admin_user_id' => auth()->user()->userId,
+                    'admin_email' => auth()->user()->email,
+                    'timestamp' => now()
+                ]);
+                $updated++;
+            }
+        }
+
+        // Log batch operation summary
+        \Log::info('Batch user status change completed', [
+            'action' => $action,
+            'total_users_affected' => $updated,
+            'admin_user_id' => auth()->user()->userId,
+            'admin_email' => auth()->user()->email,
+            'timestamp' => now()
+        ]);
 
         $message = $action === 'ban' 
             ? "{$updated} user(s) banned successfully" 
@@ -351,56 +527,85 @@ class AdminUserController extends Controller
      */
     public function statistics()
     {
+        $allUsers = $this->userService->getAllUsersFromDb();
+        $users = is_array($allUsers) ? $allUsers : [$allUsers];
+        
+        // Filter non-admin users
+        $nonAdminUsers = array_filter($users, function ($user) {
+            return ($user['role'] ?? null) !== 'admin';
+        });
+        
         // Total users count
-        $totalUsers = User::where('role', '!=', 'admin')->count();
+        $totalUsers = count($nonAdminUsers);
         
         // Users by role
-        $studentCount = User::where('role', 'student')->count();
-        $lecturerCount = User::where('role', 'lecturer')->count();
+        $studentCount = count(array_filter($nonAdminUsers, function ($user) {
+            return ($user['role'] ?? null) === 'student';
+        }));
+        $lecturerCount = count(array_filter($nonAdminUsers, function ($user) {
+            return ($user['role'] ?? null) === 'lecturer';
+        }));
         
         // Users by status
-        $activeCount = User::where('role', '!=', 'admin')->where('status', 'active')->count();
-        $inactiveCount = User::where('role', '!=', 'admin')->where('status', 'inactive')->count();
-        $bannedCount = User::where('role', '!=', 'admin')->where('status', 'banned')->count();
+        $activeCount = count(array_filter($nonAdminUsers, function ($user) {
+            return ($user['status'] ?? 'active') === 'active';
+        }));
+        $inactiveCount = count(array_filter($nonAdminUsers, function ($user) {
+            return ($user['status'] ?? null) === 'inactive';
+        }));
+        $bannedCount = count(array_filter($nonAdminUsers, function ($user) {
+            return ($user['status'] ?? null) === 'banned';
+        }));
         
         // Users by class group
-        $usersByClassGroup = User::where('role', 'student')
-            ->with('classGroup')
-            ->get()
-            ->groupBy('classGroupId')
-            ->map(function ($group) {
-                $classGroupName = $group->first()->classGroup?->classGroupName ?? 'Unassigned';
-                return [
-                    'name' => $classGroupName,
-                    'count' => $group->count()
-                ];
-            })
-            ->values();
+        $studentUsers = array_filter($nonAdminUsers, function ($user) {
+            return ($user['role'] ?? null) === 'student';
+        });
+        $usersByClassGroup = [];
+        $grouped = [];
+        foreach ($studentUsers as $user) {
+            $classGroupId = $user['classGroupId'] ?? 'Unassigned';
+            if (!isset($grouped[$classGroupId])) {
+                $grouped[$classGroupId] = [];
+            }
+            $grouped[$classGroupId][] = $user;
+        }
+        foreach ($grouped as $classGroupId => $group) {
+            $usersByClassGroup[] = [
+                'name' => $classGroupId === 'Unassigned' ? 'Unassigned' : $classGroupId,
+                'count' => count($group)
+            ];
+        }
         
         // New users in last 30 days
-        $newUsersThisMonth = User::where('role', '!=', 'admin')
-            ->where('created_at', '>=', now()->subDays(30))
-            ->count();
+        $newUsersThisMonth = count(array_filter($nonAdminUsers, function ($user) {
+            if (!isset($user['created_at'])) return false;
+            $createdDate = strtotime($user['created_at']);
+            return $createdDate >= strtotime('-30 days');
+        }));
         
         // Monthly user creation trend (last 12 months)
         $monthlyTrend = [];
         for ($i = 11; $i >= 0; $i--) {
             $startDate = now()->subMonths($i)->startOfMonth();
             $endDate = now()->subMonths($i)->endOfMonth();
-            $count = User::where('role', '!=', 'admin')
-                ->whereBetween('created_at', [$startDate, $endDate])
-                ->count();
+            $count = count(array_filter($nonAdminUsers, function ($user) use ($startDate, $endDate) {
+                if (!isset($user['created_at'])) return false;
+                $createdDate = strtotime($user['created_at']);
+                return $createdDate >= $startDate->timestamp && $createdDate <= $endDate->timestamp;
+            }));
             $monthlyTrend[] = [
                 'month' => $startDate->format('M Y'),
                 'count' => $count
             ];
         }
         
-        // Active users (logged in within last 7 days) - if you have a last_login field
-        // For now, we'll use created_at as a proxy
-        $recentlyActive = User::where('role', '!=', 'admin')
-            ->where('updated_at', '>=', now()->subDays(7))
-            ->count();
+        // Recently active users (updated within last 7 days)
+        $recentlyActive = count(array_filter($nonAdminUsers, function ($user) {
+            if (!isset($user['updated_at'])) return false;
+            $updatedDate = strtotime($user['updated_at']);
+            return $updatedDate >= strtotime('-7 days');
+        }));
 
         return view('admin.userModule.user-statistics', [
             'totalUsers' => $totalUsers,
