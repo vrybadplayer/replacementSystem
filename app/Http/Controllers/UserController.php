@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\CourseEnrollment;
+use App\Facades\CourseSubjectManagementFacade;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -111,7 +112,76 @@ class UserController extends Controller
     public function showProfile()
     {
         $user = Auth::user();
-        return view('student.userModule.profile', ['user' => $user]);
+        $enrolledCourses = $this->userService->getEnrolledCourses($user->userId);
+        
+        // Get all course subjects with error handling
+        $subjects = [];
+        if (!empty($enrolledCourses)) {
+            try {
+                $courseIds = array_column($enrolledCourses, 'courseID');
+                
+                // Get all course subjects from API
+                $allCourseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
+                
+                // Filter by enrolled courses
+                $enrolledCourseSubjects = array_filter($allCourseSubjects, function($cs) use ($courseIds) {
+                    return in_array($cs['courseId'] ?? null, $courseIds);
+                });
+                
+                // Build subjects list
+                foreach ($enrolledCourseSubjects as $courseSubject) {
+                    $subjectId = $courseSubject['subjectId'] ?? null;
+                    if ($subjectId) {
+                        // Get subject details from API
+                        $subjectDetails = CourseSubjectManagementFacade::getSubjectByIdFromApi($subjectId);
+                        
+                        // Find course info
+                        $courseInfo = array_values(array_filter($enrolledCourses, function($c) use ($courseSubject) {
+                            return $c['courseID'] === ($courseSubject['courseId'] ?? null);
+                        }));
+                        
+                        if (!empty($courseInfo)) {
+                            $course = $courseInfo[0];
+                            $subjects[] = [
+                                'subjectId' => $subjectDetails['subjectId'] ?? $subjectId,
+                                'subjectCode' => $subjectDetails['subjectCode'] ?? '',
+                                'subjectName' => $subjectDetails['subjectName'] ?? '',
+                                'creditHours' => $subjectDetails['creditHours'] ?? 0,
+                                'category' => $subjectDetails['category'] ?? '',
+                                'courseName' => $course['courseName'],
+                                'courseCode' => $course['courseCode'],
+                            ];
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // Fall back to database if API is unavailable
+                foreach ($enrolledCourses as $course) {
+                    $courseId = $course['courseID'];
+                    
+                    $courseSubjects = \App\Models\CourseSubject::where('courseId', $courseId)
+                        ->with('subject')
+                        ->get();
+                    
+                    foreach ($courseSubjects as $courseSubject) {
+                        $subject = $courseSubject->subject;
+                        if ($subject) {
+                            $subjects[] = [
+                                'subjectId' => $subject->subjectId,
+                                'subjectCode' => $subject->subjectCode,
+                                'subjectName' => $subject->subjectName,
+                                'creditHours' => $subject->creditHours,
+                                'category' => $subject->category,
+                                'courseName' => $course['courseName'],
+                                'courseCode' => $course['courseCode'],
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+        
+        return view('student.userModule.profile', ['user' => $user, 'enrolledCourses' => $enrolledCourses, 'subjects' => $subjects]);
     }
 
     /**
@@ -278,15 +348,6 @@ class UserController extends Controller
         }
 
         return response()->json($profileData);
-    }
-
-    /**
-     * API: Get enrolled courses for a user
-     */
-    public function apiGetEnrolledCourses($userId)
-    {
-        $courses = $this->userService->getEnrolledCourses($userId);
-        return response()->json(['courses' => $courses]);
     }
 
     /**

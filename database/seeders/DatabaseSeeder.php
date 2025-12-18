@@ -69,6 +69,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             TimetableSeeder::class,
         ]);
+
+        // Course Enrollment - Enroll all students in courses
+        $this->call([
+            CourseEnrollmentSeeder::class,
+        ]);
         
         $this->command->info('All seeders completed successfully!');
     }

@@ -52,6 +52,36 @@
                         </div>
                     </div>
                 </div>
+
+                @if($enrolledCourses && count($enrolledCourses) > 0)
+                <div class="profile-card">
+                    <h3 style="margin-bottom: 20px; font-weight: bold;">Enrolled Courses</h3>
+                    <div style="display: grid; gap: 15px;">
+                        @foreach($enrolledCourses as $course)
+                        <div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+                            <div style="font-weight: bold; margin-bottom: 5px;">{{ $course['courseName'] }}</div>
+                            <div style="color: #666; font-size: 14px; margin-bottom: 5px;">{{ $course['courseCode'] }}</div>
+                            <div style="color: #999; font-size: 13px;">Year: {{ $course['year'] }} | Semester: {{ $course['semester'] }}</div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                @if($subjects && count($subjects) > 0)
+                <div class="profile-card">
+                    <h3 style="margin-bottom: 20px; font-weight: bold;">Subjects</h3>
+                    <div style="display: grid; gap: 15px;">
+                        @foreach($subjects as $subject)
+                        <div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+                            <div style="font-weight: bold; margin-bottom: 5px;">{{ $subject['subjectName'] }}</div>
+                            <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Code: {{ $subject['subjectCode'] }}</div>
+                            <div style="color: #999; font-size: 13px;">Credit Hours: {{ $subject['creditHours'] }} | Category: {{ $subject['category'] }}</div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
             </div>
         </main>
     </div>

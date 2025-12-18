@@ -436,8 +436,38 @@
                         <!-- Courses Section -->
                         <div class="section">
                             <h3>Enrolled Courses</h3>
-                            <div id="coursesList" class="loading">Loading courses...</div>
+                            @if($enrolledCourses && count($enrolledCourses) > 0)
+                                <div id="coursesList">
+                                    @foreach($enrolledCourses as $course)
+                                        <div class="course-item">
+                                            <h4>{{ $course['courseName'] }}</h4>
+                                            <p class="course-item-code">{{ $course['courseCode'] }}</p>
+                                            <p class="course-item-meta">
+                                                Year: {{ $course['year'] }} | Semester: {{ $course['semester'] }}
+                                            </p>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="loading">No enrolled courses found.</p>
+                            @endif
                         </div>
+
+                        <!-- Subjects Section -->
+                        @if($subjects && count($subjects) > 0)
+                        <div class="section">
+                            <h3>Subjects</h3>
+                            <div style="display: grid; gap: 15px;">
+                                @foreach($subjects as $subject)
+                                <div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">{{ $subject['subjectName'] }}</div>
+                                    <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Code: {{ $subject['subjectCode'] }}</div>
+                                    <div style="color: #999; font-size: 13px;">Credit Hours: {{ $subject['creditHours'] }} | Category: {{ $subject['category'] }}</div>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
 
                         <!-- Change Password Section -->
                         <div class="section">
@@ -531,34 +561,6 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            loadCourses();
-        });
-
-        function loadCourses() {
-            fetch('/api/user/courses')
-                .then(r => r.json())
-                .then(data => {
-                    let html = '';
-                    if (data.courses && data.courses.length > 0) {
-                        data.courses.forEach(course => {
-                            html += '<div class="course-item">';
-                            html += '<h4>' + course.courseName + '</h4>';
-                            html += '<p class="course-item-code">' + course.courseCode + '</p>';
-                            html += '<p class="course-item-meta">Year ' + course.year + ' - Semester ' + course.semester + '</p>';
-                            html += '</div>';
-                        });
-                    } else {
-                        html = '<p style="color: #999;">No courses enrolled</p>';
-                    }
-                    document.getElementById('coursesList').innerHTML = html;
-                })
-                .catch(err => {
-                    console.log(err);
-                    document.getElementById('coursesList').innerHTML = '<p style="color: red;">Error loading courses</p>';
-                });
-        }
-
         function showEditForm() {
             document.getElementById('editModal').style.display = 'flex';
         }

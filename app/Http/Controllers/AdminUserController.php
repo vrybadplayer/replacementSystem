@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Facades\CourseSubjectManagementFacade;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -68,8 +69,77 @@ class AdminUserController extends Controller
         if (!$user) {
             abort(404);
         }
+
+        $enrolledCourses = $this->userService->getEnrolledCourses($userId);
         
-        return view('admin.userModule.showUser', ['user' => $user]);
+        // Get all course subjects with error handling
+        $subjects = [];
+        if (!empty($enrolledCourses)) {
+            try {
+                $courseIds = array_column($enrolledCourses, 'courseID');
+                
+                // Get all course subjects from API (one call for all)
+                $allCourseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
+                
+                // Filter by enrolled courses
+                $enrolledCourseSubjects = array_filter($allCourseSubjects, function($cs) use ($courseIds) {
+                    return in_array($cs['courseId'] ?? null, $courseIds);
+                });
+                
+                // Build subjects list
+                foreach ($enrolledCourseSubjects as $courseSubject) {
+                    $subjectId = $courseSubject['subjectId'] ?? null;
+                    if ($subjectId) {
+                        // Get subject details from API using Facade
+                        $subjectDetails = CourseSubjectManagementFacade::getSubjectByIdFromApi($subjectId);
+                        
+                        // Find course info
+                        $courseInfo = array_values(array_filter($enrolledCourses, function($c) use ($courseSubject) {
+                            return $c['courseID'] === ($courseSubject['courseId'] ?? null);
+                        }));
+                        
+                        if (!empty($courseInfo)) {
+                            $course = $courseInfo[0];
+                            $subjects[] = [
+                                'subjectId' => $subjectDetails['subjectId'] ?? $subjectId,
+                                'subjectCode' => $subjectDetails['subjectCode'] ?? '',
+                                'subjectName' => $subjectDetails['subjectName'] ?? '',
+                                'creditHours' => $subjectDetails['creditHours'] ?? 0,
+                                'category' => $subjectDetails['category'] ?? '',
+                                'courseName' => $course['courseName'],
+                                'courseCode' => $course['courseCode'],
+                            ];
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // Fall back to database if API is unavailable
+                foreach ($enrolledCourses as $course) {
+                    $courseId = $course['courseID'];
+                    
+                    $courseSubjects = \App\Models\CourseSubject::where('courseId', $courseId)
+                        ->with('subject')
+                        ->get();
+                    
+                    foreach ($courseSubjects as $courseSubject) {
+                        $subject = $courseSubject->subject;
+                        if ($subject) {
+                            $subjects[] = [
+                                'subjectId' => $subject->subjectId,
+                                'subjectCode' => $subject->subjectCode,
+                                'subjectName' => $subject->subjectName,
+                                'creditHours' => $subject->creditHours,
+                                'category' => $subject->category,
+                                'courseName' => $course['courseName'],
+                                'courseCode' => $course['courseCode'],
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+        
+        return view('admin.userModule.showUser', ['user' => $user, 'enrolledCourses' => $enrolledCourses, 'subjects' => $subjects]);
     }
 
     /**
@@ -242,6 +312,107 @@ class AdminUserController extends Controller
                     'role' => $user->role,
                 ];
             }),
+        ]);
+    }
+
+    /**
+     * Batch ban/unban users
+     */
+    public function batchBan(Request $request)
+    {
+        $userIds = $request->input('userIds');
+        $action = $request->input('action');
+
+        // Convert comma-separated string to array
+        $userIdArray = array_filter(array_map('trim', explode(',', $userIds)));
+
+        $validated = $request->validate([
+            'action' => 'required|in:ban,unban',
+        ]);
+
+        // Validate that all user IDs exist
+        $existingUsers = User::whereIn('userId', $userIdArray)->count();
+        if ($existingUsers === 0) {
+            return redirect()->route('admin.user.index')->with('error', 'No valid users selected');
+        }
+
+        $newStatus = $action === 'ban' ? 'banned' : 'active';
+        $updated = User::whereIn('userId', $userIdArray)->update(['status' => $newStatus]);
+
+        $message = $action === 'ban' 
+            ? "{$updated} user(s) banned successfully" 
+            : "{$updated} user(s) unbanned successfully";
+
+        return redirect()->route('admin.user.index')->with('success', $message);
+    }
+
+    /**
+     * Display user statistics dashboard
+     */
+    public function statistics()
+    {
+        // Total users count
+        $totalUsers = User::where('role', '!=', 'admin')->count();
+        
+        // Users by role
+        $studentCount = User::where('role', 'student')->count();
+        $lecturerCount = User::where('role', 'lecturer')->count();
+        
+        // Users by status
+        $activeCount = User::where('role', '!=', 'admin')->where('status', 'active')->count();
+        $inactiveCount = User::where('role', '!=', 'admin')->where('status', 'inactive')->count();
+        $bannedCount = User::where('role', '!=', 'admin')->where('status', 'banned')->count();
+        
+        // Users by class group
+        $usersByClassGroup = User::where('role', 'student')
+            ->with('classGroup')
+            ->get()
+            ->groupBy('classGroupId')
+            ->map(function ($group) {
+                $classGroupName = $group->first()->classGroup?->classGroupName ?? 'Unassigned';
+                return [
+                    'name' => $classGroupName,
+                    'count' => $group->count()
+                ];
+            })
+            ->values();
+        
+        // New users in last 30 days
+        $newUsersThisMonth = User::where('role', '!=', 'admin')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+        
+        // Monthly user creation trend (last 12 months)
+        $monthlyTrend = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $startDate = now()->subMonths($i)->startOfMonth();
+            $endDate = now()->subMonths($i)->endOfMonth();
+            $count = User::where('role', '!=', 'admin')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+            $monthlyTrend[] = [
+                'month' => $startDate->format('M Y'),
+                'count' => $count
+            ];
+        }
+        
+        // Active users (logged in within last 7 days) - if you have a last_login field
+        // For now, we'll use created_at as a proxy
+        $recentlyActive = User::where('role', '!=', 'admin')
+            ->where('updated_at', '>=', now()->subDays(7))
+            ->count();
+
+        return view('admin.userModule.user-statistics', [
+            'totalUsers' => $totalUsers,
+            'studentCount' => $studentCount,
+            'lecturerCount' => $lecturerCount,
+            'activeCount' => $activeCount,
+            'inactiveCount' => $inactiveCount,
+            'bannedCount' => $bannedCount,
+            'usersByClassGroup' => $usersByClassGroup,
+            'newUsersThisMonth' => $newUsersThisMonth,
+            'monthlyTrend' => $monthlyTrend,
+            'recentlyActive' => $recentlyActive,
         ]);
     }
 }

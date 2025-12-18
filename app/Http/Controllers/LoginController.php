@@ -53,6 +53,17 @@ class LoginController extends Controller
 
             $user = Auth::user();
 
+            // Check if user is banned
+            if ($user->status === 'banned') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                
+                throw ValidationException::withMessages([
+                    'email' => __('Your account has been banned. Please contact an administrator.'),
+                ]);
+            }
+
             // Redirect based on role
             if ($user->isAdmin()) {
                 return redirect()->intended('/admin/dashboard');
