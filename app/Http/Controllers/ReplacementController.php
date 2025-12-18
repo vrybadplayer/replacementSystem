@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\ReplacementAppeal;
+use App\Models\Replacement;
 use App\Models\Timetable;
 use App\Services\TimetableService;
 use App\Services\ReplacementService;
@@ -42,7 +43,7 @@ class ReplacementController extends Controller
             return view('student.replacementModule.select_class', compact('availableClasses'));
         }
 
-        // Get replacement class from API
+        // Get replacement class (the class student wants to JOIN) from API
         $replacementClass = $this->replacementService->getTimetableByIdFromApi($requestedClassId);
 
         if (!$replacementClass) {
@@ -52,12 +53,51 @@ class ReplacementController extends Controller
         // Get student info
         $student = Auth::user();
 
-        // For demo: Get student's original class from API
-        // In a real scenario, this would come from the student's enrolled classes
+        // Get the ORIGINAL class (the class student MISSED) from session
+        // This was selected from the timetable calendar view
+        $selectedClassData = session('replacement_selected_class');
+        
+        if (!$selectedClassData) {
+            // If no original class selected, redirect to select one
+            return redirect()->route('replacement.appeal')->with('error', 'Please select your original missed class first.');
+        }
+
+        // Load the original class with relationships
         $originalClass = Timetable::with(['subject', 'venue', 'classGroup'])
-            ->where('courseSubjectId', $replacementClass->courseSubjectId)
-            ->where('timetableId', '!=', $replacementClass->timetableId)
+            ->where('timetableId', $selectedClassData['timetableId'])
             ->first();
+
+        if (!$originalClass) {
+            // If timetable not found, create object from session data
+            $originalClass = (object) [
+                'timetableId' => $selectedClassData['timetableId'],
+                'classDate' => $selectedClassData['classDate'],
+                'classType' => $selectedClassData['classType'] ?? 'Lecture',
+                'startTime' => $selectedClassData['startTime'],
+                'endTime' => $selectedClassData['endTime'],
+                'classGroupId' => $selectedClassData['classGroupId'],
+                'subject' => (object) [
+                    'subjectId' => $selectedClassData['subjectCode'] ?? 'N/A',
+                    'subjectName' => $selectedClassData['subjectName'] ?? 'Unknown Subject'
+                ],
+                'venue' => (object) [
+                    'venueId' => $selectedClassData['venueId'] ?? 'N/A'
+                ],
+                'classGroup' => (object) [
+                    'classGroupId' => $selectedClassData['classGroupId'] ?? 'N/A'
+                ]
+            ];
+        } else {
+            // If classGroup relationship is null, add it from session or database
+            if (!$originalClass->classGroup && $selectedClassData['classGroupId']) {
+                $originalClass->classGroup = (object) [
+                    'classGroupId' => $selectedClassData['classGroupId']
+                ];
+            }
+        }
+
+        // Clear the session data after using it
+        session()->forget('replacement_selected_class');
 
         return view('student.replacementModule.appeal_form', compact('originalClass', 'replacementClass', 'student'));
     }
@@ -104,12 +144,22 @@ class ReplacementController extends Controller
         // Get the classes to extract timeslots and class group IDs
         $originalClass = Timetable::find($validated['original_class_id']);
         $requestedClass = Timetable::find($validated['requested_class_id']);
+        
+        // Get student's actual classGroupId
+        $studentClassGroupId = Auth::user()->classGroupId;
+        
+        // Extract the appropriate classGroupId from the timetable records
+        // If the timetable has multiple groups (comma-separated), check if student's group is in it
+        $originalClassGroupId = $this->extractStudentClassGroup($originalClass->classGroupId, $studentClassGroupId);
+        $requestedClassGroupId = $this->extractStudentClassGroup($requestedClass->classGroupId, $studentClassGroupId);
 
         // Create the appeal - Observer will auto-generate appealId
         $appeal = ReplacementAppeal::create([
             'userId' => Auth::user()->userId,
-            'originalClassGroupId' => $originalClass->classGroupId,
-            'requestedClassGroupId' => $requestedClass->classGroupId,
+            'originalTimetableId' => $validated['original_class_id'],
+            'requestedTimetableId' => $validated['requested_class_id'],
+            'originalClassGroupId' => $originalClassGroupId,
+            'requestedClassGroupId' => $requestedClassGroupId,
             'originalTimeslot' => $originalClass->startTime,
             'requestedTimeslot' => $requestedClass->startTime,
             'reason' => $validated['reason'],
@@ -119,6 +169,27 @@ class ReplacementController extends Controller
         ]);
 
         return redirect()->route('replacement.myAppeals')->with('success', 'Your replacement appeal has been submitted successfully! Appeal ID: #' . $appeal->appealId);
+    }
+
+    /**
+     * Helper: Extract student's classGroupId from potentially comma-separated list
+     */
+    private function extractStudentClassGroup($classGroupIds, $studentClassGroupId)
+    {
+        // If it's a single group, return it
+        if (strpos($classGroupIds, ',') === false) {
+            return $classGroupIds;
+        }
+        
+        // If multiple groups, check if student's group is in the list
+        $groups = array_map('trim', explode(',', $classGroupIds));
+        
+        if (in_array($studentClassGroupId, $groups)) {
+            return $studentClassGroupId;
+        }
+        
+        // Otherwise return the first group
+        return $groups[0];
     }
 
     /**
@@ -169,14 +240,81 @@ class ReplacementController extends Controller
 
         // Validation checks
         $validationChecks = [
-            'same_week' => true, // You can add logic to check if same week
-            'after_submission' => true, // Check if requested class is after submission
-            'no_clash' => true, // Check for time clashes
-            'has_capacity' => true, // Check if class has capacity
-            'valid_account' => $appeal->user->role === 'student', // Check user is student
+            // Check if replacement class is in the same week as original
+            'same_week' => function() use ($appeal) {
+                if (!$appeal->originalClass->date || !$appeal->requestedClass->date) return false;
+                $originalWeek = date('W', strtotime($appeal->originalClass->date));
+                $requestedWeek = date('W', strtotime($appeal->requestedClass->date));
+                return $originalWeek === $requestedWeek;
+            },
+            
+            // Check if requested class is after submission date
+            'after_submission' => function() use ($appeal) {
+                if (!$appeal->requestedClass->date) return false;
+                return strtotime($appeal->requestedClass->date) > strtotime($appeal->submissionDate);
+            },
+            
+            // Check for timetable clash - requested class shouldn't clash with student's existing schedule
+            'no_clash' => function() use ($appeal) {
+                if (!$appeal->requestedClass->date || !$appeal->requestedClass->startTime || !$appeal->requestedClass->endTime) {
+                    return false;
+                }
+                
+                // Get student's timetable for that date
+                $studentTimetable = Timetable::where(function($query) use ($appeal) {
+                        $query->where('classGroupId', $appeal->user->classGroupId)
+                              ->orWhereRaw("FIND_IN_SET(?, classGroupId) > 0", [$appeal->user->classGroupId]);
+                    })
+                    ->where('classDate', $appeal->requestedClass->date)
+                    ->get();
+                
+                // Check for time overlaps
+                foreach ($studentTimetable as $class) {
+                    $existingStart = strtotime($class->startTime);
+                    $existingEnd = strtotime($class->endTime);
+                    $requestedStart = strtotime($appeal->requestedClass->startTime);
+                    $requestedEnd = strtotime($appeal->requestedClass->endTime);
+                    
+                    // Check if times overlap
+                    if ($requestedStart < $existingEnd && $requestedEnd > $existingStart) {
+                        return false; // Clash detected
+                    }
+                }
+                
+                return true; // No clash
+            },
+            
+            // Check if class has available capacity (< 5 replacement students)
+            'has_capacity' => function() use ($appeal) {
+                if (!isset($appeal->requestedClass)) return false;
+                
+                // Get the requested class group ID from the nested structure
+                $requestedGroupId = $appeal->requestedClass->classGroup->classGroupId ?? null;
+                
+                if (!$requestedGroupId) return false;
+                
+                // Count approved replacements for this class group
+                $replacementCount = Replacement::where('requestedClassGroupId', $requestedGroupId)
+                    ->whereHas('appeal', function($query) {
+                        $query->where('status', 'Approved');
+                    })
+                    ->count();
+                
+                return $replacementCount < 5;
+            },
+            
+            // Check if student account is active
+            'valid_account' => $appeal->user->role === 'student' && $appeal->user->status === 'active',
+            
+            // Check if same subject code
             'same_subject' => $appeal->originalClass->subject && $appeal->requestedClass->subject ?
                 $appeal->originalClass->subject->subjectId === $appeal->requestedClass->subject->subjectId : false
         ];
+        
+        // Execute all validation functions
+        $validationChecks = array_map(function($check) {
+            return is_callable($check) ? $check() : $check;
+        }, $validationChecks);
 
         return view('admin.replacementModule.appeal_detail', compact('appeal', 'validationChecks'));
     }
@@ -219,20 +357,18 @@ class ReplacementController extends Controller
     public function getAllAppeals()
     {
         try {
-            $appeals = ReplacementAppeal::with([
-                'user',
-                'originalClass.timetables.subject',
-                'originalClass.timetables.venue',
-                'requestedClass.timetables.subject',
-                'requestedClass.timetables.venue',
-                'adminUser',
-                'replacement'
-            ])->orderBy('submissionDate', 'desc')
+            $appeals = ReplacementAppeal::with(['user', 'adminUser', 'replacement'])
+                ->orderBy('submissionDate', 'desc')
                 ->get()
                 ->map(function ($appeal) {
-                    // Flatten the structure for easier view access
-                    $originalTimetable = $appeal->originalClass->timetables->first();
-                    $requestedTimetable = $appeal->requestedClass->timetables->first();
+                    // Get the specific timetable records using stored timetableIds
+                    $originalTimetable = $appeal->originalTimetableId 
+                        ? Timetable::with(['subject', 'venue'])->find($appeal->originalTimetableId)
+                        : null;
+                    
+                    $requestedTimetable = $appeal->requestedTimetableId
+                        ? Timetable::with(['subject', 'venue'])->find($appeal->requestedTimetableId)
+                        : null;
 
                     return [
                         'appealId' => $appeal->appealId,
@@ -248,21 +384,25 @@ class ReplacementController extends Controller
                         'originalClass' => [
                             'subject' => $originalTimetable->subject ?? null,
                             'venue' => $originalTimetable->venue ?? null,
+                            'classType' => $originalTimetable->classType ?? null,
+                            'classGroupId' => $originalTimetable->classGroupId ?? null,
                             'date' => $originalTimetable->classDate ?? null,
                             'startTime' => $originalTimetable && $originalTimetable->startTime ? date('H:i', strtotime($originalTimetable->startTime)) : null,
                             'endTime' => $originalTimetable && $originalTimetable->endTime ? date('H:i', strtotime($originalTimetable->endTime)) : null,
                             'classGroup' => [
-                                'classGroupId' => $appeal->originalClass->classGroupId ?? null,
+                                'classGroupId' => $appeal->originalClassGroupId ?? null,
                             ],
                         ],
                         'requestedClass' => [
                             'subject' => $requestedTimetable->subject ?? null,
                             'venue' => $requestedTimetable->venue ?? null,
+                            'classType' => $requestedTimetable->classType ?? null,
+                            'classGroupId' => $requestedTimetable->classGroupId ?? null,
                             'date' => $requestedTimetable->classDate ?? null,
                             'startTime' => $requestedTimetable && $requestedTimetable->startTime ? date('H:i', strtotime($requestedTimetable->startTime)) : null,
                             'endTime' => $requestedTimetable && $requestedTimetable->endTime ? date('H:i', strtotime($requestedTimetable->endTime)) : null,
                             'classGroup' => [
-                                'classGroupId' => $appeal->requestedClass->classGroupId ?? null,
+                                'classGroupId' => $appeal->requestedClassGroupId ?? null,
                             ],
                         ],
                         'replacement' => $appeal->replacement,
@@ -288,22 +428,19 @@ class ReplacementController extends Controller
     public function getUserAppeals($userId)
     {
         try {
-            $appeals = ReplacementAppeal::with([
-                'user',
-                'originalClass.timetables.subject',
-                'originalClass.timetables.venue',
-                'requestedClass.timetables.subject',
-                'requestedClass.timetables.venue',
-                'adminUser',
-                'replacement'
-            ])
+            $appeals = ReplacementAppeal::with(['user', 'adminUser', 'replacement'])
                 ->where('userId', $userId)
                 ->orderBy('submissionDate', 'desc')
                 ->get()
                 ->map(function ($appeal) {
-                    // Flatten the structure for easier view access
-                    $originalTimetable = $appeal->originalClass->timetables->first();
-                    $requestedTimetable = $appeal->requestedClass->timetables->first();
+                    // Get the specific timetable records using stored timetableIds
+                    $originalTimetable = $appeal->originalTimetableId 
+                        ? Timetable::with(['subject', 'venue'])->find($appeal->originalTimetableId)
+                        : null;
+                    
+                    $requestedTimetable = $appeal->requestedTimetableId
+                        ? Timetable::with(['subject', 'venue'])->find($appeal->requestedTimetableId)
+                        : null;
 
                     return [
                         'appealId' => $appeal->appealId,
@@ -319,21 +456,25 @@ class ReplacementController extends Controller
                         'originalClass' => [
                             'subject' => $originalTimetable->subject ?? null,
                             'venue' => $originalTimetable->venue ?? null,
+                            'classType' => $originalTimetable->classType ?? null,
+                            'classGroupId' => $originalTimetable->classGroupId ?? null,
                             'date' => $originalTimetable->classDate ?? null,
                             'startTime' => $originalTimetable && $originalTimetable->startTime ? date('H:i', strtotime($originalTimetable->startTime)) : null,
                             'endTime' => $originalTimetable && $originalTimetable->endTime ? date('H:i', strtotime($originalTimetable->endTime)) : null,
                             'classGroup' => [
-                                'classGroupId' => $appeal->originalClass->classGroupId ?? null,
+                                'classGroupId' => $appeal->originalClassGroupId ?? null,
                             ],
                         ],
                         'requestedClass' => [
                             'subject' => $requestedTimetable->subject ?? null,
                             'venue' => $requestedTimetable->venue ?? null,
+                            'classType' => $requestedTimetable->classType ?? null,
+                            'classGroupId' => $requestedTimetable->classGroupId ?? null,
                             'date' => $requestedTimetable->classDate ?? null,
                             'startTime' => $requestedTimetable && $requestedTimetable->startTime ? date('H:i', strtotime($requestedTimetable->startTime)) : null,
                             'endTime' => $requestedTimetable && $requestedTimetable->endTime ? date('H:i', strtotime($requestedTimetable->endTime)) : null,
                             'classGroup' => [
-                                'classGroupId' => $appeal->requestedClass->classGroupId ?? null,
+                                'classGroupId' => $appeal->requestedClassGroupId ?? null,
                             ],
                         ],
                         'replacement' => $appeal->replacement,
@@ -359,19 +500,17 @@ class ReplacementController extends Controller
     public function getAppeal($appealId)
     {
         try {
-            $appeal = ReplacementAppeal::with([
-                'user',
-                'originalClass.timetables.subject',
-                'originalClass.timetables.venue',
-                'requestedClass.timetables.subject',
-                'requestedClass.timetables.venue',
-                'adminUser',
-                'replacement'
-            ])->findOrFail($appealId);
+            $appeal = ReplacementAppeal::with(['user', 'adminUser', 'replacement'])
+                ->findOrFail($appealId);
 
-            // Flatten the structure for easier view access
-            $originalTimetable = $appeal->originalClass->timetables->first();
-            $requestedTimetable = $appeal->requestedClass->timetables->first();
+            // Get the specific timetable records using stored timetableIds
+            $originalTimetable = $appeal->originalTimetableId 
+                ? Timetable::with(['subject', 'venue'])->find($appeal->originalTimetableId)
+                : null;
+            
+            $requestedTimetable = $appeal->requestedTimetableId
+                ? Timetable::with(['subject', 'venue'])->find($appeal->requestedTimetableId)
+                : null;
 
             $appealData = [
                 'appealId' => $appeal->appealId,
@@ -387,21 +526,25 @@ class ReplacementController extends Controller
                 'originalClass' => [
                     'subject' => $originalTimetable->subject ?? null,
                     'venue' => $originalTimetable->venue ?? null,
+                    'classType' => $originalTimetable->classType ?? null,
+                    'classGroupId' => $originalTimetable->classGroupId ?? null,
                     'date' => $originalTimetable->classDate ?? null,
                     'startTime' => $originalTimetable && $originalTimetable->startTime ? date('H:i', strtotime($originalTimetable->startTime)) : null,
                     'endTime' => $originalTimetable && $originalTimetable->endTime ? date('H:i', strtotime($originalTimetable->endTime)) : null,
                     'classGroup' => [
-                        'classGroupId' => $appeal->originalClass->classGroupId ?? null,
+                        'classGroupId' => $appeal->originalClassGroupId ?? null,
                     ],
                 ],
                 'requestedClass' => [
                     'subject' => $requestedTimetable->subject ?? null,
                     'venue' => $requestedTimetable->venue ?? null,
+                    'classType' => $requestedTimetable->classType ?? null,
+                    'classGroupId' => $requestedTimetable->classGroupId ?? null,
                     'date' => $requestedTimetable->classDate ?? null,
                     'startTime' => $requestedTimetable && $requestedTimetable->startTime ? date('H:i', strtotime($requestedTimetable->startTime)) : null,
                     'endTime' => $requestedTimetable && $requestedTimetable->endTime ? date('H:i', strtotime($requestedTimetable->endTime)) : null,
                     'classGroup' => [
-                        'classGroupId' => $appeal->requestedClass->classGroupId ?? null,
+                        'classGroupId' => $appeal->requestedClassGroupId ?? null,
                     ],
                 ],
                 'replacement' => $appeal->replacement,

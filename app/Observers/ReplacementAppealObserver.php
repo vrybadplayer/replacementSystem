@@ -59,11 +59,13 @@ class ReplacementAppealObserver
     {
         // When appeal is approved, create replacement record
         if ($replacementAppeal->status === 'Approved' && !$replacementAppeal->replacement) {
-            // Load relationships needed
-            $replacementAppeal->load('user', 'requestedClass.timetables', 'originalClass.timetables');
+            // Load user and get timetables directly using stored IDs
+            $replacementAppeal->load('user');
             $user = $replacementAppeal->user;
-            $requestedTimetable = $replacementAppeal->requestedClass->timetables->first();
-            $originalTimetable = $replacementAppeal->originalClass->timetables->first();
+            
+            // Get timetable records using the stored timetableIds
+            $originalTimetable = \App\Models\Timetable::find($replacementAppeal->originalTimetableId);
+            $requestedTimetable = \App\Models\Timetable::find($replacementAppeal->requestedTimetableId);
             
             if ($user && $requestedTimetable && $originalTimetable) {
                 Replacement::create([

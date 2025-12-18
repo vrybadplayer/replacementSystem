@@ -39,38 +39,47 @@
                                 </div>
 
                                 <div class="appeal-body">
-                                    <div class="class-section">
-                                        <h4>📅 Original Class (Missed)</h4>
+                                    <div class="class-section" style="background-color: #ffebee; border: 2px solid #ef5350; border-radius: 8px; padding: 15px;">
+                                        <h4 style="color: #c62828;">📅 Original Class (Missed)</h4>
                                         <div class="class-info">
-                                            📚 Subject: <strong>{{ $appeal->originalClass->subject->subjectId }} - {{ $appeal->originalClass->subject->subjectName }}</strong>
+                                            Subject: <strong>{{ $appeal->originalClass->subject->subjectId ?? 'N/A' }} - {{ $appeal->originalClass->subject->subjectName ?? 'N/A' }}</strong>
                                         </div>
                                         <div class="class-info">
-                                            📍 Venue: {{ $appeal->originalClass->venue->venueId }}
+                                            Venue: {{ $appeal->originalClass->venue->venueId ?? 'N/A' }}
                                         </div>
                                         <div class="class-info">
-                                            📅 Date: {{ date('D, d M Y', strtotime($appeal->originalClass->date)) }}
+                                            Type: {{ $appeal->originalClass->classType ?? 'N/A' }}
                                         </div>
                                         <div class="class-info">
-                                            ⏰ Time: {{ $appeal->originalClass->startTime }} - {{ $appeal->originalClass->endTime }}
+                                            Date: {{ $appeal->originalClass->date ? date('D, d M Y', strtotime($appeal->originalClass->date)) : 'N/A' }}
+                                        </div>
+                                        <div class="class-info">
+                                            Time: {{ $appeal->originalClass->startTime ?? 'N/A' }} - {{ $appeal->originalClass->endTime ?? 'N/A' }}
+                                        </div>
+                                        <div class="class-info">
+                                            Group: {{ $appeal->originalClass->classGroupId ?? 'N/A' }}
                                         </div>
                                     </div>
 
-                                    <div class="class-section">
-                                        <h4>✅ Replacement Class (Requested)</h4>
+                                    <div class="class-section" style="background-color: #e8f5e9; border: 2px solid #66bb6a; border-radius: 8px; padding: 15px;">
+                                        <h4 style="color: #2e7d32;">✅ Replacement Class (Requested)</h4>
                                         <div class="class-info">
-                                            📚 Subject: <strong>{{ $appeal->requestedClass->subject->subjectId }} - {{ $appeal->requestedClass->subject->subjectName }}</strong>
+                                            Subject: <strong>{{ $appeal->requestedClass->subject->subjectId ?? 'N/A' }} - {{ $appeal->requestedClass->subject->subjectName ?? 'N/A' }}</strong>
                                         </div>
                                         <div class="class-info">
-                                            📍 Venue: {{ $appeal->requestedClass->venue->venueId }}
+                                            Venue: {{ $appeal->requestedClass->venue->venueId ?? 'N/A' }}
                                         </div>
                                         <div class="class-info">
-                                            📅 Date: {{ date('D, d M Y', strtotime($appeal->requestedClass->date)) }}
+                                            Type: {{ $appeal->requestedClass->classType ?? 'N/A' }}
                                         </div>
                                         <div class="class-info">
-                                            ⏰ Time: {{ $appeal->requestedClass->startTime }} - {{ $appeal->requestedClass->endTime }}
+                                            Date: {{ $appeal->requestedClass->date ? date('D, d M Y', strtotime($appeal->requestedClass->date)) : 'N/A' }}
                                         </div>
                                         <div class="class-info">
-                                            👥 Group: {{ $appeal->requestedClass->classGroup->classGroupId ?? 'N/A' }}
+                                            Time: {{ $appeal->requestedClass->startTime ?? 'N/A' }} - {{ $appeal->requestedClass->endTime ?? 'N/A' }}
+                                        </div>
+                                        <div class="class-info">
+                                            Group: {{ $appeal->requestedClass->classGroupId ?? 'N/A' }}
                                         </div>
                                     </div>
                                 </div>

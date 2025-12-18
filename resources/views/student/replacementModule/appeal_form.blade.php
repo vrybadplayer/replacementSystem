@@ -28,13 +28,16 @@
                 <div class="class-info-section">
                     <!-- Original Class -->
                     <div class="class-card original">
-                        <h3>📅 Original Class (Missed)</h3>
+                        <h3>Original Class (Missed)</h3>
                         @if($originalClass)
                         <div class="class-detail">
                             <strong>Subject:</strong> {{ $originalClass->subject->subjectId }}
                         </div>
                         <div class="class-detail">
                             <strong>Name:</strong> {{ $originalClass->subject->subjectName }}
+                        </div>
+                        <div class="class-detail">
+                            <strong>Type:</strong> {{ $originalClass->classType ?? 'N/A' }}
                         </div>
                         <div class="class-detail">
                             <strong>Date:</strong> {{ date('D, d M Y', strtotime($originalClass->classDate)) }}
@@ -53,12 +56,15 @@
 
                     <!-- Replacement Class -->
                     <div class="class-card replacement">
-                        <h3>✅ Replacement Class (Request)</h3>
+                        <h3>Replacement Class (Request)</h3>
                         <div class="class-detail">
                             <strong>Subject:</strong> {{ $replacementClass->subject->subjectId }}
                         </div>
                         <div class="class-detail">
                             <strong>Name:</strong> {{ $replacementClass->subject->subjectName }}
+                        </div>
+                        <div class="class-detail">
+                            <strong>Type:</strong> {{ $replacementClass->classType ?? 'N/A' }}
                         </div>
                         <div class="class-detail">
                             <strong>Date:</strong> {{ date('D, d M Y', strtotime($replacementClass->classDate)) }}

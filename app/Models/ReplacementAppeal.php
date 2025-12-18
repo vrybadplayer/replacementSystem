@@ -14,6 +14,8 @@ class ReplacementAppeal extends Model
     protected $fillable = [
         'appealId',
         'userId',
+        'originalTimetableId',
+        'requestedTimetableId',
         'originalClassGroupId',
         'requestedClassGroupId',
         'originalTimeslot',

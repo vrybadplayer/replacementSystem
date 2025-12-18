@@ -75,9 +75,13 @@
                                     <div class="info-label">Venue</div>
                                     <div class="info-value">{{ $appeal->originalClass->venue->venueId ?? 'N/A' }}</div>
                                 </div>
+                                <div class="info-row" style="margin-bottom: 10px;">
+                                    <div class="info-label">Type</div>
+                                    <div class="info-value">{{ $appeal->originalClass->classType ?? 'N/A' }}</div>
+                                </div>
                                 <div class="info-row">
                                     <div class="info-label">Group</div>
-                                    <div class="info-value">{{ $appeal->originalClass->classGroup->classGroupId ?? 'N/A' }}</div>
+                                    <div class="info-value">{{ $appeal->originalClass->classGroupId ?? 'N/A' }}</div>
                                 </div>
                             </div>
 
@@ -97,8 +101,12 @@
                                     <div class="info-value">{{ $appeal->requestedClass->venue->venueId ?? 'N/A' }}</div>
                                 </div>
                                 <div class="info-row" style="margin-bottom: 10px;">
+                                    <div class="info-label">Type</div>
+                                    <div class="info-value">{{ $appeal->requestedClass->classType ?? 'N/A' }}</div>
+                                </div>
+                                <div class="info-row" style="margin-bottom: 10px;">
                                     <div class="info-label">Group</div>
-                                    <div class="info-value">{{ $appeal->requestedClass->classGroup->classGroupId ?? 'N/A' }}</div>
+                                    <div class="info-value">{{ $appeal->requestedClass->classGroupId ?? 'N/A' }}</div>
                                 </div>
                             </div>
                         </div>
