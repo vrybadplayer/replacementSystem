@@ -10,6 +10,10 @@ $selectedGroup = $selectedGroup ?? null;
 $daysOfWeek = $daysOfWeek ?? [];
 $venues = $venues ?? [];
 $timeSlots = $timeSlots ?? [];
+
+// SCP-73 Security tokens
+$actionToken = $actionToken ?? null;
+$confirmationId = $confirmationId ?? null;
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -39,10 +43,15 @@ $timeSlots = $timeSlots ?? [];
             <h2 class="page-title">Timeslot Management</h2>
 
             @if(session('success'))
-            <!-- ... success message ... -->
+            <div class="alert alert-success" style="padding: 15px; background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; border-radius: 4px; margin-bottom: 20px;">
+                <strong>✓ Success:</strong> {{ session('success') }}
+            </div>
             @endif
+            
             @if(session('error'))
-            <!-- ... error message ... -->
+            <div class="alert alert-error" style="padding: 15px; background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; border-radius: 4px; margin-bottom: 20px;">
+                <strong>✗ Error:</strong> {{ session('error') }}
+            </div>
             @endif
 
             <!-- 1. FILTER FORM (Always visible) -->
@@ -79,12 +88,39 @@ $timeSlots = $timeSlots ?? [];
             @if($filteredSlots)
             <form id="modifyForm" action="{{ route('admin.timeslot.update') }}" method="POST">
                 @csrf
+                
+                <!-- SCP-73: Security Tokens -->
+                @if($actionToken && $confirmationId)
+                <input type="hidden" name="action_token" value="{{ $actionToken }}">
+                <input type="hidden" name="confirmation_id" value="{{ $confirmationId }}">
+                @endif
 
                 <!-- Hidden inputs for UPDATE -->
                 <input type="hidden" name="originalTimetableId" id="originalTimetableId" value="{{ old('originalTimetableId') }}">
                 <input type="hidden" name="newDay" id="newDayInput" value="{{ old('newDay') }}">
                 <input type="hidden" name="newVenueId" id="newVenueIdInput" value="{{ old('newVenueId') }}">
                 <input type="hidden" name="newStartTime" id="newStartTimeInput" value="{{ old('newStartTime') }}">
+
+                <!-- SCP-73: Security Confirmation Section -->
+                @if($actionToken && $confirmationId)
+                <div class="security-confirmation" style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                    <h4 style="margin-top: 0; color: #856404; display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 20px;">⚠️</span> Security Confirmation Required
+                    </h4>
+                    <div style="margin-top: 10px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px;">
+                            <input type="checkbox" name="user_confirmation" value="yes" required 
+                                   style="width: 18px; height: 18px; margin-top: 3px;">
+                            <div>
+                                <strong style="color: #856404;">I confirm that I intend to modify this scheduled timeslot.</strong>
+                                <div style="margin-top: 5px; font-size: 0.85em; color: #856404;">
+                                    <div>Confirmation ID: <code style="background: #fff; padding: 2px 6px; border-radius: 3px;">{{ $confirmationId }}</code></div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                @endif
 
                 <div class="modify-section">
                     <label class="modify-label">Modify From:</label>
@@ -98,8 +134,6 @@ $timeSlots = $timeSlots ?? [];
                         </option>
                         @endforeach
                     </select>
-                    <!-- Delete Button (Removed per instruction, but placeholder left for completeness) -->
-                    <!-- <button type="button" id="deleteBtn" class="save-btn" disabled style="background-color: #f8d7da;">Delete</button> -->
                 </div>
 
                 <div class="section-label">To:</div>
@@ -123,7 +157,7 @@ $timeSlots = $timeSlots ?? [];
                 <div class="options-container" id="venue-container">
                     @foreach($venues as $venue)
                     <label class="pill-radio">
-                        <input type="radio" name="newVenueId" value="{{ $venue['venueId'] }}" onclick="updatePillSelection('newVenueId', this.value)">
+                        <input type="radio" name="newVenueId" value="{{ $venue['venueId'] }}" onclick="updatePillSelection('newVenueId', this.value)" {{ old('newVenueId') == $venue['venueId'] ? 'checked' : '' }}>
                         <span class="pill-btn">{{ $venue['venueId'] }}</span>
                     </label>
                     @endforeach
@@ -137,7 +171,7 @@ $timeSlots = $timeSlots ?? [];
                     @foreach($timeSlots as $start)
                     @php $end = Carbon::createFromFormat('H:i', $start)->addHours(2)->format('H:i'); @endphp
                     <label class="pill-radio">
-                        <input type="radio" name="newStartTime" value="{{ $start }}" onclick="updatePillSelection('newStartTime', this.value)">
+                        <input type="radio" name="newStartTime" value="{{ $start }}" onclick="updatePillSelection('newStartTime', this.value)" {{ old('newStartTime') == $start ? 'checked' : '' }}>
                         <span class="pill-btn">{{ $start }} - {{ $end }}</span>
                     </label>
                     @endforeach
@@ -147,12 +181,18 @@ $timeSlots = $timeSlots ?? [];
 
                 <!-- Save Button -->
                 <div class="footer-action">
-                    <!-- We use JS to enable this button when all fields are selected -->
-                    <button id="saveBtn" type="submit" class="save-btn" disabled>Save</button>
+                    <button id="saveBtn" type="submit" class="save-btn" disabled>Save Changes</button>
                 </div>
             </form>
             @else
-            <p class="text-gray-500" style="margin-top: 3rem;">Please select a Course and Class Group above and click 'Filter' (by selecting the Group).</p>
+            <div class="empty-state" style="margin-top: 3rem; text-align: center; padding: 40px; background: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6;">
+                <p style="color: #6c757d; font-size: 1.1em; margin-bottom: 10px;">
+                    Please select a Course and Class Group above.
+                </p>
+                <p style="color: #adb5bd; font-size: 0.95em;">
+                    The form will automatically submit when you make a selection.
+                </p>
+            </div>
             @endif
 
         </main>
@@ -187,22 +227,68 @@ $timeSlots = $timeSlots ?? [];
             const daySelected = document.querySelector('input[name="newDay"]:checked') !== null;
             const venueSelected = document.querySelector('input[name="newVenueId"]:checked') !== null;
             const timeSelected = document.querySelector('input[name="newStartTime"]:checked') !== null;
+            
+            // Also check SCP-73 confirmation checkbox if it exists
+            const confirmationCheckbox = document.querySelector('input[name="user_confirmation"]');
+            const confirmationChecked = !confirmationCheckbox || confirmationCheckbox.checked;
 
             const saveBtn = document.getElementById('saveBtn');
 
-            if (originalSelected && daySelected && venueSelected && timeSelected) {
+            if (originalSelected && daySelected && venueSelected && timeSelected && confirmationChecked) {
                 saveBtn.disabled = false;
+                saveBtn.style.opacity = "1";
+                saveBtn.style.cursor = "pointer";
             } else {
                 saveBtn.disabled = true;
+                saveBtn.style.opacity = "0.6";
+                saveBtn.style.cursor = "not-allowed";
             }
         }
 
-        // Add event listeners to the pills for visual feedback (since we don't have JS highlight)
+        // Add event listeners to the pills for visual feedback
         document.addEventListener('DOMContentLoaded', function() {
             // Check if the page has old input errors and needs to display the Save button state
             checkValidityAndEnableSave();
+            
+            // Add visual feedback for selected pills
+            document.querySelectorAll('.pill-radio input').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    // Remove 'selected' class from all pills in this group
+                    const groupName = this.name;
+                    document.querySelectorAll(`input[name="${groupName}"]`).forEach(r => {
+                        r.parentElement.classList.remove('selected');
+                    });
+                    
+                    // Add 'selected' class to the clicked one
+                    this.parentElement.classList.add('selected');
+                });
+            });
+            
+            // Check confirmation checkbox for SCP-73 compliance
+            const confirmationCheckbox = document.querySelector('input[name="user_confirmation"]');
+            if (confirmationCheckbox) {
+                confirmationCheckbox.addEventListener('change', checkValidityAndEnableSave);
+            }
         });
     </script>
+    
+    <style>
+        .pill-radio.selected .pill-btn {
+            background-color: #007bff !important;
+            color: white !important;
+            border-color: #007bff !important;
+        }
+        
+        .security-confirmation code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+        
+        .save-btn:disabled {
+            background-color: #6c757d !important;
+            border-color: #6c757d !important;
+        }
+    </style>
 </body>
-
 </html>

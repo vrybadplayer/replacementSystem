@@ -1,6 +1,10 @@
 @php
 // FIX: Import Carbon here so it is available for timeslot formatting
 use Carbon\Carbon;
+
+// SCP-73 Security tokens (passed from controller)
+$actionToken = $actionToken ?? null;
+$confirmationId = $confirmationId ?? null;
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -32,13 +36,14 @@ use Carbon\Carbon;
 
             <!-- Success/Error Message Display -->
             @if(session('success'))
-            <div style="padding: 1rem; background-color: #d1e7dd; border: 1px solid #a3cfb4; color: #0a3622; margin-bottom: 1rem; border-radius: 5px;">
-                {{ session('success') }}
+            <div class="alert alert-success" style="padding: 1rem; background-color: #d1e7dd; border: 1px solid #a3cfb4; color: #0a3622; margin-bottom: 1rem; border-radius: 5px;">
+                <strong>✓ Success:</strong> {{ session('success') }}
             </div>
             @endif
+            
             @if(session('error'))
-            <div style="padding: 1rem; background-color: #f8d7da; border: 1px solid #f5c2c7; color: #58151c; margin-bottom: 1rem; border-radius: 5px;">
-                {{ session('error') }}
+            <div class="alert alert-error" style="padding: 1rem; background-color: #f8d7da; border: 1px solid #f5c2c7; color: #58151c; margin-bottom: 1rem; border-radius: 5px;">
+                <strong>✗ Error:</strong> {{ session('error') }}
             </div>
             @endif
 
@@ -47,11 +52,39 @@ use Carbon\Carbon;
             <!-- The action points to the named route for form submission -->
             <form id="assignmentForm" action="{{ route('admin.assignment.submit') }}" method="POST">
                 @csrf
+                
+                <!-- SCP-73: Security Tokens -->
+                @if($actionToken && $confirmationId)
+                <input type="hidden" name="action_token" value="{{ $actionToken }}">
+                <input type="hidden" name="confirmation_id" value="{{ $confirmationId }}">
+                @endif
+
+                <!-- SCP-73: Security Confirmation Section -->
+                @if($actionToken && $confirmationId)
+                <div class="security-confirmation" style="margin: 0 0 20px 0; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                    <h4 style="margin-top: 0; color: #856404; display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 20px;">⚠️</span> Security Confirmation Required
+                    </h4>
+                    <div style="margin-top: 10px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px;">
+                            <input type="checkbox" name="user_confirmation" value="yes" required 
+                                   style="width: 18px; height: 18px; margin-top: 3px;"
+                                   onchange="toggleSubmitButton()">
+                            <div>
+                                <strong style="color: #856404;">I confirm that I intend to create this class assignment.</strong>
+                                <div style="margin-top: 5px; font-size: 0.85em; color: #856404;">
+                                    <div>Confirmation ID: <code style="background: #fff; padding: 2px 6px; border-radius: 3px;">{{ $confirmationId }}</code></div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                @endif
 
                 <!-- LAYER 1: Dropdowns -->
                 <div class="filters-container">
                     <!-- 1. Course -->
-                    <select name="courseId" id="courseDropdown" class="custom-dropdown">
+                    <select name="courseId" id="courseDropdown" class="custom-dropdown" required>
                         <option value="" disabled selected>1. Select Course ▼</option>
                         @foreach($courses as $courseId => $courseCode)
                         <option value="{{ $courseId }}" {{ old('courseId') == $courseId ? 'selected' : '' }}>
@@ -61,7 +94,7 @@ use Carbon\Carbon;
                     </select>
 
                     <!-- 2. Subject (ALL Subjects) -->
-                    <select name="subjectId" id="subjectDropdown" class="custom-dropdown">
+                    <select name="subjectId" id="subjectDropdown" class="custom-dropdown" required>
                         <option value="" disabled selected>2. Select Subject ▼</option>
                         @foreach($allSubjects as $subject)
                         <option value="{{ $subject['subjectId'] }}" {{ old('subjectId') == $subject['subjectId'] ? 'selected' : '' }}>{{ $subject['subjectName'] }}</option>
@@ -102,7 +135,7 @@ use Carbon\Carbon;
                     @foreach($daysOfWeek as $day)
                     @php $dayValue = $day; @endphp
                     <label class="pill-radio">
-                        <input type="radio" name="day" value="{{ $dayValue }}" {{ old('day') == $dayValue ? 'checked' : '' }}>
+                        <input type="radio" name="day" value="{{ $dayValue }}" {{ old('day') == $dayValue ? 'checked' : '' }} required>
                         <span class="pill-btn">{{ $day }}</span>
                     </label>
                     @endforeach
@@ -116,7 +149,7 @@ use Carbon\Carbon;
                     @foreach($venues as $venue)
                     @php $venueId = $venue['venueId']; @endphp
                     <label class="pill-radio">
-                        <input type="radio" name="venueId" value="{{ $venueId }}" {{ old('venueId') == $venueId ? 'checked' : '' }}>
+                        <input type="radio" name="venueId" value="{{ $venueId }}" {{ old('venueId') == $venueId ? 'checked' : '' }} required>
                         <span class="pill-btn">{{ $venueId }}</span>
                     </label>
                     @endforeach
@@ -133,7 +166,7 @@ use Carbon\Carbon;
                     $timeslotValue = $start;
                     @endphp
                     <label class="pill-radio">
-                        <input type="radio" name="selectedTimeslot" value="{{ $timeslotValue }}" {{ old('selectedTimeslot') == $timeslotValue ? 'checked' : '' }}>
+                        <input type="radio" name="selectedTimeslot" value="{{ $timeslotValue }}" {{ old('selectedTimeslot') == $timeslotValue ? 'checked' : '' }} required>
                         <span class="pill-btn">{{ $start }} - {{ $end }}</span>
                     </label>
                     @endforeach
@@ -143,8 +176,7 @@ use Carbon\Carbon;
 
                 <!-- Footer -->
                 <div class="footer-action">
-                    <!-- Submit button is always enabled and backend handles required field checks -->
-                    <button id="submit-btn" class="submit-btn">Submit</button>
+                    <button id="submit-btn" type="submit" class="submit-btn" disabled>Create Assignment</button>
                 </div>
             </form>
 
@@ -152,6 +184,116 @@ use Carbon\Carbon;
     </div>
 
     <script src="{{ asset('js/sidebar.js') }}"></script>
+    
+    <script>
+        function toggleSubmitButton() {
+            const confirmationCheckbox = document.querySelector('input[name="user_confirmation"]');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            if (confirmationCheckbox && submitBtn) {
+                if (confirmationCheckbox.checked) {
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = "1";
+                    submitBtn.style.cursor = "pointer";
+                    submitBtn.title = "";
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = "0.6";
+                    submitBtn.style.cursor = "not-allowed";
+                    submitBtn.title = "Please confirm the action first";
+                }
+            }
+        }
+        
+        // Add visual feedback for selected radio buttons
+        function setupRadioSelection() {
+            document.querySelectorAll('.pill-radio input[type="radio"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    // Remove 'selected' class from all pills in this group
+                    const groupName = this.name;
+                    document.querySelectorAll(`input[name="${groupName}"]`).forEach(r => {
+                        r.parentElement.classList.remove('selected');
+                    });
+                    
+                    // Add 'selected' class to the clicked one
+                    this.parentElement.classList.add('selected');
+                });
+                
+                // Initialize selection state
+                if (radio.checked) {
+                    radio.parentElement.classList.add('selected');
+                }
+            });
+        }
+        
+        // Add visual feedback for selected checkboxes
+        function setupCheckboxSelection() {
+            document.querySelectorAll('.pill-checkbox input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        this.parentElement.classList.add('selected');
+                    } else {
+                        this.parentElement.classList.remove('selected');
+                    }
+                });
+                
+                // Initialize selection state
+                if (checkbox.checked) {
+                    checkbox.parentElement.classList.add('selected');
+                }
+            });
+        }
+        
+        // Initialize everything on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleSubmitButton();
+            setupRadioSelection();
+            setupCheckboxSelection();
+            
+            // Add CSS for visual feedback
+            const style = document.createElement('style');
+            style.textContent = `
+                .pill-radio.selected .pill-btn,
+                .pill-checkbox.selected span {
+                    background-color: #007bff !important;
+                    color: white !important;
+                    border-color: #007bff !important;
+                }
+                
+                #submit-btn:disabled {
+                    background-color: #6c757d !important;
+                    border-color: #6c757d !important;
+                    color: white !important;
+                    opacity: 0.6;
+                    cursor: not-allowed !important;
+                }
+                
+                .security-confirmation code {
+                    font-family: 'Courier New', monospace;
+                    font-size: 0.9em;
+                    letter-spacing: 0.5px;
+                }
+                
+                .alert-success {
+                    padding: 1rem;
+                    background-color: #d1e7dd;
+                    border: 1px solid #a3cfb4;
+                    color: #0a3622;
+                    margin-bottom: 1rem;
+                    border-radius: 5px;
+                }
+                
+                .alert-error {
+                    padding: 1rem;
+                    background-color: #f8d7da;
+                    border: 1px solid #f5c2c7;
+                    color: #58151c;
+                    margin-bottom: 1rem;
+                    border-radius: 5px;
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
 </body>
-
 </html>
