@@ -12,7 +12,7 @@ class CourseSubjectService
     protected $baseUrl = 'http://127.0.0.1:8001/api';
 
 
-    function fetchFromApi(string $endpoint): array
+    function fetchFromApi(string $endpoint)
     {
         $url = "{$this->baseUrl}/{$endpoint}";
         $response = Http::timeout(5)->get($url);
@@ -25,13 +25,13 @@ class CourseSubjectService
     }
 
 
-    public function fetchCourseSubjectsFromApi(): array
+    public function fetchCourseSubjectsFromApi()
     {
         return $this->fetchFromApi('courseSubject');
     }
 
 
-    public function fetchCourseSubjectByIdFromApi(string $courseSubjectId): array
+    public function fetchCourseSubjectByIdFromApi(string $courseSubjectId)
     {
         $response = Http::timeout(5)->get("{$this->baseUrl}/courseSubject/{$courseSubjectId}");
         if ($response->status() === 404) {
@@ -45,7 +45,7 @@ class CourseSubjectService
     }
 
 
-    public function createOrUpdateCourseSubject(array $data, ?string $courseSubjectId = null): array
+    public function createOrUpdateCourseSubject(array $data, ?string $courseSubjectId = null)
     {
         $courseSubjectId = $courseSubjectId ?? $data['courseSubjectId'] ?? null;
 
@@ -97,5 +97,17 @@ class CourseSubjectService
         }
 
         return [];
+    }
+
+    public function getCourseSubjectCodes($courseSubjectId)
+    {
+        $response = Http::get($this->baseUrl . '/courseSubject/' . $courseSubjectId);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'] ?? null;
+        }
+
+        return null;
     }
 }

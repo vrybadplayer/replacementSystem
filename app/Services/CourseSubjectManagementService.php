@@ -19,63 +19,83 @@ class CourseSubjectManagementService
     }
 
     // Course Service
-    public function fetchCoursesFromApi(): array
+    public function fetchCoursesFromApi()
     {
         return $this->courseService->fetchCoursesFromApi();
     }
 
-    public function getCoursesForViewFromApi(): array
+    public function getCoursesForViewFromApi()
     {
         return $this->courseService->getCoursesForViewFromApi();
     }
 
-    public function getCourseByIdFromApi(string $courseId): array
+    public function getCourseByIdFromApi(string $courseId)
     {
         return $this->courseService->fetchCourseByIdFromApi($courseId);
     }
     
-    public function createOrUpdateCourse(array $data, ?string $courseId = null): array
+    public function createOrUpdateCourse(array $data, ?string $courseId = null)
     {
         return $this->courseService->createOrUpdateCourse($data, $courseId);
     }
 
 
     // Subject Service
-    public function fetchSubjectsFromApi(): array
+    public function fetchSubjectsFromApi()
     {
         return $this->subjectService->fetchSubjectsFromApi();
     }
 
-    public function getSubjectsForViewFromApi(): array
+    public function getSubjectsForViewFromApi()
     {
         return $this->subjectService->getSubjectsForViewFromApi();
     }
 
-    public function getSubjectByIdFromApi(string $subjectId): array
+    public function getSubjectByIdFromApi(string $subjectId)
     {
         return $this->subjectService->fetchSubjectByIdFromApi($subjectId);
     }
 
-    public function createOrUpdateSubject(array $data, ?string $subjectId = null): array
+    public function createOrUpdateSubject(array $data, ?string $subjectId = null)
     {
         return $this->subjectService->createOrUpdateSubject($data, $subjectId);
     }
 
+    public function getSubjectByCourseSubject(string $courseSubjectId)
+    {
+        return $this->subjectService->getSubjectByCourseSubject($courseSubjectId);
+    }
+
 
     // Course Subject Service
-    public function fetchCourseSubjectsFromApi(): array
+    public function fetchCourseSubjectsFromApi()
     {
         return $this->courseSubjectService->fetchCourseSubjectsFromApi();
     }
+    
+    public function getCourseSubjectCodes(string $courseSubjectId)
+    {
+        return $this->courseSubjectService->getCourseSubjectCodes($courseSubjectId);
+    }
 
-    public function getCourseSubjectByIdFromApi(string $courseSubjectId): array
+    public function getCourseSubjectByIdFromApi(string $courseSubjectId)
     {
         return $this->courseSubjectService->fetchCourseSubjectByIdFromApi($courseSubjectId);
     }
 
-    public function createOrUpdateCourseSubject(array $data, ?string $courseSubjectId = null): array
+    public function createOrUpdateCourseSubject(array $data, ?string $courseSubjectId = null)
     {
         return $this->courseSubjectService->createOrUpdateCourseSubject($data, $courseSubjectId);
+    }
+
+    public function getCourseSubjectsByCourse(string $courseId)
+    {
+        return $this->courseSubjectService->getCourseSubjectsByCourse($courseId);
+    }
+
+    public function fetchCourseSubjectWithForeignKeys($subjectId, $courseId)
+    {
+        return $this->courseSubjectService->fetchCourseSubjectWithForeignKeys($subjectId, $courseId);
     }
 }
 

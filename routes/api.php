@@ -62,7 +62,7 @@ Route::patch('/courses/{courseId}', [CourseController::class, 'apiUpdate']);
 
 // --- Course Subject Bridge REST API ---
 Route::get('/courseSubject', [CourseSubjectController::class, 'index']);
-Route::get('/courseSubject/{courseSubjectId}', [CourseSubjectController::class, 'apiShow']);
+Route::get('/courseSubject/{courseSubjectId}', [CourseSubjectController::class, 'getCourseSubjectCodes']);
 Route::post('/courseSubject', [CourseSubjectController::class, 'apiStore']);
 Route::put('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate']);
 Route::patch('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate']);
@@ -76,6 +76,7 @@ Route::post('/subjects', [SubjectController::class, 'apiStore']);
 Route::put('/subjects/{id}', [SubjectController::class, 'apiUpdate']);
 Route::patch('/subjects/{id}', [SubjectController::class, 'apiUpdate']);
 Route::get('/subject/byCourseSubject/{courseSubjectId}', [SubjectController::class, 'getSubjectByCourseSubject']);
+
 // --- User Management API ---
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -88,7 +89,7 @@ Route::middleware('auth')->group(function () {
 
 // --- Replacement Module API ---
 Route::prefix('replacement')->group(function () {
-    // Appeals
+    // Appeals.
     Route::get('/appeals', [ReplacementController::class, 'getAllAppeals']);
     Route::get('/appeals/pending', [ReplacementController::class, 'getPendingAppeals']);
     Route::get('/appeals/user/{userId}', [ReplacementController::class, 'getUserAppeals']);
