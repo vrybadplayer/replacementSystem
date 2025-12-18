@@ -117,44 +117,18 @@ class CourseSubjectController extends Controller
      */
     public function index()
     {
-        $courseSubjects = CourseSubject::all();
-
-        $courseSubjectsData = $courseSubjects->map(function ($courseSubject) {
-            return [
-                'courseSubjectId' => $courseSubject->courseSubjectId,
-                'courseId' => $courseSubject->courseId,
-                'subjectId' => $courseSubject->subjectId,
-            ];
-        })->toArray();
-
+        $data = CourseSubject::select(
+            'courseSubjectId',
+            'courseId',
+            'subjectId'
+        )->get();
+    
         return response()->json([
             'success' => true,
-            'data' => $courseSubjectsData,
-            'count' => count($courseSubjectsData)
+            'data' => $data,
+            'count' => $data->count(),
         ], 200);
-    }
-
-    public function apiShow(string $courseSubjectId)
-    {
-        $courseSubject = CourseSubject::with(['course', 'subject'])->findOrFail($courseSubjectId);
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'courseSubjectId' => $courseSubject->courseSubjectId,
-                'courseId' => $courseSubject->courseId,
-                'subjectId' => $courseSubject->subjectId,
-                'course' => $courseSubject->course ? [
-                    'courseId' => $courseSubject->course->courseId,
-                    'courseCode' => $courseSubject->course->courseCode ?? '',
-                ] : null,
-                'subject' => $courseSubject->subject ? [
-                    'subjectId' => $courseSubject->subject->subjectId,
-                    'subjectCode' => $courseSubject->subject->subjectCode ?? '',
-                ] : null,
-            ]
-        ], 200);
-    }
+    }    
 
     public function apiStore(Request $request)
     {

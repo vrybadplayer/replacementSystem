@@ -62,13 +62,12 @@ Route::patch('/courses/{courseId}', [CourseController::class, 'apiUpdate']);
 
 // --- Course Subject Bridge REST API ---
 Route::get('/courseSubject', [CourseSubjectController::class, 'index']);
-Route::get('/courseSubject/{courseSubjectId}', [CourseSubjectController::class, 'apiShow']);
+Route::get('/courseSubject/{courseSubjectId}', [CourseSubjectController::class, 'getCourseSubjectCodes']);
 Route::post('/courseSubject', [CourseSubjectController::class, 'apiStore']);
 Route::put('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate']);
 Route::patch('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate']);
 Route::get('/courseSubject/fetchCourseSubjectWithForeignKeys', [CourseSubjectController::class, 'fetchCourseSubjectWithForeignKeys']);
 Route::get('/courseSubjects/byCourse/{courseId}', [CourseSubjectController::class, 'getCourseSubjectsByCourse']);
-Route::get('/courseSubject/{courseSubjectId}/codes', [CourseSubjectController::class, 'getCourseSubjectCodes']);
 
 // --- Subjects REST API ---
 Route::get('/subjects', [SubjectController::class, 'index']);

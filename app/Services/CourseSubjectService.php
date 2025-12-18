@@ -101,7 +101,7 @@ class CourseSubjectService
 
     public function getCourseSubjectCodes($courseSubjectId)
     {
-        $response = Http::get($this->baseUrl . '/courseSubject/' . $courseSubjectId . '/codes');
+        $response = Http::get($this->baseUrl . '/courseSubject/' . $courseSubjectId);
 
         if ($response->successful()) {
             $data = $response->json();
