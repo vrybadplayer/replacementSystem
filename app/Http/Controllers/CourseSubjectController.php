@@ -16,45 +16,38 @@ class CourseSubjectController extends Controller
 
     public function courseSubjectListView(Request $request)
     {
-        // Get all course subjects first
         $allCourseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
-        
-        // Enrich each course subject with course and subject data using getCourseSubjectCodes
+
         $enrichedCourseSubjects = [];
         foreach ($allCourseSubjects as $courseSubject) {
             try {
                 $courseSubjectId = $courseSubject['courseSubjectId'] ?? null;
-                
+
                 if (!$courseSubjectId) {
                     continue;
                 }
-                
-                // Use getCourseSubjectCodes to get both course and subject data in one call
+
                 $codes = CourseSubjectManagementFacade::getCourseSubjectCodes($courseSubjectId);
-                
+
                 if ($codes) {
-                    // Add course data
                     $courseSubject['course'] = [
                         'courseId' => $codes['courseId'],
                         'courseCode' => $codes['courseCode'],
-                        'courseName' => $codes['courseName'] ?? '',
                     ];
-                    
-                    // Add subject data
+
                     $courseSubject['subject'] = [
                         'subjectId' => $codes['subjectId'],
                         'subjectCode' => $codes['subjectCode'],
-                        'subjectName' => $codes['subjectName'] ?? '',
                     ];
                 }
-                
+
                 $enrichedCourseSubjects[] = $courseSubject;
             } catch (\Exception $e) {
                 $csId = $courseSubject['courseSubjectId'] ?? 'unknown';
                 Log::warning("Failed to enrich course subject {$csId}: " . $e->getMessage());
             }
         }
-        
+
         $allCourseSubjects = $enrichedCourseSubjects;
 
         $perPage = 10;
@@ -117,18 +110,14 @@ class CourseSubjectController extends Controller
      */
     public function index()
     {
-        $data = CourseSubject::select(
-            'courseSubjectId',
-            'courseId',
-            'subjectId'
-        )->get();
-    
+        $data = CourseSubject::all();
+
         return response()->json([
             'success' => true,
             'data' => $data,
             'count' => $data->count(),
         ], 200);
-    }    
+    }
 
     public function apiStore(Request $request)
     {
@@ -142,12 +131,7 @@ class CourseSubjectController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Course subject created successfully',
-            'data' => [
-                'courseSubjectId' => $courseSubject->courseSubjectId,
-                'courseId' => $courseSubject->courseId,
-                'subjectId' => $courseSubject->subjectId,
-            ]
+            'data' => $courseSubject,
         ], 201);
     }
 
@@ -163,12 +147,7 @@ class CourseSubjectController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Course subject updated successfully',
-            'data' => [
-                'courseSubjectId' => $courseSubject->courseSubjectId,
-                'courseId' => $courseSubject->courseId,
-                'subjectId' => $courseSubject->subjectId,
-            ]
+            'data' => $courseSubject,
         ], 200);
     }
 
@@ -215,8 +194,7 @@ class CourseSubjectController extends Controller
         if (!$courseSubject) {
             return response()->json([
                 'success' => false,
-                'message' => 'Course subject not found',
-                'data' => null
+                'data' => null,
             ], 404);
         }
 
@@ -230,7 +208,7 @@ class CourseSubjectController extends Controller
                 'subjectId' => $courseSubject->subjectId,
                 'subjectCode' => $courseSubject->subject->subjectCode ?? '',
                 'subjectName' => $courseSubject->subject->subjectName ?? '',
-            ]
+            ],
         ], 200);
     }
 }

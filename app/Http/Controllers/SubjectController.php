@@ -11,7 +11,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class SubjectController extends Controller
 {
-    
+
     public function subjectListView(Request $request)
     {
         $allSubjects = CourseSubjectManagementFacade::getSubjectsForViewFromApi();
@@ -79,25 +79,12 @@ class SubjectController extends Controller
      */
     public function index()
     {
-        // Get all subjects FROM DATABASE directly (bypassing services to avoid circular calls)
-        $subjects = Subject::with(['courses'])->get();
-
-        // Map to API response format
-        $subjectsData = $subjects->map(function ($subject) {
-            return [
-                'subjectId' => $subject->subjectId,
-                'subjectCode' => $subject->subjectCode ?? '',
-                'subjectName' => $subject->subjectName ?? '',
-                'creditHours' => $subject->creditHours ?? 0,
-                'category' => $subject->category ?? '',
-                'status' => $subject->status ?? 'active',
-            ];
-        })->toArray();
+        $data = Subject::all();
 
         return response()->json([
             'success' => true,
-            'data' => $subjectsData,
-            'count' => count($subjectsData)
+            'data' => $data,
+            'count' => $data->count(),
         ], 200);
     }
 
@@ -112,38 +99,21 @@ class SubjectController extends Controller
             'status' => 'nullable|string',
         ]);
 
-
         $subject = Subject::create($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Subject created successfully',
-            'data' => [
-                'subjectId' => $subject->subjectId,
-                'subjectCode' => $subject->subjectCode ?? '',
-                'subjectName' => $subject->subjectName ?? '',
-                'creditHours' => $subject->creditHours ?? 0,
-                'category' => $subject->category ?? '',
-                'status' => $subject->status ?? 'active',
-            ]
+            'data' => $subject,
         ], 201);
     }
 
     public function apiShow(string $subjectId)
     {
-
         $subject = Subject::findOrFail($subjectId);
 
         return response()->json([
             'success' => true,
-            'data' => [
-                'subjectId' => $subject->subjectId,
-                'subjectCode' => $subject->subjectCode ?? '',
-                'subjectName' => $subject->subjectName ?? '',
-                'creditHours' => $subject->creditHours ?? 0,
-                'category' => $subject->category ?? '',
-                'status' => $subject->status ?? 'active',
-            ]
+            'data' => $subject,
         ], 200);
     }
 
@@ -157,21 +127,12 @@ class SubjectController extends Controller
             'status' => 'nullable|string',
         ]);
 
-
         $subject = Subject::findOrFail($id);
         $subject->update($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Subject updated successfully',
-            'data' => [
-                'subjectId' => $subject->subjectId,
-                'subjectCode' => $subject->subjectCode ?? '',
-                'subjectName' => $subject->subjectName ?? '',
-                'creditHours' => $subject->creditHours ?? 0,
-                'category' => $subject->category ?? '',
-                'status' => $subject->status ?? 'active',
-            ]
+            'data' => $subject,
         ], 200);
     }
 
@@ -181,8 +142,8 @@ class SubjectController extends Controller
         $courseSubject = CourseSubject::where('courseSubjectId', $courseSubjectId)->first();
 
         $subject = Subject::where('subjectId', $courseSubject->subjectId)
-        ->select('subjectCode', 'subjectName')
-        ->first();
+            ->select('subjectCode', 'subjectName')
+            ->first();
 
         if (!$subject) {
             return response()->json([

@@ -13,16 +13,12 @@ class SubjectService
 
     protected function fetchFromApi(string $endpoint)
     {
-        $url = "{$this->baseUrl}/{$endpoint}";
-
-        $response = Http::timeout(5)->get($url);
-
-        if (!$response->successful()) {
-            throw new \Exception("API failed: {$endpoint}");
+        $response = Http::get($this->baseUrl . '/' . $endpoint);
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'] ?? null;
         }
-
-        $data = $response->json();
-        return $data['data'] ?? (is_array($data) ? $data : []);
+        return null;
     }
 
 
@@ -44,25 +40,22 @@ class SubjectService
         $courseSubjects = $this->fetchCourseSubjectsFromApi();
 
         $subjectCoursesMap = [];
-        foreach ($courseSubjects as $courseSubject) {
-            $subjectId = $courseSubject['subjectId'] ?? null;
-            $courseCode = $courseSubject['course']['courseCode'] ?? $courseSubject['courseCode'] ?? null;
-
-            if ($subjectId && $courseCode) {
-                if (!isset($subjectCoursesMap[$subjectId])) {
-                    $subjectCoursesMap[$subjectId] = [];
-                }
-                if (!in_array($courseCode, $subjectCoursesMap[$subjectId])) {
-                    $subjectCoursesMap[$subjectId][] = $courseCode;
+        foreach ($courseSubjects as $cs) {
+            $subjectId = $cs['subjectId'] ?? null;
+            $courseSubjectId = $cs['courseSubjectId'] ?? null;
+            if ($subjectId && $courseSubjectId) {
+                $codes = $this->getCourseSubjectCodes($courseSubjectId);
+                $courseCode = $codes['courseCode'] ?? null;
+                if ($courseCode) {
+                    $subjectCoursesMap[$subjectId] = array_unique(array_merge($subjectCoursesMap[$subjectId] ?? [], [$courseCode]));
                 }
             }
         }
 
         return array_map(function ($subject) use ($subjectCoursesMap) {
-            $subjectId = $subject['subjectId'] ?? '';
-            $courseCodes = $subjectCoursesMap[$subjectId] ?? [];
+            $courseCodes = $subjectCoursesMap[$subject['subjectId'] ?? ''] ?? [];
             $subject['courseCodes'] = $courseCodes;
-            $subject['course'] = !empty($courseCodes) ? implode(', ', $courseCodes) : 'N/A';
+            $subject['course'] = $courseCodes ? implode(', ', $courseCodes) : 'N/A';
             return $subject;
         }, $subjects);
     }
@@ -83,22 +76,16 @@ class SubjectService
     public function createOrUpdateSubject(array $data, ?string $subjectId = null)
     {
         $subjectId = $subjectId ?? $data['subjectId'] ?? null;
-
         if (!$subjectId) {
             throw new \InvalidArgumentException('Subject ID is required');
         }
 
-        $url = "{$this->baseUrl}/subjects/{$subjectId}";
-        $response = Http::timeout(5)->put($url, $data);
-
+        $response = Http::put($this->baseUrl . '/subjects/' . $subjectId, $data);
         if ($response->status() === 404) {
-            $response = Http::timeout(5)->post("{$this->baseUrl}/subjects", $data);
+            $response = Http::post($this->baseUrl . '/subjects', $data);
         }
         if (!$response->successful()) {
-            throw new \Exception(
-                $response->json()['message']
-                    ?? 'Failed to create/update subject'
-            );
+            throw new \Exception($response->json()['message'] ?? 'Failed to create/update subject');
         }
 
         return $response->json()['data'] ?? $response->json();
@@ -113,6 +100,16 @@ class SubjectService
             return $data['data'] ?? null;
         }
 
+        return null;
+    }
+
+    protected function getCourseSubjectCodes($courseSubjectId)
+    {
+        $response = Http::get($this->baseUrl . '/courseSubject/' . $courseSubjectId);
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'] ?? null;
+        }
         return null;
     }
 }

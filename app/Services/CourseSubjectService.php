@@ -14,14 +14,12 @@ class CourseSubjectService
 
     function fetchFromApi(string $endpoint)
     {
-        $url = "{$this->baseUrl}/{$endpoint}";
-        $response = Http::timeout(5)->get($url);
-
-        if (!$response->successful()) {
-            throw new \Exception("API failed: {$endpoint}");
+        $response = Http::get($this->baseUrl . '/' . $endpoint);
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'] ?? null;
         }
-        $data = $response->json();
-        return $data['data'] ?? (is_array($data) ? $data : []);
+        return null;
     }
 
 
@@ -33,37 +31,28 @@ class CourseSubjectService
 
     public function fetchCourseSubjectByIdFromApi(string $courseSubjectId)
     {
-        $response = Http::timeout(5)->get("{$this->baseUrl}/courseSubject/{$courseSubjectId}");
-        if ($response->status() === 404) {
-            throw new \Exception('Course Subject not found');
+        $response = Http::get($this->baseUrl . '/courseSubject/' . $courseSubjectId);
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'] ?? null;
         }
-        if (!$response->successful()) {
-            throw new \Exception('Course Subject API failed: ' . $response->status());
-        }
-        $data = $response->json();
-        return $data['data'] ?? (is_array($data) ? $data : []);
+        return null;
     }
 
 
     public function createOrUpdateCourseSubject(array $data, ?string $courseSubjectId = null)
     {
         $courseSubjectId = $courseSubjectId ?? $data['courseSubjectId'] ?? null;
-
         if (!$courseSubjectId) {
             throw new \InvalidArgumentException('Course Subject ID is required');
         }
 
-        $url = "{$this->baseUrl}/courseSubject/{$courseSubjectId}";
-        $response = Http::timeout(5)->put($url, $data);
-
+        $response = Http::put($this->baseUrl . '/courseSubject/' . $courseSubjectId, $data);
         if ($response->status() === 404) {
-            $response = Http::timeout(5)->post("{$this->baseUrl}/courseSubject", $data);
+            $response = Http::post($this->baseUrl . '/courseSubject', $data);
         }
         if (!$response->successful()) {
-            throw new \Exception(
-                $response->json()['message']
-                    ?? 'Failed to create/update course subject'
-            );
+            throw new \Exception($response->json()['message'] ?? 'Failed to create/update course subject');
         }
 
         return $response->json()['data'] ?? $response->json();

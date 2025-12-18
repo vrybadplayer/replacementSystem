@@ -13,12 +13,12 @@ class CourseService
     
     public function fetchCoursesFromApi()
     {
-        $response = Http::timeout(5)->get("{$this->baseUrl}/courses");
-        if (!$response->successful()) {
-            throw new \Exception('Courses API failed: ' . $response->status());
+        $response = Http::get($this->baseUrl . '/courses');
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'] ?? null;
         }
-        $data = $response->json();
-        return $data['data'] ?? (is_array($data) ? $data : []);
+        return null;
     }
 
 
@@ -30,37 +30,28 @@ class CourseService
 
     public function fetchCourseByIdFromApi(string $courseId)
     {
-        $response = Http::timeout(5)->get("{$this->baseUrl}/courses/{$courseId}");
-        if ($response->status() === 404) {
-            throw new \Exception('Course not found');
+        $response = Http::get($this->baseUrl . '/courses/' . $courseId);
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'] ?? null;
         }
-        if (!$response->successful()) {
-            throw new \Exception('Courses API failed: ' . $response->status());
-        }
-        $data = $response->json();
-        return $data['data'] ?? (is_array($data) ? $data : []);
+        return null;
     }
 
 
     public function createOrUpdateCourse(array $data, ?string $courseId = null)
     {
         $courseId = $courseId ?? $data['courseId'] ?? null;
-
         if (!$courseId) {
             throw new \InvalidArgumentException('Course ID is required');
         }
 
-        $url = "{$this->baseUrl}/courses/{$courseId}";
-        $response = Http::timeout(5)->put($url, $data);
-
+        $response = Http::put($this->baseUrl . '/courses/' . $courseId, $data);
         if ($response->status() === 404) {
-            $response = Http::timeout(5)->post("{$this->baseUrl}/courses", $data);
+            $response = Http::post($this->baseUrl . '/courses', $data);
         }
         if (!$response->successful()) {
-            throw new \Exception(
-                $response->json()['message']
-                    ?? 'Failed to create/update course'
-            );
+            throw new \Exception($response->json()['message'] ?? 'Failed to create/update course');
         }
 
         return $response->json()['data'] ?? $response->json();

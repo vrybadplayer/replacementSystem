@@ -14,12 +14,12 @@ class CourseController extends Controller
     public function courseListView(Request $request)
     {
         $allCourses = CourseSubjectManagementFacade::getCoursesForViewFromApi();
-        
+
         $perPage = 10;
         $currentPage = $request->get('page', 1);
         $total = count($allCourses);
         $items = array_slice($allCourses, ($currentPage - 1) * $perPage, $perPage);
-        
+
         $courses = new LengthAwarePaginator(
             $items,
             $total,
@@ -27,7 +27,7 @@ class CourseController extends Controller
             $currentPage,
             ['path' => $request->url(), 'query' => $request->query()]
         );
-        
+
         return view('admin.courseModule.listCourse', compact('courses'));
     }
 
@@ -83,22 +83,12 @@ class CourseController extends Controller
 
     public function index()
     {
-        $courses = Course::all();
-
-        $coursesData = $courses->map(function ($course) {
-            return [
-                'courseId' => $course->courseId,
-                'courseCode' => $course->courseCode,
-                'courseName' => $course->courseName ?? '',
-                'faculty' => $course->faculty ?? '',
-                'status' => $course->status ?? 'active',
-            ];
-        })->toArray();
+        $data = Course::all();
 
         return response()->json([
             'success' => true,
-            'data' => $coursesData,
-            'count' => count($coursesData)
+            'data' => $data,
+            'count' => $data->count(),
         ], 200);
     }
 
@@ -112,36 +102,21 @@ class CourseController extends Controller
             'status' => 'required|string|in:active,inactive',
         ]);
 
-
         $course = Course::create($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Course created successfully',
-            'data' => [
-                'courseId' => $course->courseId,
-                'courseCode' => $course->courseCode,
-                'courseName' => $course->courseName ?? '',
-                'faculty' => $course->faculty ?? '',
-                'status' => $course->status ?? 'active',
-            ]
+            'data' => $course,
         ], 201);
     }
 
     public function apiShow(string $courseId)
     {
-
         $course = Course::findOrFail($courseId);
 
         return response()->json([
             'success' => true,
-            'data' => [
-                'courseId' => $course->courseId,
-                'courseCode' => $course->courseCode,
-                'courseName' => $course->courseName ?? '',
-                'faculty' => $course->faculty ?? '',
-                'status' => $course->status ?? 'active',
-            ]
+            'data' => $course,
         ], 200);
     }
 
@@ -154,20 +129,12 @@ class CourseController extends Controller
             'status' => 'nullable|string|in:active,inactive',
         ]);
 
-
         $course = Course::findOrFail($courseId);
         $course->update($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Course updated successfully',
-            'data' => [
-                'courseId' => $course->courseId,
-                'courseCode' => $course->courseCode,
-                'courseName' => $course->courseName ?? '',
-                'faculty' => $course->faculty ?? '',
-                'status' => $course->status ?? 'active',
-            ]
+            'data' => $course,
         ], 200);
     }
 }
