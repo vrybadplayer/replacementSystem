@@ -72,6 +72,11 @@ class CourseSubjectManagementService
     {
         return $this->courseSubjectService->fetchCourseSubjectsFromApi();
     }
+    
+    public function getCourseSubjectCodes(string $courseSubjectId)
+    {
+        return $this->courseSubjectService->getCourseSubjectCodes($courseSubjectId);
+    }
 
     public function getCourseSubjectByIdFromApi(string $courseSubjectId)
     {
@@ -88,9 +93,9 @@ class CourseSubjectManagementService
         return $this->courseSubjectService->getCourseSubjectsByCourse($courseId);
     }
 
-    public function getCourseSubjectCodes(string $courseSubjectId)
+    public function fetchCourseSubjectWithForeignKeys($subjectId, $courseId)
     {
-        return $this->courseSubjectService->getCourseSubjectCodes($courseSubjectId);
+        return $this->courseSubjectService->fetchCourseSubjectWithForeignKeys($subjectId, $courseId);
     }
 }
 

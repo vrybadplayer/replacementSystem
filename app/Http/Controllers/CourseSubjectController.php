@@ -14,11 +14,6 @@ class CourseSubjectController extends Controller
 
     protected $courseSubjectService;
 
-    public function __construct(CourseSubjectService $courseSubjectService)
-    {
-        $this->courseSubjectService = $courseSubjectService;
-    }
-
     public function courseSubjectListView(Request $request)
     {
         // Get all course subjects first
@@ -208,7 +203,7 @@ class CourseSubjectController extends Controller
         $subjectId = $request->query('subjectId');
         $courseId = $request->query('courseId');
 
-        $courseSubject = $this->courseSubjectService->fetchCourseSubjectWithForeignKeys(
+        $courseSubject = CourseSubjectManagementFacade::fetchCourseSubjectWithForeignKeys(
             $subjectId,
             $courseId
         );
