@@ -5,22 +5,17 @@ namespace App\Mediator;
 use Carbon\Carbon;
 use App\Models\Timetable;
 use App\Services\ClassGroupService;
-use App\Services\CourseService;
-use App\Services\CourseSubjectService;
-use App\Services\SubjectService;
+use App\Services\CourseSubjectManagementService;
 use App\Services\TimetableService;
 use App\Services\UserService;
 use App\Services\VenueService;
-use App\Models\CourseSubject;
 use App\Services\ReplacementService;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TimetableMediator implements TimetableMediatorInterface
 {
-    protected $courseApi;
-    protected $subjectApi;
-    protected $courseSubjectApi;
+
+    protected $courseSubjectmanagementApi;
     protected $userApi;
     protected $timetableApi;
     protected $venueApi;
@@ -28,18 +23,14 @@ class TimetableMediator implements TimetableMediatorInterface
     protected $replacementApi;
 
     public function __construct(
-        CourseService $courseApi,
-        SubjectService $subjectApi,
-        CourseSubjectService $courseSubjectApi,
+        CourseSubjectManagementService $courseSubjectmanagementApi,
         UserService $userApi,
         TimetableService $timetableApi,
         VenueService $venueApi,
         ClassGroupService $classGroupApi,
         ReplacementService $replacementApi
     ) {
-        $this->courseApi = $courseApi;
-        $this->subjectApi = $subjectApi;
-        $this->courseSubjectApi = $courseSubjectApi;
+        $this->courseSubjectmanagementApi = $courseSubjectmanagementApi;
         $this->userApi = $userApi;
         $this->timetableApi = $timetableApi;
         $this->venueApi = $venueApi;
@@ -83,7 +74,7 @@ class TimetableMediator implements TimetableMediatorInterface
     public function getTransitiveSubjectList()
     {
         // subjectId, subjectName
-        $subjectRecords = $this->subjectApi->fetchSubjectsFromApi();
+        $subjectRecords = $this->courseSubjectmanagementApi->fetchSubjectsFromApi();
 
         // subjectId -> subjectName
         $subjectMap = [];
@@ -94,7 +85,7 @@ class TimetableMediator implements TimetableMediatorInterface
         }
 
         // courseSubjectId, courseId, subjectId
-        $courseSubjectRecords = $this->courseSubjectApi->fetchCourseSubjectsFromApi();
+        $courseSubjectRecords = $this->courseSubjectmanagementApi->fetchCourseSubjectsFromApi();
 
         // desired result: courseSubjectId -> subjectName
         $transitiveMap = [];
@@ -124,7 +115,7 @@ class TimetableMediator implements TimetableMediatorInterface
 
     public function getAllCourses()
     {
-        $rawCourses = $this->courseApi->fetchCoursesFromApi();
+        $rawCourses = $this->courseSubjectmanagementApi->fetchCoursesFromApi();
         $result = [];
 
         foreach ($rawCourses as $course) {
@@ -137,7 +128,7 @@ class TimetableMediator implements TimetableMediatorInterface
 
     public function getAllSubjects()
     {
-        $subjects = $this->subjectApi->fetchSubjectsFromApi();
+        $subjects = $this->courseSubjectmanagementApi->fetchSubjectsFromApi();
 
         $subjectsData = [];
 
@@ -227,7 +218,7 @@ class TimetableMediator implements TimetableMediatorInterface
         $classGroupIds = is_array($data['classGroupIds']) ? implode(',', $data['classGroupIds']) : $data['classGroupIds'];
 
         // Get CourseSubject
-        $courseSubject = $this->courseSubjectApi->fetchCourseSubjectWithForeignKeys($data['subjectId'], $data['courseId']);
+        $courseSubject = $this->courseSubjectmanagementApi->fetchCourseSubjectWithForeignKeys($data['subjectId'], $data['courseId']);
 
         if (!$courseSubject) {
             Log::error("Timetable Creation Failed: CourseSubject link missing for Subject {$data['subjectId']} and Course {$data['courseId']}");
@@ -306,7 +297,7 @@ class TimetableMediator implements TimetableMediatorInterface
 
     public function getAllCourseCodes()
     {
-        $rawCourses = $this->courseApi->fetchCoursesFromApi();
+        $rawCourses = $this->courseSubjectmanagementApi->fetchCoursesFromApi();
         $courses = [];
 
         foreach ($rawCourses as $course) {
@@ -346,7 +337,7 @@ class TimetableMediator implements TimetableMediatorInterface
 
     public function getFilteredTimetableSlots($courseId, $classGroupId)
     {
-        $courseSubjects = $this->courseSubjectApi->getCourseSubjectsByCourse($courseId);
+        $courseSubjects = $this->courseSubjectmanagementApi->getCourseSubjectsByCourse($courseId);
 
         $slots = Timetable::with(['venue'])
             ->whereIn('courseSubjectId', $courseSubjects)
@@ -356,7 +347,7 @@ class TimetableMediator implements TimetableMediatorInterface
             ->get();
 
         return $slots->map(function ($slot) {
-            $subject = $this->subjectApi->getSubjectByCourseSubject($slot->courseSubjectId);
+            $subject = $this->courseSubjectmanagementApi->getSubjectByCourseSubject($slot->courseSubjectId);
 
             return [
                 'timetableId' => $slot->timetableId,
