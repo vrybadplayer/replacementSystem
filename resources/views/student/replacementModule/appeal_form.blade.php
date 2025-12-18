@@ -70,7 +70,7 @@
                             <strong>Venue:</strong> {{ $replacementClass->venue->venueId }}
                         </div>
                         <div class="class-detail">
-                            <strong>Group:</strong> {{ $replacementClass->classGroup->classGroupId ?? 'N/A' }}
+                            <strong>Group:</strong> {{ $replacementClass->classGroupId}}
                         </div>
                     </div>
                 </div>
