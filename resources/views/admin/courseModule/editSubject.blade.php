@@ -49,7 +49,7 @@
 
                     <div class="form-group">
                         <label for="subjectName">Subject Name:</label>
-                        <input type="text" id="subjectName" name="subjectName" value="{{ $subject['subjectName'] ?? old('subjectName') }}" required>
+                        <input type="text" id="subjectName" name="subjectName" value="{{ $subject['subjectName'] ?? old('subjectName') }}">
                         @error('subjectName')
                         <span class="error">{{ $message }}</span>
                         @enderror

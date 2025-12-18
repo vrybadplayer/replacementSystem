@@ -41,7 +41,7 @@
 
                     <div class="form-group">
                         <label for="courseId">Course:</label>
-                        <select id="courseId" name="courseId" required>
+                        <select id="courseId" name="courseId">
                             <option value="">Select a Course</option>
                             @foreach($courses as $course)
                             <option value="{{ $course['courseId'] }}" {{ ($courseSubject['courseId'] ?? old('courseId')) === $course['courseId'] ? 'selected' : '' }}>
@@ -56,7 +56,7 @@
 
                     <div class="form-group">
                         <label for="subjectId">Subject:</label>
-                        <select id="subjectId" name="subjectId" required>
+                        <select id="subjectId" name="subjectId">
                             <option value="">Select a Subject</option>
                             @foreach($subjects as $subject)
                             <option value="{{ $subject['subjectId'] }}" {{ ($courseSubject['subjectId'] ?? old('subjectId')) === $subject['subjectId'] ? 'selected' : '' }}>

@@ -43,7 +43,7 @@
 
                     <div class="form-group">
                         <label for="subjectName">Subject Name:</label>
-                        <input type="text" id="subjectName" name="subjectName" value="{{ old('subjectName') }}" required>
+                        <input type="text" id="subjectName" name="subjectName" value="{{ old('subjectName') }}">
                         @error('subjectName')
                         <span class="error">{{ $message }}</span>
                         @enderror
@@ -72,7 +72,7 @@
 
                     <div class="form-group">
                         <label for="status">Status:</label>
-                        <select id="status" name="status" required>
+                        <select id="status" name="status">
                             <option value="active" {{ old('status') === 'active' ? 'selected' : '' }}>Active</option>
                             <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                         </select>

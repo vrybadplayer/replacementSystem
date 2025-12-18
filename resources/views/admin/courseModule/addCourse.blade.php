@@ -35,7 +35,7 @@
 
                     <div class="form-group">
                         <label for="courseCode">Course Code:</label>
-                        <input type="text" id="courseCode" name="courseCode" value="{{ old('courseCode') }}" required>
+                        <input type="text" id="courseCode" name="courseCode" value="{{ old('courseCode') }}">
                         @error('courseCode')
                         <span class="error">{{ $message }}</span>
                         @enderror
@@ -43,7 +43,7 @@
 
                     <div class="form-group">
                         <label for="courseName">Course Name:</label>
-                        <input type="text" id="courseName" name="courseName" value="{{ old('courseName') }}" required>
+                        <input type="text" id="courseName" name="courseName" value="{{ old('courseName') }}">
                         @error('courseName')
                         <span class="error">{{ $message }}</span>
                         @enderror
@@ -61,7 +61,7 @@
 
                     <div class="form-group">
                         <label for="status">Status:</label>
-                        <select id="status" name="status" required>
+                        <select id="status" name="status">
                             <option value="active" {{ old('status') === 'active' ? 'selected' : '' }}>Active</option>
                             <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                         </select>
