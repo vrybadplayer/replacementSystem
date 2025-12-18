@@ -57,7 +57,9 @@
 
                     <div class="form-group">
                         <label for="faculty">Faculty:</label>
-                        <input type="text" id="faculty" name="faculty" value="{{ $course['faculty'] ?? old('faculty') }}">
+                        <select id="faculty" name="faculty">
+                            <option value="FOCS" {{ ($course['faculty'] ?? old('faculty')) === 'FOCS' ? 'selected' : 'selected' }}>FOCS</option>
+                        </select>
                         @error('faculty')
                         <span class="error">{{ $message }}</span>
                         @enderror

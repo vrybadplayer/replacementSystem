@@ -33,10 +33,15 @@ class CourseSubjectManagementService
     {
         return $this->courseService->fetchCourseByIdFromApi($courseId);
     }
-    
-    public function createOrUpdateCourse(array $data, ?string $courseId = null)
+
+    public function createCourseViaApi(array $data)
     {
-        return $this->courseService->createOrUpdateCourse($data, $courseId);
+        return $this->courseService->createCourseViaApi($data);
+    }
+
+    public function updateCourseViaApi(string $courseId, array $data)
+    {
+        return $this->courseService->updateCourseViaApi($courseId, $data);
     }
 
 

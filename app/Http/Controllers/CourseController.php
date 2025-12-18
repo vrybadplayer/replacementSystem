@@ -4,10 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Facades\CourseSubjectManagementFacade;
 use App\Models\Course;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Pagination\Paginator;
 
 class CourseController extends Controller
 {
@@ -39,17 +37,38 @@ class CourseController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'courseId' => 'required|string',
-            'courseCode' => 'required|string',
-            'courseName' => 'required|string',
+            'courseId' => 'nullable|string|unique:course,courseId',
+            'courseCode' => 'required|string|unique:course,courseCode',
+            'courseName' => 'required|string|unique:course,courseName|different:courseCode',
             'faculty' => 'nullable|string',
             'status' => 'required|string|in:active,inactive',
         ]);
 
-        CourseSubjectManagementFacade::createOrUpdateCourse($validated);
+        if (empty($validated['courseId'])) {
+            $courses = CourseSubjectManagementFacade::fetchCoursesFromApi() ?? [];
+            $courseNumbers = [];
+            foreach ($courses as $course) {
+                $courseId = $course['courseId'] ?? '';
+                if (strpos($courseId, 'C') === 0 && is_numeric(substr($courseId, 1))) {
+                    $courseNumbers[] = (int) substr($courseId, 1);
+                }
+            }
+            
+            $nextNumber = !empty($courseNumbers) ? max($courseNumbers) + 1 : 1;
+            $validated['courseId'] = 'C' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        }
 
-        return redirect()->route('admin.courses')
-            ->with('success', 'Course created successfully!');
+        $response = CourseSubjectManagementFacade::createCourseViaApi($validated);
+        
+        if ($response->successful()) {
+            return redirect()->route('admin.courses')
+                ->with('success', 'Course created successfully!');
+        }
+        
+        $errorMessage = $response->json()['message'] ?? 'Failed to create course';
+        return redirect()->back()
+            ->withInput()
+            ->withErrors(['error' => $errorMessage]);
     }
 
     public function edit(string $courseId)
@@ -61,20 +80,25 @@ class CourseController extends Controller
     public function update(Request $request, string $courseId)
     {
         $validated = $request->validate([
-            'courseCode' => 'required|string',
-            'courseName' => 'required|string',
+            'courseCode' => 'required|string|unique:course,courseCode,' . $courseId . ',courseId',
+            'courseName' => 'required|string|unique:course,courseName,' . $courseId . ',courseId|different:courseCode',
             'faculty' => 'nullable|string',
             'status' => 'required|string|in:active,inactive',
         ]);
 
-        // Add courseId to validated data for the API call
-        $validated['courseId'] = $courseId;
-
-        CourseSubjectManagementFacade::createOrUpdateCourse($validated, $courseId);
-
-        return redirect()->route('admin.courses')
-            ->with('success', 'Course updated successfully!');
+        $response = CourseSubjectManagementFacade::updateCourseViaApi($courseId, $validated);
+        
+        if ($response->successful()) {
+            return redirect()->route('admin.courses')
+                ->with('success', 'Course updated successfully!');
+        }
+        
+        $errorMessage = $response->json()['message'] ?? 'Failed to update course';
+        return redirect()->back()
+            ->withInput()
+            ->withErrors(['error' => $errorMessage]);
     }
+
 
 
     /**
@@ -94,15 +118,7 @@ class CourseController extends Controller
 
     public function apiStore(Request $request)
     {
-        $validated = $request->validate([
-            'courseId' => 'required|string|unique:course,courseId',
-            'courseCode' => 'required|string',
-            'courseName' => 'required|string',
-            'faculty' => 'nullable|string',
-            'status' => 'required|string|in:active,inactive',
-        ]);
-
-        $course = Course::create($validated);
+        $course = Course::create($request->all());
 
         return response()->json([
             'success' => true,
@@ -123,13 +139,19 @@ class CourseController extends Controller
     public function apiUpdate(Request $request, string $courseId)
     {
         $validated = $request->validate([
-            'courseCode' => 'nullable|string',
-            'courseName' => 'nullable|string',
+            'courseCode' => 'nullable|string|unique:course,courseCode,' . $courseId . ',courseId',
+            'courseName' => 'nullable|string|unique:course,courseName,' . $courseId . ',courseId',
             'faculty' => 'nullable|string',
             'status' => 'nullable|string|in:active,inactive',
         ]);
 
+        // Get existing course data
         $course = Course::findOrFail($courseId);
+        
+        // Determine final values (use provided or existing)
+        $finalCourseCode = $validated['courseCode'] ?? $course->courseCode;
+        $finalCourseName = $validated['courseName'] ?? $course->courseName;
+
         $course->update($validated);
 
         return response()->json([

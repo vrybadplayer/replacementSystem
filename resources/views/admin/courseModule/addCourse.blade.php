@@ -34,14 +34,6 @@
                     @csrf
 
                     <div class="form-group">
-                        <label for="courseId">Course ID:</label>
-                        <input type="text" id="courseId" name="courseId" value="{{ old('courseId') }}" required>
-                        @error('courseId')
-                        <span class="error">{{ $message }}</span>
-                        @enderror
-                    </div>
-
-                    <div class="form-group">
                         <label for="courseCode">Course Code:</label>
                         <input type="text" id="courseCode" name="courseCode" value="{{ old('courseCode') }}" required>
                         @error('courseCode')
@@ -59,7 +51,9 @@
 
                     <div class="form-group">
                         <label for="faculty">Faculty:</label>
-                        <input type="text" id="faculty" name="faculty" value="{{ old('faculty') }}">
+                        <select id="faculty" name="faculty">
+                            <option value="FOCS" selected>FOCS</option>
+                        </select>
                         @error('faculty')
                         <span class="error">{{ $message }}</span>
                         @enderror

@@ -58,7 +58,6 @@ Route::get('/courses', [CourseController::class, 'index']);
 Route::get('/courses/{courseId}', [CourseController::class, 'apiShow']);
 Route::post('/courses', [CourseController::class, 'apiStore']);
 Route::put('/courses/{courseId}', [CourseController::class, 'apiUpdate']);
-Route::patch('/courses/{courseId}', [CourseController::class, 'apiUpdate']);
 
 // --- Course Subject Bridge REST API ---
 Route::get('/courseSubject', [CourseSubjectController::class, 'index']);

@@ -38,22 +38,15 @@ class CourseService
         return null;
     }
 
-
-    public function createOrUpdateCourse(array $data, ?string $courseId = null)
+    public function createCourseViaApi(array $data)
     {
-        $courseId = $courseId ?? $data['courseId'] ?? null;
-        if (!$courseId) {
-            throw new \InvalidArgumentException('Course ID is required');
-        }
+        $response = Http::post($this->baseUrl . '/courses', $data);
+        return $response;
+    }
 
+    public function updateCourseViaApi(string $courseId, array $data)
+    {
         $response = Http::put($this->baseUrl . '/courses/' . $courseId, $data);
-        if ($response->status() === 404) {
-            $response = Http::post($this->baseUrl . '/courses', $data);
-        }
-        if (!$response->successful()) {
-            throw new \Exception($response->json()['message'] ?? 'Failed to create/update course');
-        }
-
-        return $response->json()['data'] ?? $response->json();
+        return $response;
     }
 }
