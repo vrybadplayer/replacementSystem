@@ -106,7 +106,7 @@ class CourseController extends Controller
      * REST API
      */
 
-    public function index()
+    public function apiGetAllCourses()
     {
         try {
             $data = Course::all();
@@ -122,7 +122,7 @@ class CourseController extends Controller
         }
     }
 
-    public function apiStore(Request $request)
+    public function apiCreateCourse(Request $request)
     {
         // Authorization check - only admins can create courses
         if (!$request->user() || $request->user()->role !== 'admin') {
@@ -145,7 +145,7 @@ class CourseController extends Controller
         }
     }
 
-    public function apiShow(string $courseId)
+    public function apiGetCourse(string $courseId)
     {
         $course = Course::findOrFail($courseId);
 
@@ -155,7 +155,7 @@ class CourseController extends Controller
         ], 200);
     }
 
-    public function apiUpdate(Request $request, string $courseId)
+    public function apiUpdateCourse(Request $request, string $courseId)
     {
         // Authorization check - only admins can update courses
         if (!$request->user() || $request->user()->role !== 'admin') {

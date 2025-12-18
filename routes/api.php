@@ -53,25 +53,25 @@ Route::post('/timetable/create', [TimetableController::class, 'createTimetable']
 Route::get('/timetable/{classGroupId}', [TimetableController::class, 'getTimetableByClassGroupId']);
 Route::get('/timetable/future/{userId}', [TimetableController::class, 'getFutureClasses']);
 
-// --- Course Management API ---
-Route::get('/courses', [CourseController::class, 'index'])->middleware(['api.auth', 'role:admin']);
-Route::get('/courses/{courseId}', [CourseController::class, 'apiShow'])->middleware(['api.auth', 'role:admin']);
-Route::post('/courses', [CourseController::class, 'apiStore'])->middleware(['api.auth', 'role:admin']);
-Route::put('/courses/{courseId}', [CourseController::class, 'apiUpdate'])->middleware(['api.auth', 'role:admin']);
+// --- Course API ---
+Route::get('/courses', [CourseController::class, 'apiGetAllCourses'])->middleware(['api.auth', 'role:admin']);
+Route::get('/courses/{courseId}', [CourseController::class, 'apiGetCourse'])->middleware(['api.auth', 'role:admin']);
+Route::post('/courses', [CourseController::class, 'apiCreateCourse'])->middleware(['api.auth', 'role:admin']);
+Route::put('/courses/{courseId}', [CourseController::class, 'apiUpdateCourse'])->middleware(['api.auth', 'role:admin']);
 
-// --- Course Subject Bridge REST API ---
-Route::get('/courseSubject', [CourseSubjectController::class, 'index'])->middleware(['api.auth', 'role:admin']);
-Route::get('/courseSubject/{courseSubjectId}', [CourseSubjectController::class, 'getCourseSubjectCodes'])->middleware(['api.auth', 'role:admin']);
-Route::post('/courseSubject', [CourseSubjectController::class, 'apiStore'])->middleware(['api.auth', 'role:admin']);
-Route::put('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate'])->middleware(['api.auth', 'role:admin']);
+// --- Course Subject API ---
+Route::get('/courseSubject', [CourseSubjectController::class, 'apiGetAllCourseSubjects'])->middleware(['api.auth', 'role:admin']);
+Route::get('/courseSubject/{courseSubjectId}', [CourseSubjectController::class, 'getCourseSubject'])->middleware(['api.auth', 'role:admin']);
+Route::post('/courseSubject', [CourseSubjectController::class, 'apiCreateCourseSubject'])->middleware(['api.auth', 'role:admin']);
+Route::put('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdateCourseSubject'])->middleware(['api.auth', 'role:admin']);
 Route::get('/courseSubject/fetchCourseSubjectWithForeignKeys', [CourseSubjectController::class, 'fetchCourseSubjectWithForeignKeys']);
 Route::get('/courseSubjects/byCourse/{courseId}', [CourseSubjectController::class, 'getCourseSubjectsByCourse']);
 
-// --- Subjects REST API ---
-Route::get('/subjects', [SubjectController::class, 'index'])->middleware(['api.auth', 'role:admin']);
-Route::get('/subjects/{subjectId}', [SubjectController::class, 'apiShow'])->middleware(['api.auth', 'role:admin']);
-Route::post('/subjects', [SubjectController::class, 'apiStore'])->middleware(['api.auth', 'role:admin']);
-Route::put('/subjects/{id}', [SubjectController::class, 'apiUpdate'])->middleware(['api.auth', 'role:admin']);
+// --- Subjects API ---
+Route::get('/subjects', [SubjectController::class, 'apiGetAllSubjects'])->middleware(['api.auth', 'role:admin']);
+Route::get('/subjects/{subjectId}', [SubjectController::class, 'apiGetSubject'])->middleware(['api.auth', 'role:admin']);
+Route::post('/subjects', [SubjectController::class, 'apiCreateSubject'])->middleware(['api.auth', 'role:admin']);
+Route::put('/subjects/{id}', [SubjectController::class, 'apiUpdateSubject'])->middleware(['api.auth', 'role:admin']);
 Route::get('/subject/byCourseSubject/{courseSubjectId}', [SubjectController::class, 'getSubjectByCourseSubject']);
 
 // --- User Management API ---
