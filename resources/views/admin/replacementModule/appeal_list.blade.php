@@ -81,24 +81,27 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <div><strong>{{ $appeal->originalClass->subject->subjectId }}</strong></div>
+                                            <div><strong>{{ $appeal->originalClass->subject->subjectId ?? 'N/A' }}</strong></div>
                                             <div style="font-size: 12px; color: #555;">
-                                                {{ date('D, d M Y', strtotime($appeal->originalClass->date)) }}
+                                                {{ $appeal->originalClass->date ? date('D, d M Y', strtotime($appeal->originalClass->date)) : 'N/A' }}
                                             </div>
                                             <div style="font-size: 12px; color: #555;">
-                                                {{ $appeal->originalClass->startTime }} - {{ $appeal->originalClass->endTime }}
+                                                {{ $appeal->originalClass->startTime ?? 'N/A' }} - {{ $appeal->originalClass->endTime ?? 'N/A' }}
+                                            </div>
+                                            <div style="font-size: 12px; color: #555;">
+                                                Group {{ $appeal->originalClass->classGroup->classGroupId ?? 'N/A' }}
                                             </div>
                                         </td>
                                         <td>
-                                            <div><strong>{{ $appeal->requestedClass->subject->subjectId }}</strong></div>
+                                            <div><strong>{{ $appeal->requestedClass->subject->subjectId ?? 'N/A' }}</strong></div>
                                             <div style="font-size: 12px; color: #555;">
-                                                {{ date('D, d M Y', strtotime($appeal->requestedClass->date)) }}
+                                                {{ $appeal->requestedClass->date ? date('D, d M Y', strtotime($appeal->requestedClass->date)) : 'N/A' }}
                                             </div>
                                             <div style="font-size: 12px; color: #555;">
-                                                {{ $appeal->requestedClass->startTime }} - {{ $appeal->requestedClass->endTime }}
+                                                {{ $appeal->requestedClass->startTime ?? 'N/A' }} - {{ $appeal->requestedClass->endTime ?? 'N/A' }}
                                             </div>
                                             <div style="font-size: 12px; color: #555;">
-                                                Group {{ $appeal->requestedClass->classGroup->groupName ?? 'N/A' }}
+                                                Group {{ $appeal->requestedClass->classGroup->classGroupId ?? 'N/A' }}
                                             </div>
                                         </td>
                                         <td>
