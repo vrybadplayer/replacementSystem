@@ -47,17 +47,35 @@ class LoginController extends Controller
         ]);
 
         $remember = $request->boolean('remember');
+        $clientIp = $request->ip();
 
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
 
             $user = Auth::user();
 
+            // Log successful authentication
+            \Log::info('Authentication successful', [
+                'user_id' => $user->userId,
+                'email' => $user->email,
+                'role' => $user->role,
+                'ip_address' => $clientIp,
+                'timestamp' => now()
+            ]);
+
             // Check if user is banned
             if ($user->status === 'banned') {
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
+                
+                // Log banned user attempt
+                \Log::warning('Authentication blocked - user banned', [
+                    'user_id' => $user->userId,
+                    'email' => $user->email,
+                    'ip_address' => $clientIp,
+                    'timestamp' => now()
+                ]);
                 
                 throw ValidationException::withMessages([
                     'email' => __('Your account has been banned. Please contact an administrator.'),
@@ -79,6 +97,15 @@ class LoginController extends Controller
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
                 
+                // Log lecturer access attempt
+                \Log::warning('Authentication blocked - lecturer role not allowed', [
+                    'user_id' => $user->userId,
+                    'email' => $user->email,
+                    'role' => 'lecturer',
+                    'ip_address' => $clientIp,
+                    'timestamp' => now()
+                ]);
+                
                 throw ValidationException::withMessages([
                     'email' => __('Lecturer accounts do not have access yet.'),
                 ]);
@@ -89,12 +116,25 @@ class LoginController extends Controller
             $request->session()->invalidate();
             $request->session()->regenerateToken();
             
-            \Log::warning('Invalid user role during login', ['role' => $user->role, 'email' => $user->email]);
+            \Log::warning('Authentication blocked - invalid role', [
+                'user_id' => $user->userId,
+                'email' => $user->email,
+                'role' => $user->role,
+                'ip_address' => $clientIp,
+                'timestamp' => now()
+            ]);
             
             throw ValidationException::withMessages([
                 'email' => __('Your account role is invalid. Please contact an administrator.'),
             ]);
         }
+
+        // Log failed authentication attempt
+        \Log::warning('Authentication failed - invalid credentials', [
+            'email' => $credentials['email'],
+            'ip_address' => $clientIp,
+            'timestamp' => now()
+        ]);
 
         throw ValidationException::withMessages([
             'email' => __('The provided credentials do not match our records.'),
@@ -103,6 +143,20 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
+        $user = Auth::user();
+        $clientIp = $request->ip();
+
+        // Log logout event
+        if ($user) {
+            \Log::info('User logged out', [
+                'user_id' => $user->userId,
+                'email' => $user->email,
+                'role' => $user->role,
+                'ip_address' => $clientIp,
+                'timestamp' => now()
+            ]);
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();

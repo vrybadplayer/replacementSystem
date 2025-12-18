@@ -42,9 +42,9 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'userId' => 'required|string|unique:users',
+            'userId' => 'required|string',
             'name' => 'required|string',
-            'email' => 'required|email|unique:users',
+            'email' => 'required|email',
             'role' => 'required|string',
         ]);
 
@@ -114,72 +114,82 @@ class UserController extends Controller
         $user = Auth::user();
         $enrolledCourses = $this->userService->getEnrolledCourses($user->userId);
         
-        // Get all course subjects with error handling
+        \Log::info('Profile page loaded for user', [
+            'user_id' => $user->userId,
+            'enrolled_courses_count' => count($enrolledCourses ?? []),
+            'enrolled_courses' => $enrolledCourses
+        ]);
+        
+        // Get all course subjects with error handling - using DATABASE directly
         $subjects = [];
         if (!empty($enrolledCourses)) {
             try {
                 $courseIds = array_column($enrolledCourses, 'courseID');
                 
-                // Get all course subjects from API
-                $allCourseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
+                \Log::info('Fetching course subjects from database', [
+                    'user_id' => $user->userId,
+                    'course_ids' => $courseIds
+                ]);
                 
-                // Filter by enrolled courses
-                $enrolledCourseSubjects = array_filter($allCourseSubjects, function($cs) use ($courseIds) {
-                    return in_array($cs['courseId'] ?? null, $courseIds);
-                });
+                // Get all course subjects from DATABASE with relationships
+                $courseSubjects = \App\Models\CourseSubject::with(['course', 'subject'])
+                    ->whereIn('courseId', $courseIds)
+                    ->get();
+                
+                \Log::info('Database returned course subjects', [
+                    'count' => count($courseSubjects),
+                    'sample' => $courseSubjects->count() > 0 ? $courseSubjects[0]->toArray() : null
+                ]);
                 
                 // Build subjects list
-                foreach ($enrolledCourseSubjects as $courseSubject) {
-                    $subjectId = $courseSubject['subjectId'] ?? null;
-                    if ($subjectId) {
-                        // Get subject details from API
-                        $subjectDetails = CourseSubjectManagementFacade::getSubjectByIdFromApi($subjectId);
+                foreach ($courseSubjects as $courseSubject) {
+                    if ($courseSubject->subject) {
+                        $subject = $courseSubject->subject;
+                        $course = $courseSubject->course;
                         
-                        // Find course info
-                        $courseInfo = array_values(array_filter($enrolledCourses, function($c) use ($courseSubject) {
-                            return $c['courseID'] === ($courseSubject['courseId'] ?? null);
+                        \Log::info('Processing subject', [
+                            'subjectId' => $subject->subjectId,
+                            'subjectName' => $subject->subjectName,
+                            'courseId' => $course->courseId ?? null
+                        ]);
+                        
+                        // Find the corresponding enrolled course to get enrollment year/semester
+                        $enrollmentInfo = array_values(array_filter($enrolledCourses, function($c) use ($course) {
+                            return $c['courseID'] === $course->courseId;
                         }));
                         
-                        if (!empty($courseInfo)) {
-                            $course = $courseInfo[0];
-                            $subjects[] = [
-                                'subjectId' => $subjectDetails['subjectId'] ?? $subjectId,
-                                'subjectCode' => $subjectDetails['subjectCode'] ?? '',
-                                'subjectName' => $subjectDetails['subjectName'] ?? '',
-                                'creditHours' => $subjectDetails['creditHours'] ?? 0,
-                                'category' => $subjectDetails['category'] ?? '',
-                                'courseName' => $course['courseName'],
-                                'courseCode' => $course['courseCode'],
-                            ];
-                        }
+                        $subjects[] = [
+                            'subjectId' => $subject->subjectId,
+                            'subjectCode' => $subject->subjectCode,
+                            'subjectName' => $subject->subjectName,
+                            'creditHours' => $subject->creditHours,
+                            'category' => $subject->category,
+                            'courseName' => $course->courseName,
+                            'courseCode' => $course->courseCode,
+                        ];
                     }
                 }
+                
+                \Log::info('Final subjects list from database', [
+                    'count' => count($subjects),
+                    'subjects' => $subjects
+                ]);
             } catch (\Exception $e) {
-                // Fall back to database if API is unavailable
-                foreach ($enrolledCourses as $course) {
-                    $courseId = $course['courseID'];
-                    
-                    $courseSubjects = \App\Models\CourseSubject::where('courseId', $courseId)
-                        ->with('subject')
-                        ->get();
-                    
-                    foreach ($courseSubjects as $courseSubject) {
-                        $subject = $courseSubject->subject;
-                        if ($subject) {
-                            $subjects[] = [
-                                'subjectId' => $subject->subjectId,
-                                'subjectCode' => $subject->subjectCode,
-                                'subjectName' => $subject->subjectName,
-                                'creditHours' => $subject->creditHours,
-                                'category' => $subject->category,
-                                'courseName' => $course['courseName'],
-                                'courseCode' => $course['courseCode'],
-                            ];
-                        }
-                    }
-                }
+                \Log::error('Error fetching subjects from database', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'user_id' => $user->userId
+                ]);
             }
+        } else {
+            \Log::info('No enrolled courses found', ['user_id' => $user->userId]);
         }
+        
+        \Log::info('Profile page data prepared', [
+            'user_id' => $user->userId,
+            'subjects_count' => count($subjects),
+            'courses_count' => count($enrolledCourses ?? [])
+        ]);
         
         return view('student.userModule.profile', ['user' => $user, 'enrolledCourses' => $enrolledCourses, 'subjects' => $subjects]);
     }
@@ -191,18 +201,9 @@ class UserController extends Controller
     {
         $user = Auth::user();
         
-        $enrollments = CourseEnrollment::where('userID', $user->userId)->with('course')->get();
+        $profileData = $this->userService->getProfileData($user->userId);
 
-        return response()->json([
-            'user' => [
-                'userId' => $user->userId,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-            ],
-            'enrollments' => $enrollments,
-            'count' => count($enrollments),
-        ]);
+        return response()->json($profileData ?? []);
     }
 
     /**
@@ -212,23 +213,9 @@ class UserController extends Controller
     {
         $user = Auth::user();
         
-        $courses = CourseEnrollment::where('userID', $user->userId)
-            ->with('course')
-            ->get();
+        $courses = $this->userService->getEnrolledCourses($user->userId);
 
-        $result = [];
-        foreach ($courses as $enrollment) {
-            $result[] = [
-                'enrollmentID' => $enrollment->enrollmentID,
-                'courseID' => $enrollment->courseID,
-                'courseName' => $enrollment->course->courseName,
-                'courseCode' => $enrollment->course->courseCode,
-                'year' => $enrollment->year,
-                'semester' => $enrollment->semester,
-            ];
-        }
-
-        return response()->json(['courses' => $result]);
+        return response()->json(['courses' => $courses ?? []]);
     }
 
     /**
@@ -245,11 +232,21 @@ class UserController extends Controller
             return response()->json(['error' => 'Name and email required'], 400);
         }
 
-        $user->name = $name;
-        $user->email = $email;
-        $user->save();
+        // Log profile update attempt
+        \Log::info('User profile update attempted', [
+            'user_id' => $user->userId,
+            'email' => $user->email,
+            'updated_fields' => ['name', 'email'],
+            'ip_address' => $request->ip(),
+            'timestamp' => now()
+        ]);
 
-        return response()->json(['success' => true, 'message' => 'Updated']);
+        $updated = $this->userService->updateUser($user->userId, [
+            'name' => $name,
+            'email' => $email
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Updated', 'user' => $updated]);
     }
 
     // ---------- API ENDPOINTS ----------
@@ -375,12 +372,28 @@ class UserController extends Controller
 
         // Verify current password
         if (!\Hash::check($validated['current_password'], $user->password)) {
+            // Log failed password change attempt
+            \Log::warning('Password change failed - incorrect current password', [
+                'user_id' => $user->userId,
+                'email' => $user->email,
+                'ip_address' => $request->ip(),
+                'timestamp' => now()
+            ]);
+            
             return redirect()->back()->withErrors(['current_password' => 'Current password is incorrect']);
         }
 
         // Update password
         $user->password = \Hash::make($validated['password']);
         $user->save();
+
+        // Log successful password change
+        \Log::info('User password changed successfully', [
+            'user_id' => $user->userId,
+            'email' => $user->email,
+            'ip_address' => $request->ip(),
+            'timestamp' => now()
+        ]);
 
         return redirect()->route('student.profile')->with('success', 'Password changed successfully!');
     }
