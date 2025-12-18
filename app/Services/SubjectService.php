@@ -110,7 +110,10 @@ class SubjectService
 
     public function getSubjectByCourseSubject($courseSubjectId)
     {
-        $response = Http::get($this->baseUrl . '/subject/byCourseSubject/' . $courseSubjectId);
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->getInternalApiToken(),
+            'X-Internal-Request' => 'true',
+        ])->get($this->baseUrl . '/subject/byCourseSubject/' . $courseSubjectId);
 
         if ($response->successful()) {
             $data = $response->json();
