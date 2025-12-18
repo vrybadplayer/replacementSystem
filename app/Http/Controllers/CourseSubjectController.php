@@ -206,7 +206,7 @@ class CourseSubjectController extends Controller
     /**
      * REST API
      */
-    public function index()
+    public function apiGetAllCourseSubjects()
     {
         try {
             $data = CourseSubject::all();
@@ -222,7 +222,7 @@ class CourseSubjectController extends Controller
         }
     }
 
-    public function apiStore(Request $request)
+    public function apiCreateCourseSubject(Request $request)
     {
         // Authorization check - only admins can create course subjects
         if (!$request->user() || $request->user()->role !== 'admin') {
@@ -245,7 +245,7 @@ class CourseSubjectController extends Controller
         }
     }
 
-    public function apiUpdate(Request $request, string $id)
+    public function apiUpdateCourseSubject(Request $request, string $id)
     {
         // Authorization check - only admins can update course subjects
         if (!$request->user() || $request->user()->role !== 'admin') {
@@ -301,8 +301,8 @@ class CourseSubjectController extends Controller
         ]);
     }
 
-    // GET /api/courseSubject/{courseSubjectId}/codes
-    public function getCourseSubjectCodes($courseSubjectId)
+    // GET /api/courseSubject/{courseSubjectId}
+    public function getCourseSubject($courseSubjectId)
     {
         $courseSubject = CourseSubject::with(['course', 'subject'])
             ->where('courseSubjectId', $courseSubjectId)

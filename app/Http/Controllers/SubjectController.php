@@ -109,18 +109,23 @@ class SubjectController extends Controller
     /**
      * REST API
      */
-    public function index()
+    public function apiGetAllSubjects()
     {
-        $data = Subject::all();
+        try {
+            $data = Subject::all();
 
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-            'count' => $data->count(),
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'count' => $data->count(),
+            ], 200);
+        } finally {
+            // Close database connection as soon as possible
+            DB::disconnect();
+        }
     }
 
-    public function apiStore(Request $request)
+    public function apiCreateSubject(Request $request)
     {
         // Authorization check - only admins can create subjects
         if (!$request->user() || $request->user()->role !== 'admin') {
@@ -152,7 +157,7 @@ class SubjectController extends Controller
         }
     }
 
-    public function apiShow(string $subjectId)
+    public function apiGetSubject(string $subjectId)
     {
         $subject = Subject::findOrFail($subjectId);
 
@@ -162,7 +167,7 @@ class SubjectController extends Controller
         ], 200);
     }
 
-    public function apiUpdate(Request $request, string $id)
+    public function apiUpdateSubject(Request $request, string $id)
     {
         $subject = Subject::findOrFail($id);
         $subject->update($request->all());

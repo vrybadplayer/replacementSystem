@@ -41,6 +41,20 @@ class CourseSubjectService
         return $this->fetchFromApi('courseSubject');
     }
 
+    public function getCourseSubjectCodes($courseSubjectId)
+    {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->getInternalApiToken(),
+            'X-Internal-Request' => 'true',
+        ])->get($this->baseUrl . '/courseSubject/' . $courseSubjectId);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'] ?? null;
+        }
+
+        return null;
+    }
 
     public function fetchCourseSubjectByIdFromApi(string $courseSubjectId)
     {
@@ -105,20 +119,5 @@ class CourseSubjectService
         }
 
         return [];
-    }
-
-    public function getCourseSubjectCodes($courseSubjectId)
-    {
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->getInternalApiToken(),
-            'X-Internal-Request' => 'true',
-        ])->get($this->baseUrl . '/courseSubject/' . $courseSubjectId);
-
-        if ($response->successful()) {
-            $data = $response->json();
-            return $data['data'] ?? null;
-        }
-
-        return null;
     }
 }
