@@ -76,13 +76,69 @@ class CourseSubjectController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'courseSubjectId' => 'required|string',
-            'courseId' => 'required|string',
-            'subjectId' => 'required|string',
+            'courseSubjectId' => 'nullable|string|unique:course_subject,courseSubjectId',
+            'courseId' => 'required|string|exists:course,courseId',
+            'subjectId' => 'required|string|exists:subject,subjectId',
         ]);
-        CourseSubjectManagementFacade::createOrUpdateCourseSubject($validated);
-        return redirect()->route('admin.courseSubjects')
-            ->with('success', 'Course Subject created successfully!');
+
+        // Check if course and subject are active
+        $course = CourseSubjectManagementFacade::getCourseByIdFromApi($validated['courseId']);
+        $subject = CourseSubjectManagementFacade::getSubjectByIdFromApi($validated['subjectId']);
+        
+        if (!$course || ($course['status'] ?? '') !== 'active') {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['courseId' => 'The selected course is not active.']);
+        }
+        
+        if (!$subject || ($subject['status'] ?? '') !== 'active') {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['subjectId' => 'The selected subject is not active.']);
+        }
+
+        // Ensure courseId and subjectId combination is unique
+        $courseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi() ?? [];
+        $existing = null;
+        foreach ($courseSubjects as $courseSubject) {
+            if (($courseSubject['courseId'] ?? '') === $validated['courseId'] && 
+                ($courseSubject['subjectId'] ?? '') === $validated['subjectId']) {
+                $existing = $courseSubject;
+                break;
+            }
+        }
+        
+        if ($existing) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'This course-subject combination already exists.']);
+        }
+
+        if (empty($validated['courseSubjectId'])) {
+            $courseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi() ?? [];
+            $courseSubjectNumbers = [];
+            foreach ($courseSubjects as $courseSubject) {
+                $courseSubjectId = $courseSubject['courseSubjectId'] ?? '';
+                if (strpos($courseSubjectId, 'CS') === 0 && is_numeric(substr($courseSubjectId, 2))) {
+                    $courseSubjectNumbers[] = (int) substr($courseSubjectId, 2);
+                }
+            }
+            
+            $nextNumber = !empty($courseSubjectNumbers) ? max($courseSubjectNumbers) + 1 : 1;
+            $validated['courseSubjectId'] = 'CS' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        }
+
+        $response = CourseSubjectManagementFacade::createCourseSubjectViaApi($validated);
+        
+        if ($response->successful()) {
+            return redirect()->route('admin.courseSubjects')
+                ->with('success', 'Course Subject created successfully!');
+        }
+        
+        $errorMessage = $response->json()['message'] ?? 'Failed to create course subject';
+        return redirect()->back()
+            ->withInput()
+            ->withErrors(['error' => $errorMessage]);
     }
 
     public function edit(string $courseSubjectId)
@@ -96,13 +152,55 @@ class CourseSubjectController extends Controller
     public function update(Request $request, string $courseSubjectId)
     {
         $validated = $request->validate([
-            'courseId' => 'required|string',
-            'subjectId' => 'required|string',
+            'courseId' => 'required|string|exists:course,courseId',
+            'subjectId' => 'required|string|exists:subject,subjectId',
         ]);
-        $validated['courseSubjectId'] = $courseSubjectId;
-        CourseSubjectManagementFacade::createOrUpdateCourseSubject($validated, $courseSubjectId);
-        return redirect()->route('admin.courseSubjects')
-            ->with('success', 'Course Subject updated successfully!');
+
+        // Check if course and subject are active
+        $course = CourseSubjectManagementFacade::getCourseByIdFromApi($validated['courseId']);
+        $subject = CourseSubjectManagementFacade::getSubjectByIdFromApi($validated['subjectId']);
+        
+        if (!$course || ($course['status'] ?? '') !== 'active') {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['courseId' => 'The selected course is not active.']);
+        }
+        
+        if (!$subject || ($subject['status'] ?? '') !== 'active') {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['subjectId' => 'The selected subject is not active.']);
+        }
+
+        // Ensure courseId and subjectId combination is unique (excluding current record)
+        $courseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi() ?? [];
+        $existing = null;
+        foreach ($courseSubjects as $courseSubject) {
+            if (($courseSubject['courseId'] ?? '') === $validated['courseId'] && 
+                ($courseSubject['subjectId'] ?? '') === $validated['subjectId'] &&
+                ($courseSubject['courseSubjectId'] ?? '') !== $courseSubjectId) {
+                $existing = $courseSubject;
+                break;
+            }
+        }
+        
+        if ($existing) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'This course-subject combination already exists.']);
+        }
+
+        $response = CourseSubjectManagementFacade::updateCourseSubjectViaApi($courseSubjectId, $validated);
+        
+        if ($response->successful()) {
+            return redirect()->route('admin.courseSubjects')
+                ->with('success', 'Course Subject updated successfully!');
+        }
+        
+        $errorMessage = $response->json()['message'] ?? 'Failed to update course subject';
+        return redirect()->back()
+            ->withInput()
+            ->withErrors(['error' => $errorMessage]);
     }
 
     /**
@@ -121,13 +219,7 @@ class CourseSubjectController extends Controller
 
     public function apiStore(Request $request)
     {
-        $validated = $request->validate([
-            'courseSubjectId' => 'required|string|unique:course_subject,courseSubjectId',
-            'courseId' => 'required|string|exists:course,courseId',
-            'subjectId' => 'required|string|exists:subject,subjectId',
-        ]);
-
-        $courseSubject = CourseSubject::create($validated);
+        $courseSubject = CourseSubject::create($request->all());
 
         return response()->json([
             'success' => true,
@@ -137,13 +229,8 @@ class CourseSubjectController extends Controller
 
     public function apiUpdate(Request $request, string $id)
     {
-        $validated = $request->validate([
-            'courseId' => 'nullable|string|exists:course,courseId',
-            'subjectId' => 'nullable|string|exists:subject,subjectId',
-        ]);
-
         $courseSubject = CourseSubject::findOrFail($id);
-        $courseSubject->update($validated);
+        $courseSubject->update($request->all());
 
         return response()->json([
             'success' => true,

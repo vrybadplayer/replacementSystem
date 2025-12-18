@@ -61,9 +61,14 @@ class CourseSubjectManagementService
         return $this->subjectService->fetchSubjectByIdFromApi($subjectId);
     }
 
-    public function createOrUpdateSubject(array $data, ?string $subjectId = null)
+    public function createSubjectViaApi(array $data)
     {
-        return $this->subjectService->createOrUpdateSubject($data, $subjectId);
+        return $this->subjectService->createSubjectViaApi($data);
+    }
+
+    public function updateSubjectViaApi(string $subjectId, array $data)
+    {
+        return $this->subjectService->updateSubjectViaApi($subjectId, $data);
     }
 
     public function getSubjectByCourseSubject(string $courseSubjectId)
@@ -88,9 +93,14 @@ class CourseSubjectManagementService
         return $this->courseSubjectService->fetchCourseSubjectByIdFromApi($courseSubjectId);
     }
 
-    public function createOrUpdateCourseSubject(array $data, ?string $courseSubjectId = null)
+    public function createCourseSubjectViaApi(array $data)
     {
-        return $this->courseSubjectService->createOrUpdateCourseSubject($data, $courseSubjectId);
+        return $this->courseSubjectService->createCourseSubjectViaApi($data);
+    }
+
+    public function updateCourseSubjectViaApi(string $courseSubjectId, array $data)
+    {
+        return $this->courseSubjectService->updateCourseSubjectViaApi($courseSubjectId, $data);
     }
 
     public function getCourseSubjectsByCourse(string $courseId)

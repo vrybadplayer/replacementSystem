@@ -40,22 +40,16 @@ class CourseSubjectService
     }
 
 
-    public function createOrUpdateCourseSubject(array $data, ?string $courseSubjectId = null)
+    public function createCourseSubjectViaApi(array $data)
     {
-        $courseSubjectId = $courseSubjectId ?? $data['courseSubjectId'] ?? null;
-        if (!$courseSubjectId) {
-            throw new \InvalidArgumentException('Course Subject ID is required');
-        }
+        $response = Http::post($this->baseUrl . '/courseSubject', $data);
+        return $response;
+    }
 
+    public function updateCourseSubjectViaApi(string $courseSubjectId, array $data)
+    {
         $response = Http::put($this->baseUrl . '/courseSubject/' . $courseSubjectId, $data);
-        if ($response->status() === 404) {
-            $response = Http::post($this->baseUrl . '/courseSubject', $data);
-        }
-        if (!$response->successful()) {
-            throw new \Exception($response->json()['message'] ?? 'Failed to create/update course subject');
-        }
-
-        return $response->json()['data'] ?? $response->json();
+        return $response;
     }
 
 

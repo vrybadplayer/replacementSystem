@@ -64,7 +64,6 @@ Route::get('/courseSubject', [CourseSubjectController::class, 'index']);
 Route::get('/courseSubject/{courseSubjectId}', [CourseSubjectController::class, 'getCourseSubjectCodes']);
 Route::post('/courseSubject', [CourseSubjectController::class, 'apiStore']);
 Route::put('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate']);
-Route::patch('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate']);
 Route::get('/courseSubject/fetchCourseSubjectWithForeignKeys', [CourseSubjectController::class, 'fetchCourseSubjectWithForeignKeys']);
 Route::get('/courseSubjects/byCourse/{courseId}', [CourseSubjectController::class, 'getCourseSubjectsByCourse']);
 
@@ -73,7 +72,6 @@ Route::get('/subjects', [SubjectController::class, 'index']);
 Route::get('/subjects/{subjectId}', [SubjectController::class, 'apiShow']);
 Route::post('/subjects', [SubjectController::class, 'apiStore']);
 Route::put('/subjects/{id}', [SubjectController::class, 'apiUpdate']);
-Route::patch('/subjects/{id}', [SubjectController::class, 'apiUpdate']);
 Route::get('/subject/byCourseSubject/{courseSubjectId}', [SubjectController::class, 'getSubjectByCourseSubject']);
 
 // --- User Management API ---
