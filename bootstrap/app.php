@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => RoleMiddleware::class,
+            'api.auth' => \App\Http\Middleware\ApiAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

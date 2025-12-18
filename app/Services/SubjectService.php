@@ -10,10 +10,23 @@ class SubjectService
 {
     protected $baseUrl = 'http://127.0.0.1:8001/api';
 
+    /**
+     * Create a token for internal API calls
+     */
+    private function getInternalApiToken(): string
+    {
+        $secret = env('INTERNAL_API_SECRET', 'your-secret-key-change-this');
+        $timestamp = time();
+        return base64_encode($secret . '|' . $timestamp . '|internal');
+    }
 
     protected function fetchFromApi(string $endpoint)
     {
-        $response = Http::get($this->baseUrl . '/' . $endpoint);
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->getInternalApiToken(),
+            'X-Internal-Request' => 'true',
+        ])->get($this->baseUrl . '/' . $endpoint);
+        
         if ($response->successful()) {
             $data = $response->json();
             return $data['data'] ?? null;
@@ -63,7 +76,11 @@ class SubjectService
 
     public function fetchSubjectByIdFromApi(string $subjectId)
     {
-        $response = Http::get($this->baseUrl . '/subjects/' . $subjectId);
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->getInternalApiToken(),
+            'X-Internal-Request' => 'true',
+        ])->get($this->baseUrl . '/subjects/' . $subjectId);
+        
         if ($response->successful()) {
             $data = $response->json();
             return $data['data'] ?? null;
@@ -73,13 +90,21 @@ class SubjectService
 
     public function createSubjectViaApi(array $data)
     {
-        $response = Http::post($this->baseUrl . '/subjects', $data);
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->getInternalApiToken(),
+            'X-Internal-Request' => 'true',
+        ])->post($this->baseUrl . '/subjects', $data);
+        
         return $response;
     }
 
     public function updateSubjectViaApi(string $subjectId, array $data)
     {
-        $response = Http::put($this->baseUrl . '/subjects/' . $subjectId, $data);
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->getInternalApiToken(),
+            'X-Internal-Request' => 'true',
+        ])->put($this->baseUrl . '/subjects/' . $subjectId, $data);
+        
         return $response;
     }
 
@@ -97,7 +122,11 @@ class SubjectService
 
     protected function getCourseSubjectCodes($courseSubjectId)
     {
-        $response = Http::get($this->baseUrl . '/courseSubject/' . $courseSubjectId);
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->getInternalApiToken(),
+            'X-Internal-Request' => 'true',
+        ])->get($this->baseUrl . '/courseSubject/' . $courseSubjectId);
+        
         if ($response->successful()) {
             $data = $response->json();
             return $data['data'] ?? null;

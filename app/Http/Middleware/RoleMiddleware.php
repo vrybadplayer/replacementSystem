@@ -11,6 +11,13 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, string $role): Response
     {
+        // API requests with Bearer token: bypass role check (services are trusted)
+        if ($request->header('X-Internal-Request') === 'true' && 
+            str_starts_with($request->header('Authorization', ''), 'Bearer ')) {
+            return $next($request);
+        }
+        
+        // Web routes: check user session and role
         if (!$request->user()) {
             return redirect('/login');
         }
