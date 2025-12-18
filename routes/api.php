@@ -24,58 +24,58 @@ Route::post('/logout', [LoginController::class, 'apiLogout'])->middleware('auth'
 Route::get('/auth/user', [LoginController::class, 'apiGetUser'])->middleware('auth');
 
 // --- User Management API (Admin) ---
-Route::middleware('auth')->get('/admin/users', [AdminUserController::class, 'getUsersJson']);
-Route::middleware('auth')->get('/users', [UserController::class, 'apiIndex']);
-Route::middleware('auth')->post('/users', [UserController::class, 'apiStore']);
-Route::middleware('auth')->get('/users/{id}', [UserController::class, 'apiShow']);
-Route::middleware('auth')->get('/users/{id}/db', [UserController::class, 'apiShowDb']);
-Route::middleware('auth')->put('/users/{id}', [UserController::class, 'apiUpdate']);
-Route::middleware('auth')->delete('/users/{id}', [UserController::class, 'apiDestroy']);
-Route::middleware('auth')->get('/users/{userId}/profile', [UserController::class, 'apiGetProfileData']);
-Route::middleware('auth')->get('/users/{userId}/courses', [UserController::class, 'apiGetEnrolledCourses']);
+Route::get('/admin/users', [AdminUserController::class, 'getUsersJson']);
+Route::get('/users', [UserController::class, 'apiIndex']);
+Route::post('/users', [UserController::class, 'apiStore']);
+Route::get('/users/{id}', [UserController::class, 'apiShow']);
+Route::get('/users/{id}/db', [UserController::class, 'apiShowDb']);
+Route::put('/users/{id}', [UserController::class, 'apiUpdate']);
+Route::delete('/users/{id}', [UserController::class, 'apiDestroy']);
+Route::get('/users/{userId}/profile', [UserController::class, 'apiGetProfileData']);
+Route::get('/users/{userId}/courses', [UserController::class, 'apiGetEnrolledCourses']);
 
 // --- Student Profile API ---
-Route::middleware('auth')->get('/user/profile', [UserController::class, 'getProfileData']);
-Route::middleware('auth')->get('/user/courses', [UserController::class, 'getEnrolledCourses']);
-Route::middleware('auth')->post('/user/profile/update', [UserController::class, 'updateProfile']);
+Route::get('/user/profile', [UserController::class, 'getProfileData']);
+Route::get('/user/courses', [UserController::class, 'getEnrolledCourses']);
+Route::post('/user/profile/update', [UserController::class, 'updateProfile']);
 
 // Timetable Module API
-Route::middleware('auth')->get('/', [StudentTimetableController::class, '']);
-Route::middleware('auth')->get('/venues', [VenueController::class, 'getAllVenues']);
-Route::middleware('auth')->get('/venues/{id}', [VenueController::class, 'getVenueById']);
-Route::middleware('auth')->get('/classgroups', [ClassGroupController::class, 'getAllClassGroups']);
-Route::middleware('auth')->get('/classgroups/{id}', [ClassGroupController::class, 'getClassGroupById']);
-Route::middleware('auth')->get('/timetable', [TimetableController::class, 'getAllTimetableRecords']);
-Route::middleware('auth')->get('/timetable/{id}', [TimetableController::class, 'getTimetableById']);
-Route::middleware('auth')->get('/occupiedSlots', [TimetableController::class, 'getOccupiedSlots']);
-Route::middleware('auth')->get('/clashCheck', [TimetableController::class, 'clashCheck']);
-Route::middleware('auth')->post('/timetable/create', [TimetableController::class, 'createTimetable']);
-Route::middleware('auth')->get('/timetable/{classGroupId}', [TimetableController::class, 'getTimetableByClassGroupId']);
-Route::middleware('auth')->get('/timetable/future/{userId}', [TimetableController::class, 'getFutureClasses']);
+Route::get('/', [StudentTimetableController::class, '']);
+Route::get('/venues', [VenueController::class, 'getAllVenues']);
+Route::get('/venues/{id}', [VenueController::class, 'getVenueById']);
+Route::get('/classgroups', [ClassGroupController::class, 'getAllClassGroups']);
+Route::get('/classgroups/{id}', [ClassGroupController::class, 'getClassGroupById']);
+Route::get('/timetable', [TimetableController::class, 'getAllTimetableRecords']);
+Route::get('/timetable/{id}', [TimetableController::class, 'getTimetableById']);
+Route::get('/occupiedSlots', [TimetableController::class, 'getOccupiedSlots']);
+Route::get('/clashCheck', [TimetableController::class, 'clashCheck']);
+Route::post('/timetable/create', [TimetableController::class, 'createTimetable']);
+Route::get('/timetable/{classGroupId}', [TimetableController::class, 'getTimetableByClassGroupId']);
+Route::get('/timetable/future/{userId}', [TimetableController::class, 'getFutureClasses']);
 
 // --- Course Management API ---
-Route::middleware('auth')->get('/courses', [CourseController::class, 'index']);
-Route::middleware('auth')->get('/courses/{courseId}', [CourseController::class, 'apiShow']);
-Route::middleware('auth')->post('/courses', [CourseController::class, 'apiStore']);
-Route::middleware('auth')->put('/courses/{courseId}', [CourseController::class, 'apiUpdate']);
-Route::middleware('auth')->patch('/courses/{courseId}', [CourseController::class, 'apiUpdate']);
+Route::get('/courses', [CourseController::class, 'index']);
+Route::get('/courses/{courseId}', [CourseController::class, 'apiShow']);
+Route::post('/courses', [CourseController::class, 'apiStore']);
+Route::put('/courses/{courseId}', [CourseController::class, 'apiUpdate']);
+Route::patch('/courses/{courseId}', [CourseController::class, 'apiUpdate']);
 
 // --- Course Subject Bridge REST API ---
-Route::middleware('auth')->get('/courseSubject', [CourseSubjectController::class, 'index']);
-Route::middleware('auth')->get('/courseSubject/{courseSubjectId}', [CourseSubjectController::class, 'apiShow']);
-Route::middleware('auth')->post('/courseSubject', [CourseSubjectController::class, 'apiStore']);
-Route::middleware('auth')->put('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate']);
-Route::middleware('auth')->patch('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate']);
-Route::middleware('auth')->get('/courseSubject/fetchCourseSubjectWithForeignKeys', [CourseSubjectController::class, 'fetchCourseSubjectWithForeignKeys']);
-Route::middleware('auth')->get('/courseSubjects/byCourse/{courseId}', [CourseSubjectController::class, 'getCourseSubjectsByCourse']);
+Route::get('/courseSubject', [CourseSubjectController::class, 'index']);
+Route::get('/courseSubject/{courseSubjectId}', [CourseSubjectController::class, 'apiShow']);
+Route::post('/courseSubject', [CourseSubjectController::class, 'apiStore']);
+Route::put('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate']);
+Route::patch('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate']);
+Route::get('/courseSubject/fetchCourseSubjectWithForeignKeys', [CourseSubjectController::class, 'fetchCourseSubjectWithForeignKeys']);
+Route::get('/courseSubjects/byCourse/{courseId}', [CourseSubjectController::class, 'getCourseSubjectsByCourse']);
 
 // --- Subjects REST API ---
-Route::middleware('auth')->get('/subjects', [SubjectController::class, 'index']);
-Route::middleware('auth')->get('/subjects/{subjectId}', [SubjectController::class, 'apiShow']);
-Route::middleware('auth')->post('/subjects', [SubjectController::class, 'apiStore']);
-Route::middleware('auth')->put('/subjects/{id}', [SubjectController::class, 'apiUpdate']);
-Route::middleware('auth')->patch('/subjects/{id}', [SubjectController::class, 'apiUpdate']);
-Route::middleware('auth')->get('/subject/byCourseSubject/{courseSubjectId}', [SubjectController::class, 'getSubjectByCourseSubject']);
+Route::get('/subjects', [SubjectController::class, 'index']);
+Route::get('/subjects/{subjectId}', [SubjectController::class, 'apiShow']);
+Route::post('/subjects', [SubjectController::class, 'apiStore']);
+Route::put('/subjects/{id}', [SubjectController::class, 'apiUpdate']);
+Route::patch('/subjects/{id}', [SubjectController::class, 'apiUpdate']);
+Route::get('/subject/byCourseSubject/{courseSubjectId}', [SubjectController::class, 'getSubjectByCourseSubject']);
 // --- User Management API ---
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -87,7 +87,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // --- Replacement Module API ---
-Route::middleware('auth')->prefix('replacement')->group(function () {
+Route::prefix('replacement')->group(function () {
     // Appeals
     Route::get('/appeals', [ReplacementController::class, 'getAllAppeals']);
     Route::get('/appeals/pending', [ReplacementController::class, 'getPendingAppeals']);
