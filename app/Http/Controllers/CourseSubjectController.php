@@ -6,8 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Facades\CourseSubjectManagementFacade;
 use App\Models\CourseSubject;
-use App\Services\CourseSubjectService;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class CourseSubjectController extends Controller
 {
@@ -208,34 +208,65 @@ class CourseSubjectController extends Controller
      */
     public function index()
     {
-        $data = CourseSubject::all();
+        try {
+            $data = CourseSubject::all();
 
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-            'count' => $data->count(),
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'count' => $data->count(),
+            ], 200);
+        } finally {
+            // Close database connection as soon as possible
+            DB::disconnect();
+        }
     }
 
     public function apiStore(Request $request)
     {
-        $courseSubject = CourseSubject::create($request->all());
+        // Authorization check - only admins can create course subjects
+        if (!$request->user() || $request->user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only administrators can create course subjects.',
+            ], 403);
+        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $courseSubject,
-        ], 201);
+        try {
+            $courseSubject = CourseSubject::create($request->all());
+
+            return response()->json([
+                'success' => true,
+                'data' => $courseSubject,
+            ], 201);
+        } finally {
+            // Close database connection as soon as possible
+            DB::disconnect();
+        }
     }
 
     public function apiUpdate(Request $request, string $id)
     {
-        $courseSubject = CourseSubject::findOrFail($id);
-        $courseSubject->update($request->all());
+        // Authorization check - only admins can update course subjects
+        if (!$request->user() || $request->user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only administrators can update course subjects.',
+            ], 403);
+        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $courseSubject,
-        ], 200);
+        try {
+            $courseSubject = CourseSubject::findOrFail($id);
+            $courseSubject->update($request->all());
+
+            return response()->json([
+                'success' => true,
+                'data' => $courseSubject,
+            ], 200);
+        } finally {
+            // Close database connection as soon as possible
+            DB::disconnect();
+        }
     }
 
     public function fetchCourseSubjectWithForeignKeys(Request $request)
@@ -252,7 +283,6 @@ class CourseSubjectController extends Controller
             return response()->json(null, 404);
         }
 
-        // Return just the data
         return response()->json($courseSubject, 200);
     }
 

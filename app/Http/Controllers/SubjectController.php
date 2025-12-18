@@ -8,6 +8,7 @@ use App\Facades\CourseSubjectManagementFacade;
 use App\Models\Subject;
 use App\Models\CourseSubject;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class SubjectController extends Controller
 {
@@ -121,6 +122,14 @@ class SubjectController extends Controller
 
     public function apiStore(Request $request)
     {
+        // Authorization check - only admins can create subjects
+        if (!$request->user() || $request->user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only administrators can create subjects.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'subjectId' => 'nullable|string|unique:subject,subjectId',
             'subjectCode' => 'required|string|unique:subject,subjectCode',
@@ -130,12 +139,17 @@ class SubjectController extends Controller
             'status' => 'required|string|in:active,inactive',
         ]);
 
-        $subject = Subject::create($validated);
+        try {
+            $subject = Subject::create($validated);
 
-        return response()->json([
-            'success' => true,
-            'data' => $subject,
-        ], 201);
+            return response()->json([
+                'success' => true,
+                'data' => $subject,
+            ], 201);
+        } finally {
+            // Close database connection as soon as possible
+            DB::disconnect();
+        }
     }
 
     public function apiShow(string $subjectId)

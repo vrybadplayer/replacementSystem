@@ -6,6 +6,7 @@ use App\Facades\CourseSubjectManagementFacade;
 use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class CourseController extends Controller
 {
@@ -107,23 +108,41 @@ class CourseController extends Controller
 
     public function index()
     {
-        $data = Course::all();
+        try {
+            $data = Course::all();
 
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-            'count' => $data->count(),
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'count' => $data->count(),
+            ], 200);
+        } finally {
+            // Close database connection as soon as possible
+            DB::disconnect();
+        }
     }
 
     public function apiStore(Request $request)
     {
-        $course = Course::create($request->all());
+        // Authorization check - only admins can create courses
+        if (!$request->user() || $request->user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only administrators can create courses.',
+            ], 403);
+        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $course,
-        ], 201);
+        try {
+            $course = Course::create($request->all());
+
+            return response()->json([
+                'success' => true,
+                'data' => $course,
+            ], 201);
+        } finally {
+            // Close database connection as soon as possible
+            DB::disconnect();
+        }
     }
 
     public function apiShow(string $courseId)
@@ -138,12 +157,25 @@ class CourseController extends Controller
 
     public function apiUpdate(Request $request, string $courseId)
     {
-        $course = Course::findOrFail($courseId);
-        $course->update($request->all());
+        // Authorization check - only admins can update courses
+        if (!$request->user() || $request->user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only administrators can update courses.',
+            ], 403);
+        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $course,
-        ], 200);
+        try {
+            $course = Course::findOrFail($courseId);
+            $course->update($request->all());
+
+            return response()->json([
+                'success' => true,
+                'data' => $course,
+            ], 200);
+        } finally {
+            // Close database connection as soon as possible
+            DB::disconnect();
+        }
     }
 }
