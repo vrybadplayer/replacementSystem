@@ -155,6 +155,36 @@
         .test-credentials strong {
             color: #2d3748;
         }
+
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-wrapper input {
+            flex: 1;
+            padding-right: 40px !important;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: #718096;
+            padding: 5px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+        }
+
+        .password-toggle:hover {
+            color: #667eea;
+        }
     </style>
 </head>
 <body>
@@ -193,14 +223,17 @@
 
             <div class="form-group">
                 <label for="password">Password</label>
-                <input 
-                    type="password" 
-                    name="password" 
-                    id="password" 
-                    required
-                    class="{{ $errors->has('password') ? 'error' : '' }}"
-                    placeholder="Enter your password"
-                >
+                <div class="password-wrapper">
+                    <input 
+                        type="password" 
+                        name="password" 
+                        id="password" 
+                        required
+                        class="{{ $errors->has('password') ? 'error' : '' }}"
+                        placeholder="Enter your password"
+                    >
+                    <button type="button" class="password-toggle" onclick="toggleLoginPasswordVisibility()">👁️</button>
+                </div>
             </div>
 
             <div class="remember-group">
@@ -223,5 +256,20 @@
             <p><strong>Student:</strong> student@example.com / 123456</p>
         </div>
     </div>
+
+    <script>
+        function toggleLoginPasswordVisibility() {
+            const passwordField = document.getElementById('password');
+            const button = event.target.closest('.password-toggle');
+            
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                passwordField.type = 'password';
+                button.textContent = '👁️';
+            }
+        }
+    </script>
 </body>
 </html>

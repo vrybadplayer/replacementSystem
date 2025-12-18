@@ -60,6 +60,7 @@ class LoginController extends Controller
                 'email' => $user->email,
                 'role' => $user->role,
                 'ip_address' => $clientIp,
+                'remember_me' => $remember,
                 'timestamp' => now()
             ]);
 
