@@ -63,32 +63,24 @@ class SubjectService
 
     public function fetchSubjectByIdFromApi(string $subjectId)
     {
-        $response = Http::timeout(5)->get("{$this->baseUrl}/subjects/{$subjectId}");
+        $response = Http::get($this->baseUrl . '/subjects/' . $subjectId);
         if ($response->successful()) {
             $data = $response->json();
             return $data['data'] ?? null;
         }
-
         return null;
     }
 
-
-    public function createOrUpdateSubject(array $data, ?string $subjectId = null)
+    public function createSubjectViaApi(array $data)
     {
-        $subjectId = $subjectId ?? $data['subjectId'] ?? null;
-        if (!$subjectId) {
-            throw new \InvalidArgumentException('Subject ID is required');
-        }
+        $response = Http::post($this->baseUrl . '/subjects', $data);
+        return $response;
+    }
 
+    public function updateSubjectViaApi(string $subjectId, array $data)
+    {
         $response = Http::put($this->baseUrl . '/subjects/' . $subjectId, $data);
-        if ($response->status() === 404) {
-            $response = Http::post($this->baseUrl . '/subjects', $data);
-        }
-        if (!$response->successful()) {
-            throw new \Exception($response->json()['message'] ?? 'Failed to create/update subject');
-        }
-
-        return $response->json()['data'] ?? $response->json();
+        return $response;
     }
 
     public function getSubjectByCourseSubject($courseSubjectId)

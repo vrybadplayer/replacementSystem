@@ -40,16 +40,39 @@ class SubjectController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'subjectId' => 'required|string',
-            'subjectCode' => 'nullable|string',
-            'subjectName' => 'required|string',
-            'creditHours' => 'nullable|integer',
-            'category' => 'nullable|string',
+            'subjectId' => 'nullable|string|unique:subject,subjectId',
+            'subjectCode' => 'required|string|unique:subject,subjectCode',
+            'subjectName' => 'required|string|unique:subject,subjectName|different:subjectCode',
+            'creditHours' => 'required|integer',
+            'category' => 'required|string|in:core,general,elective',
             'status' => 'required|string|in:active,inactive',
         ]);
-        CourseSubjectManagementFacade::createOrUpdateSubject($validated);
-        return redirect()->route('admin.subjects')
-            ->with('success', 'Subject created successfully!');
+
+        if (empty($validated['subjectId'])) {
+            $subjects = CourseSubjectManagementFacade::fetchSubjectsFromApi() ?? [];
+            $subjectNumbers = [];
+            foreach ($subjects as $subject) {
+                $subjectId = $subject['subjectId'] ?? '';
+                if (strpos($subjectId, 'S') === 0 && is_numeric(substr($subjectId, 1))) {
+                    $subjectNumbers[] = (int) substr($subjectId, 1);
+                }
+            }
+            
+            $nextNumber = !empty($subjectNumbers) ? max($subjectNumbers) + 1 : 1;
+            $validated['subjectId'] = 'S' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        }
+
+        $response = CourseSubjectManagementFacade::createSubjectViaApi($validated);
+        
+        if ($response->successful()) {
+            return redirect()->route('admin.subjects')
+                ->with('success', 'Subject created successfully!');
+        }
+        
+        $errorMessage = $response->json()['message'] ?? 'Failed to create subject';
+        return redirect()->back()
+            ->withInput()
+            ->withErrors(['error' => $errorMessage]);
     }
 
     public function edit(string $subjectId)
@@ -61,16 +84,24 @@ class SubjectController extends Controller
     public function update(Request $request, string $subjectId)
     {
         $validated = $request->validate([
-            'subjectCode' => 'nullable|string',
-            'subjectName' => 'required|string',
-            'creditHours' => 'nullable|integer',
-            'category' => 'nullable|string',
+            'subjectCode' => 'required|string|unique:subject,subjectCode,' . $subjectId . ',subjectId',
+            'subjectName' => 'required|string|unique:subject,subjectName,' . $subjectId . ',subjectId|different:subjectCode',
+            'creditHours' => 'required|integer',
+            'category' => 'required|string|in:core,general,elective',
             'status' => 'required|string|in:active,inactive',
         ]);
-        $validated['subjectId'] = $subjectId;
-        CourseSubjectManagementFacade::createOrUpdateSubject($validated, $subjectId);
-        return redirect()->route('admin.subjects')
-            ->with('success', 'Subject updated successfully!');
+
+        $response = CourseSubjectManagementFacade::updateSubjectViaApi($subjectId, $validated);
+        
+        if ($response->successful()) {
+            return redirect()->route('admin.subjects')
+                ->with('success', 'Subject updated successfully!');
+        }
+        
+        $errorMessage = $response->json()['message'] ?? 'Failed to update subject';
+        return redirect()->back()
+            ->withInput()
+            ->withErrors(['error' => $errorMessage]);
     }
 
 
@@ -91,12 +122,12 @@ class SubjectController extends Controller
     public function apiStore(Request $request)
     {
         $validated = $request->validate([
-            'subjectId' => 'required|string|unique:subject,subjectId',
-            'subjectCode' => 'nullable|string',
-            'subjectName' => 'required|string',
-            'creditHours' => 'nullable|integer',
-            'category' => 'nullable|string',
-            'status' => 'nullable|string',
+            'subjectId' => 'nullable|string|unique:subject,subjectId',
+            'subjectCode' => 'required|string|unique:subject,subjectCode',
+            'subjectName' => 'required|string|unique:subject,subjectName|different:subjectCode',
+            'creditHours' => 'required|integer',
+            'category' => 'required|string|in:core,general,elective',
+            'status' => 'required|string|in:active,inactive',
         ]);
 
         $subject = Subject::create($validated);
@@ -119,16 +150,8 @@ class SubjectController extends Controller
 
     public function apiUpdate(Request $request, string $id)
     {
-        $validated = $request->validate([
-            'subjectCode' => 'nullable|string',
-            'subjectName' => 'nullable|string',
-            'creditHours' => 'nullable|integer',
-            'category' => 'nullable|string',
-            'status' => 'nullable|string',
-        ]);
-
         $subject = Subject::findOrFail($id);
-        $subject->update($validated);
+        $subject->update($request->all());
 
         return response()->json([
             'success' => true,

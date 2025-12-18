@@ -40,7 +40,7 @@ class CourseController extends Controller
             'courseId' => 'nullable|string|unique:course,courseId',
             'courseCode' => 'required|string|unique:course,courseCode',
             'courseName' => 'required|string|unique:course,courseName|different:courseCode',
-            'faculty' => 'nullable|string',
+            'faculty' => 'required|string',
             'status' => 'required|string|in:active,inactive',
         ]);
 
@@ -82,7 +82,7 @@ class CourseController extends Controller
         $validated = $request->validate([
             'courseCode' => 'required|string|unique:course,courseCode,' . $courseId . ',courseId',
             'courseName' => 'required|string|unique:course,courseName,' . $courseId . ',courseId|different:courseCode',
-            'faculty' => 'nullable|string',
+            'faculty' => 'required|string',
             'status' => 'required|string|in:active,inactive',
         ]);
 
@@ -138,21 +138,8 @@ class CourseController extends Controller
 
     public function apiUpdate(Request $request, string $courseId)
     {
-        $validated = $request->validate([
-            'courseCode' => 'nullable|string|unique:course,courseCode,' . $courseId . ',courseId',
-            'courseName' => 'nullable|string|unique:course,courseName,' . $courseId . ',courseId',
-            'faculty' => 'nullable|string',
-            'status' => 'nullable|string|in:active,inactive',
-        ]);
-
-        // Get existing course data
         $course = Course::findOrFail($courseId);
-        
-        // Determine final values (use provided or existing)
-        $finalCourseCode = $validated['courseCode'] ?? $course->courseCode;
-        $finalCourseName = $validated['courseName'] ?? $course->courseName;
-
-        $course->update($validated);
+        $course->update($request->all());
 
         return response()->json([
             'success' => true,

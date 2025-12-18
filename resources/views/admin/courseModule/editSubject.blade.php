@@ -65,7 +65,12 @@
 
                     <div class="form-group">
                         <label for="category">Category:</label>
-                        <input type="text" id="category" name="category" value="{{ $subject['category'] ?? old('category') }}">
+                        <select id="category" name="category">
+                            <option value="">Select Category</option>
+                            <option value="core" {{ ($subject['category'] ?? old('category')) === 'core' ? 'selected' : '' }}>Core</option>
+                            <option value="general" {{ ($subject['category'] ?? old('category')) === 'general' ? 'selected' : '' }}>General</option>
+                            <option value="elective" {{ ($subject['category'] ?? old('category')) === 'elective' ? 'selected' : '' }}>Elective</option>
+                        </select>
                         @error('category')
                         <span class="error">{{ $message }}</span>
                         @enderror

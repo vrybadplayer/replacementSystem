@@ -34,14 +34,6 @@
                     @csrf
 
                     <div class="form-group">
-                        <label for="subjectId">Subject ID:</label>
-                        <input type="text" id="subjectId" name="subjectId" value="{{ old('subjectId') }}" required>
-                        @error('subjectId')
-                        <span class="error">{{ $message }}</span>
-                        @enderror
-                    </div>
-
-                    <div class="form-group">
                         <label for="subjectCode">Subject Code:</label>
                         <input type="text" id="subjectCode" name="subjectCode" value="{{ old('subjectCode') }}">
                         @error('subjectCode')
@@ -67,7 +59,12 @@
 
                     <div class="form-group">
                         <label for="category">Category:</label>
-                        <input type="text" id="category" name="category" value="{{ old('category') }}">
+                        <select id="category" name="category">
+                            <option value="">Select Category</option>
+                            <option value="core" {{ old('category') === 'core' ? 'selected' : '' }}>Core</option>
+                            <option value="general" {{ old('category') === 'general' ? 'selected' : '' }}>General</option>
+                            <option value="elective" {{ old('category') === 'elective' ? 'selected' : '' }}>Elective</option>
+                        </select>
                         @error('category')
                         <span class="error">{{ $message }}</span>
                         @enderror
