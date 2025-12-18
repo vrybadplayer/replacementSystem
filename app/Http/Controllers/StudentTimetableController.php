@@ -201,14 +201,6 @@ class StudentTimetableController extends Controller
     $originalDay = $originalDate->format('D');
     $originalShortDay = substr($originalDay, 0, 3);
     $originalTime = Carbon::parse($selectedClass['startTime'])->format('H:i');
-    
-    // Debug original class
-    \Log::info('Original Class Debug:', [
-        'originalShortDay' => $originalShortDay,
-        'originalTime' => $originalTime,
-        'scheduleData_keys' => array_keys($scheduleData),
-        'Mon_times' => array_keys($scheduleData['Mon'] ?? [])
-    ]);
 
     // Set original class - FORCE it to be set
     if (isset($scheduleData[$originalShortDay])) {
@@ -282,7 +274,7 @@ class StudentTimetableController extends Controller
 
 
     return view('student.timetableModule.select_timeslot', compact(
-        'validSlots',
+        'validSlots',   
         'timeSlots',
         'days',
         'originalClass',

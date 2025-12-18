@@ -109,27 +109,6 @@
                 </table>
             </div>
 
-            <!-- Debug Info (remove in production) -->
-            <div style="margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
-                <h3>Debug Information:</h3>
-                <p><strong>Valid Slots Count:</strong> {{ is_countable($validSlots) ? count($validSlots) : 'N/A' }}</p>
-                <p><strong>Original Class ID:</strong> {{ $originalClass->timetableId ?? 'N/A' }}</p>
-                <p><strong>Schedule Data Structure:</strong> 
-                    @foreach($days as $day)
-                        {{ $day['name'] }}: 
-                        @php
-                            $slotCount = 0;
-                            foreach($timeSlots as $time) {
-                                if(isset($scheduleData[$day['name']][$time]) && is_array($scheduleData[$day['name']][$time])) {
-                                    $slotCount++;
-                                }
-                            }
-                        @endphp
-                        {{ $slotCount }} slots |
-                    @endforeach
-                </p>
-            </div>
-
             <!-- Simple Legend -->
             <div style="margin-top: 1.5rem; display: flex; gap: 1.5rem; font-size: 0.9rem;">
                 <div style="display:flex; align-items:center; gap:0.5rem;">
