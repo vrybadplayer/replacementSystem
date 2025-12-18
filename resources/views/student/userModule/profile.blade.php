@@ -289,6 +289,35 @@
             color: #333;
         }
 
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-wrapper input {
+            flex: 1;
+            padding-right: 35px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: #666;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            color: #3b82f6;
+        }
+
         .error-text {
             display: block;
             color: #dc2626;
@@ -356,6 +385,17 @@
         }
 
         .alert-error p {
+            margin: 5px 0;
+            font-size: 13px;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-success p {
             margin: 5px 0;
             font-size: 13px;
         }
@@ -512,6 +552,12 @@
                 <button type="button" class="modal-close" onclick="closeChangePasswordForm()">&times;</button>
             </div>
 
+            @if (session('success'))
+                <div class="alert alert-success">
+                    <p>{{ session('success') }}</p>
+                </div>
+            @endif
+
             @if ($errors->any())
                 <div class="alert alert-error">
                     @foreach ($errors->all() as $error)
@@ -525,20 +571,29 @@
                 
                 <div class="form-group">
                     <label for="currentPassword">Current Password</label>
-                    <input type="password" id="currentPassword" name="current_password" required placeholder="Enter your current password">
+                    <div class="password-wrapper">
+                        <input type="password" id="currentPassword" name="current_password" required placeholder="Enter your current password">
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('currentPassword')">👁️</button>
+                    </div>
                     <span class="error-text" id="currentPasswordError"></span>
                 </div>
 
                 <div class="form-group">
                     <label for="newPassword">New Password</label>
-                    <input type="password" id="newPassword" name="password" required placeholder="Enter new password">
+                    <div class="password-wrapper">
+                        <input type="password" id="newPassword" name="password" required placeholder="Enter new password">
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('newPassword')">👁️</button>
+                    </div>
                     <span class="password-strength" id="passwordStrength"></span>
                     <span class="error-text" id="newPasswordError"></span>
                 </div>
 
                 <div class="form-group">
                     <label for="confirmPassword">Confirm New Password</label>
-                    <input type="password" id="confirmPassword" name="password_confirmation" required placeholder="Confirm new password">
+                    <div class="password-wrapper">
+                        <input type="password" id="confirmPassword" name="password_confirmation" required placeholder="Confirm new password">
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">👁️</button>
+                    </div>
                     <span class="error-text" id="confirmPasswordError"></span>
                 </div>
 
@@ -671,6 +726,44 @@
             document.getElementById('newPasswordError').textContent = '';
             document.getElementById('confirmPasswordError').textContent = '';
         }
+
+        // Toggle password visibility
+        function togglePasswordVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            const button = event.target.closest('.password-toggle');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                field.type = 'password';
+                button.textContent = '👁️';
+            }
+        }
+
+        // Auto-close modal and show success message after password change
+        document.addEventListener('DOMContentLoaded', function() {
+            const successAlert = document.querySelector('#changePasswordModal .alert-success');
+            if (successAlert) {
+                document.getElementById('changePasswordModal').style.display = 'flex';
+                setTimeout(function() {
+                    closeChangePasswordForm();
+                    // Optionally show a notification
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success';
+                    notification.style.position = 'fixed';
+                    notification.style.top = '20px';
+                    notification.style.right = '20px';
+                    notification.style.zIndex = '9999';
+                    notification.style.minWidth = '300px';
+                    notification.innerHTML = '<p>✓ Password changed successfully!</p>';
+                    document.body.appendChild(notification);
+                    setTimeout(function() {
+                        notification.remove();
+                    }, 3000);
+                }, 1500);
+            }
+        });
 
         // Real-time password strength indicator
         document.getElementById('newPassword')?.addEventListener('input', function() {
