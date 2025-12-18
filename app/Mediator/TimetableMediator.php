@@ -347,11 +347,10 @@ class TimetableMediator implements TimetableMediatorInterface
             ->get();
 
         return $slots->map(function ($slot) {
-            $subject = $this->courseSubjectmanagementApi->getSubjectByCourseSubject($slot->courseSubjectId);
 
             return [
                 'timetableId' => $slot->timetableId,
-                'subjectCode' => $subject->subjectCode ?? 'N/A',
+                'subjectCode' => $slot->courseSubject->subject->subjectCode ?? 'N/A',
                 'classType' => $slot->classType,
                 'dayOfWeek' => $slot->dayOfWeek,
                 'startTime' => Carbon::parse($slot->startTime)->format('H:i'),
