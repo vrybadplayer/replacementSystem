@@ -68,6 +68,7 @@ Route::put('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate'])
 Route::patch('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdate']);
 Route::get('/courseSubject/fetchCourseSubjectWithForeignKeys', [CourseSubjectController::class, 'fetchCourseSubjectWithForeignKeys']);
 Route::get('/courseSubjects/byCourse/{courseId}', [CourseSubjectController::class, 'getCourseSubjectsByCourse']);
+Route::get('/courseSubject/{courseSubjectId}/codes', [CourseSubjectController::class, 'getCourseSubjectCodes']);
 
 // --- Subjects REST API ---
 Route::get('/subjects', [SubjectController::class, 'index']);
@@ -76,6 +77,7 @@ Route::post('/subjects', [SubjectController::class, 'apiStore']);
 Route::put('/subjects/{id}', [SubjectController::class, 'apiUpdate']);
 Route::patch('/subjects/{id}', [SubjectController::class, 'apiUpdate']);
 Route::get('/subject/byCourseSubject/{courseSubjectId}', [SubjectController::class, 'getSubjectByCourseSubject']);
+
 // --- User Management API ---
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -88,7 +90,7 @@ Route::middleware('auth')->group(function () {
 
 // --- Replacement Module API ---
 Route::prefix('replacement')->group(function () {
-    // Appeals
+    // Appeals.
     Route::get('/appeals', [ReplacementController::class, 'getAllAppeals']);
     Route::get('/appeals/pending', [ReplacementController::class, 'getPendingAppeals']);
     Route::get('/appeals/user/{userId}', [ReplacementController::class, 'getUserAppeals']);

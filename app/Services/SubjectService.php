@@ -11,7 +11,7 @@ class SubjectService
     protected $baseUrl = 'http://127.0.0.1:8001/api';
 
 
-    protected function fetchFromApi(string $endpoint): array
+    protected function fetchFromApi(string $endpoint)
     {
         $url = "{$this->baseUrl}/{$endpoint}";
 
@@ -26,19 +26,19 @@ class SubjectService
     }
 
 
-    public function fetchSubjectsFromApi(): array
+    public function fetchSubjectsFromApi()
     {
         return $this->fetchFromApi('subjects');
     }
 
 
-    protected function fetchCourseSubjectsFromApi(): array
+    protected function fetchCourseSubjectsFromApi()
     {
         return $this->fetchFromApi('courseSubject');
     }
 
 
-    public function getSubjectsForViewFromApi(): array
+    public function getSubjectsForViewFromApi()
     {
         $subjects = $this->fetchSubjectsFromApi();
         $courseSubjects = $this->fetchCourseSubjectsFromApi();
@@ -68,21 +68,19 @@ class SubjectService
     }
 
 
-    public function fetchSubjectByIdFromApi(string $subjectId): array
+    public function fetchSubjectByIdFromApi(string $subjectId)
     {
         $response = Http::timeout(5)->get("{$this->baseUrl}/subjects/{$subjectId}");
-        if ($response->status() === 404) {
-            throw new \Exception('Subject not found');
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'] ?? null;
         }
-        if (!$response->successful()) {
-            throw new \Exception('Subjects API failed: ' . $response->status());
-        }
-        $data = $response->json();
-        return $data['data'] ?? (is_array($data) ? $data : []);
+
+        return null;
     }
 
 
-    public function createOrUpdateSubject(array $data, ?string $subjectId = null): array
+    public function createOrUpdateSubject(array $data, ?string $subjectId = null)
     {
         $subjectId = $subjectId ?? $data['subjectId'] ?? null;
 
