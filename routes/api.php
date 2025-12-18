@@ -64,15 +64,15 @@ Route::get('/courseSubject', [CourseSubjectController::class, 'apiGetAllCourseSu
 Route::get('/courseSubject/{courseSubjectId}', [CourseSubjectController::class, 'getCourseSubject'])->middleware(['api.auth', 'role:admin']);
 Route::post('/courseSubject', [CourseSubjectController::class, 'apiCreateCourseSubject'])->middleware(['api.auth', 'role:admin']);
 Route::put('/courseSubject/{id}', [CourseSubjectController::class, 'apiUpdateCourseSubject'])->middleware(['api.auth', 'role:admin']);
-Route::get('/courseSubject/fetchCourseSubjectWithForeignKeys', [CourseSubjectController::class, 'fetchCourseSubjectWithForeignKeys']);
-Route::get('/courseSubjects/byCourse/{courseId}', [CourseSubjectController::class, 'getCourseSubjectsByCourse']);
+Route::get('/courseSubject/fetchCourseSubjectWithForeignKeys', [CourseSubjectController::class, 'fetchCourseSubjectWithForeignKeys'])->middleware('api.auth');
+Route::get('/courseSubjects/byCourse/{courseId}', [CourseSubjectController::class, 'getCourseSubjectsByCourse'])->middleware('api.auth');
 
 // --- Subjects API ---
 Route::get('/subjects', [SubjectController::class, 'apiGetAllSubjects'])->middleware(['api.auth', 'role:admin']);
 Route::get('/subjects/{subjectId}', [SubjectController::class, 'apiGetSubject'])->middleware(['api.auth', 'role:admin']);
 Route::post('/subjects', [SubjectController::class, 'apiCreateSubject'])->middleware(['api.auth', 'role:admin']);
 Route::put('/subjects/{id}', [SubjectController::class, 'apiUpdateSubject'])->middleware(['api.auth', 'role:admin']);
-Route::get('/subject/byCourseSubject/{courseSubjectId}', [SubjectController::class, 'getSubjectByCourseSubject']);
+Route::get('/subject/byCourseSubject/{courseSubjectId}', [SubjectController::class, 'getSubjectByCourseSubject'])->middleware('api.auth');
 
 // --- User Management API ---
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
