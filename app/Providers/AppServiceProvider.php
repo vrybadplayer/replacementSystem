@@ -51,9 +51,7 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
-    /**
-     * Bootstrap any application services.
-     */
+    //Bootstrap any application services.
     public function boot(): void
     {
         // Register the Observer for ReplacementAppeal

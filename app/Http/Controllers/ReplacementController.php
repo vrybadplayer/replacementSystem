@@ -11,8 +11,7 @@ use App\Services\TimetableService;
 use App\Services\ReplacementService;
 use App\Services\UserService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
+
 
 class ReplacementController extends Controller
 {
@@ -27,11 +26,7 @@ class ReplacementController extends Controller
         $this->userService = $userService;
     }
 
-    /**
-     * Display the replacement appeal form
-     * This is where students submit their replacement appeal
-     * Calls ReplacementService which makes API calls to port 8001
-     */
+    // show appeal form
     public function showAppealForm(Request $request)
     {
         // Get the requested class from timetable
@@ -102,7 +97,7 @@ class ReplacementController extends Controller
         return view('student.replacementModule.appeal_form', compact('originalClass', 'replacementClass', 'student'));
     }
 
-    // Helper function for showAppealForm 
+    // get future classes for student
     private function getFutureClassesDirectly($userId)
     {
         $studentProfile = $this->userService->getUser($userId);
@@ -122,12 +117,10 @@ class ReplacementController extends Controller
     }
 
 
-    /**
-     * Submit the replacement appeal
-     */
+    // submit appeal
     public function submitAppeal(Request $request)
     {
-        // Validate the form input
+        // validate input
         $validated = $request->validate([
             'original_class_id' => 'required|string|exists:timetable,timetableId',
             'requested_class_id' => 'required|string|exists:timetable,timetableId',
@@ -171,9 +164,7 @@ class ReplacementController extends Controller
         return redirect()->route('replacement.myAppeals')->with('success', 'Your replacement appeal has been submitted successfully! Appeal ID: #' . $appeal->appealId);
     }
 
-    /**
-     * Helper: Extract student's classGroupId from potentially comma-separated list
-     */
+    // get student class group from list
     private function extractStudentClassGroup($classGroupIds, $studentClassGroupId)
     {
         // If it's a single group, return it
@@ -192,10 +183,7 @@ class ReplacementController extends Controller
         return $groups[0];
     }
 
-    /**
-     * Display student's appeal history and status
-     * Calls ReplacementService which makes API calls to port 8001
-     */
+    // show student appeals
     public function myAppeals()
     {
         $userId = Auth::user()->userId;
@@ -204,13 +192,10 @@ class ReplacementController extends Controller
         return view('student.replacementModule.my_appeals', compact('appeals'));
     }
 
-    /**
-     * Admin: View all replacement appeals
-     * Calls ReplacementService which makes API calls to port 8001
-     */
+    // admin view all appeals
     public function adminViewAppeals(Request $request)
     {
-        $filterStatus = $request->input('status', 'all');
+        $filterStatus = $request->input('status', 'all'); //get with no leak sensitive data
 
         // Get all appeals and statistics from service
         $allAppeals = $this->replacementService->getAllAppealsFromApi();
@@ -226,9 +211,7 @@ class ReplacementController extends Controller
         return view('admin.replacementModule.appeal_list', compact('appeals', 'stats', 'filterStatus'));
     }
 
-    /**
-     * Admin: View single appeal details
-     */
+    // admin view appeal detail
     public function adminViewAppealDetail($appealId)
     {
         // Get appeal from API
@@ -319,9 +302,7 @@ class ReplacementController extends Controller
         return view('admin.replacementModule.appeal_detail', compact('appeal', 'validationChecks'));
     }
 
-    /**
-     * Admin: Process appeal (Approve/Reject)
-     */
+    // admin approve or reject appeal
     public function adminProcessAppeal(Request $request, $appealId)
     {
         $validated = $request->validate([
@@ -347,17 +328,12 @@ class ReplacementController extends Controller
         return redirect()->route('admin.replacement.appeals')->with('success', $message);
     }
 
-    // ============================================
-    // API METHODS (Previously in ReplacementApiController)
-    // ============================================
-
-    /**
-     * API: Get all appeals (admin)
-     */
+    // API methods
+    
+    // get all appeals
     public function getAllAppeals()
     {
-        try {
-            $appeals = ReplacementAppeal::with(['user', 'adminUser', 'replacement'])
+        $appeals = ReplacementAppeal::with(['user', 'adminUser', 'replacement'])
                 ->orderBy('submissionDate', 'desc')
                 ->get()
                 ->map(function ($appeal) {
@@ -409,26 +385,16 @@ class ReplacementController extends Controller
                     ];
                 });
 
-            return response()->json([
-                'success' => true,
-                'data' => $appeals
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to fetch appeals', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to retrieve appeals. Please try again later.'
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $appeals
+        ]);
     }
 
-    /**
-     * API: Get user's appeals
-     */
+    // get user appeals
     public function getUserAppeals($userId)
     {
-        try {
-            $appeals = ReplacementAppeal::with(['user', 'adminUser', 'replacement'])
+        $appeals = ReplacementAppeal::with(['user', 'adminUser', 'replacement'])
                 ->where('userId', $userId)
                 ->orderBy('submissionDate', 'desc')
                 ->get()
@@ -481,26 +447,16 @@ class ReplacementController extends Controller
                     ];
                 });
 
-            return response()->json([
-                'success' => true,
-                'data' => $appeals
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to fetch user appeals', ['userId' => $userId, 'error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to retrieve your appeals. Please try again later.'
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $appeals
+        ]);
     }
 
-    /**
-     * API: Get single appeal details
-     */
+    // get single appeal
     public function getAppeal($appealId)
     {
-        try {
-            $appeal = ReplacementAppeal::with(['user', 'adminUser', 'replacement'])
+        $appeal = ReplacementAppeal::with(['user', 'adminUser', 'replacement'])
                 ->findOrFail($appealId);
 
             // Get the specific timetable records using stored timetableIds
@@ -550,26 +506,16 @@ class ReplacementController extends Controller
                 'replacement' => $appeal->replacement,
             ];
 
-            return response()->json([
-                'success' => true,
-                'data' => $appealData
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to fetch appeal details', ['appealId' => $appealId, 'error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Appeal not found.'
-            ], 404);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $appealData
+        ]);
     }
 
-    /**
-     * API: Create new appeal
-     */
+    // create new appeal
     public function createAppeal(Request $request)
     {
-        try {
-            $validated = $request->validate([
+        $validated = $request->validate([
                 'user_id' => 'required|exists:users,userId',
                 'original_class_id' => 'required|exists:timetable,timetableId',
                 'requested_class_id' => 'required|exists:timetable,timetableId',
@@ -589,27 +535,17 @@ class ReplacementController extends Controller
                 'submissionDate' => now(),
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Appeal created successfully',
-                'data' => $appeal
-            ], 201);
-        } catch (\Exception $e) {
-            Log::error('Failed to create appeal', ['error' => $e->getMessage(), 'request' => $request->except(['proof'])]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to create appeal. Please check your input and try again.'
-            ], 400);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Appeal created successfully',
+            'data' => $appeal
+        ], 201);
     }
 
-    /**
-     * API: Process appeal (approve/reject)
-     */
+    // approve or reject appeal
     public function processAppeal(Request $request, $appealId)
     {
-        try {
-            $validated = $request->validate([
+        $validated = $request->validate([
                 'decision' => 'required|in:approve,reject',
                 'admin_id' => 'required|exists:users,userId',
                 'admin_remarks' => 'nullable|string|max:500'
@@ -623,27 +559,17 @@ class ReplacementController extends Controller
             $appeal->adminRemarks = $validated['admin_remarks'] ?? null;
             $appeal->save();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Appeal processed successfully',
-                'data' => $appeal
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to process appeal', ['appealId' => $appealId, 'error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to process appeal. Please try again later.'
-            ], 400);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Appeal processed successfully',
+            'data' => $appeal
+        ]);
     }
 
-    /**
-     * API: Get user's replacements
-     */
+    // get user replacements
     public function getUserReplacements($userId)
     {
-        try {
-            $appeals = ReplacementAppeal::with([
+        $appeals = ReplacementAppeal::with([
                 'originalClass.subject',
                 'requestedClass.subject',
                 'replacement'
@@ -654,43 +580,26 @@ class ReplacementController extends Controller
                 ->orderBy('decisionDate', 'desc')
                 ->get();
 
-            return response()->json([
-                'success' => true,
-                'data' => $appeals
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to fetch user replacements', ['userId' => $userId, 'error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to retrieve replacements. Please try again later.'
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $appeals
+        ]);
     }
 
-    /**
-     * API: Get statistics
-     */
+    // get statistics
     public function getStatistics()
     {
-        try {
-            $stats = [
+        $stats = [
                 'total_appeals' => ReplacementAppeal::count(),
                 'pending_appeals' => ReplacementAppeal::where('status', 'Pending')->count(),
                 'approved_appeals' => ReplacementAppeal::where('status', 'Approved')->count(),
                 'rejected_appeals' => ReplacementAppeal::where('status', 'Rejected')->count(),
             ];
 
-            return response()->json([
-                'success' => true,
-                'data' => $stats
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to fetch statistics', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to retrieve statistics. Please try again later.'
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $stats
+        ]);
     }
 
 

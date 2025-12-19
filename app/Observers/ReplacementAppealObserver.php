@@ -9,10 +9,7 @@ use Illuminate\Support\Str;
 
 class ReplacementAppealObserver
 {
-    /**
-     * Handle the ReplacementAppeal "creating" event.
-     * Auto-generate appealId if not provided
-     */
+    // auto generate ID and set defaults
     public function creating(ReplacementAppeal $replacementAppeal): void
     {
         if (empty($replacementAppeal->appealId)) {
@@ -30,19 +27,13 @@ class ReplacementAppealObserver
         }
     }
 
-    /**
-     * Handle the ReplacementAppeal "created" event.
-     */
+    // log when appeal created
     public function created(ReplacementAppeal $replacementAppeal): void
     {
-        // Log or send notification when appeal is created
         Log::info("New replacement appeal created: {$replacementAppeal->appealId} by user {$replacementAppeal->userId}");
     }
 
-    /**
-     * Handle the ReplacementAppeal "updating" event.
-     * When status changes to Approved, create a Replacement record
-     */
+    // set decision date when approving
     public function updating(ReplacementAppeal $replacementAppeal): void
     {
         // Check if status is being changed to Approved
@@ -52,9 +43,7 @@ class ReplacementAppealObserver
         }
     }
 
-    /**
-     * Handle the ReplacementAppeal "updated" event.
-     */
+    // create replacement record when approved
     public function updated(ReplacementAppeal $replacementAppeal): void
     {
         // When appeal is approved, create replacement record
@@ -93,27 +82,10 @@ class ReplacementAppealObserver
         }
     }
 
-    /**
-     * Handle the ReplacementAppeal "deleted" event.
-     */
+    // log when deleted
     public function deleted(ReplacementAppeal $replacementAppeal): void
     {
         Log::info("Replacement appeal deleted: {$replacementAppeal->appealId}");
     }
 
-    /**
-     * Handle the ReplacementAppeal "restored" event.
-     */
-    public function restored(ReplacementAppeal $replacementAppeal): void
-    {
-        //
-    }
-
-    /**
-     * Handle the ReplacementAppeal "force deleted" event.
-     */
-    public function forceDeleted(ReplacementAppeal $replacementAppeal): void
-    {
-        //
-    }
 }
