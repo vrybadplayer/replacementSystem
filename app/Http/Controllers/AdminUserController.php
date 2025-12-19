@@ -17,9 +17,7 @@ class AdminUserController extends Controller
         $this->userService = $userService;
     }
 
-    /**
-     * Display users list
-     */
+    // Display users list
     public function index()
     {
         try {
@@ -33,9 +31,7 @@ class AdminUserController extends Controller
         }
     }
 
-    /**
-     * Get filtered users for AJAX requests
-     */
+    // Get filtered users for AJAX requests
     public function getFilteredUsers(Request $request)
     {
         try {
@@ -125,17 +121,13 @@ class AdminUserController extends Controller
         }
     }
 
-    /**
-     * Show create form
-     */
+    // Show create form
     public function create()
     {
         return view('admin.userModule.addUser');
     }
 
-    /**
-     * Store a new user
-     */
+    // Store a new user
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -177,26 +169,10 @@ class AdminUserController extends Controller
             'timestamp' => now()
         ]);
         
-        // Send email with credentials
-        try {
-            Mail::send('emails.user-created', [
-                'userName' => $validated['name'],
-                'userEmail' => $validated['email'],
-                'userId' => $validated['userId'],
-                'password' => '123456',
-            ], function ($message) use ($validated) {
-                $message->to($validated['email'])->subject('Your Account Has Been Created');
-            });
-        } catch (\Exception $e) {
-            \Log::error('Failed to send user creation email: ' . $e->getMessage());
-        }
-        
         return redirect()->route('admin.user.index')->with('success', 'User created successfully. Login credentials have been sent to ' . $validated['email']);
     }
 
-    /**
-     * Show user details
-     */
+    // Show user details
     public function show($userId)
     {
         $user = User::find($userId);
@@ -261,9 +237,7 @@ class AdminUserController extends Controller
         return view('admin.userModule.showUser', ['user' => $user, 'enrolledCourses' => $enrolledCourses, 'subjects' => $subjects]);
     }
 
-    /**
-     * Show edit form
-     */
+    // Show edit form
     public function edit($userId)
     {
         $user = User::find($userId);
@@ -275,9 +249,7 @@ class AdminUserController extends Controller
         return view('admin.userModule.editUser', ['user' => $user]);
     }
 
-    /**
-     * Update user
-     */
+    // Update user
     public function update(Request $request, $userId)
     {
         $name = $request->input('name');
@@ -302,9 +274,7 @@ class AdminUserController extends Controller
         return redirect()->route('admin.user.index')->with('success', 'User updated successfully');
     }
 
-    /**
-     * Delete or ban user
-     */
+    // Delete or ban user
     public function delete($userId)
     {
         try {
@@ -340,9 +310,7 @@ class AdminUserController extends Controller
         }
     }
 
-    /**
-     * Reset user password
-     */
+    // Reset user password
     public function resetPassword($userId)
     {
         $user = User::find($userId);
@@ -366,21 +334,6 @@ class AdminUserController extends Controller
         // Update user with new password
         $this->userService->updateUser($userId, ['password' => bcrypt($newPassword)]);
 
-        // Send email with new password
-        try {
-            Mail::send('emails.password-reset', [
-                'userName' => $user->name ?? '',
-                'userEmail' => $user->email ?? '',
-                'newPassword' => $newPassword,
-                'userId' => $user->userId ?? $userId
-            ], function ($message) use ($user) {
-                $message->to($user->email ?? '')->subject('Your Password Has Been Reset');
-            });
-        } catch (\Exception $e) {
-            // Log the error but still show success message
-            \Log::error('Failed to send password reset email: ' . $e->getMessage());
-        }
-
         return redirect()->route('admin.user.passwordResetConfirm', [
             'userId' => $userId,
             'password' => $newPassword,
@@ -388,9 +341,7 @@ class AdminUserController extends Controller
         ]);
     }
 
-    /**
-     * Generate a random password
-     */
+    // Generate a random password
     private function generatePassword($length = 10)
     {
         $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -418,9 +369,7 @@ class AdminUserController extends Controller
         return $password;
     }
 
-    /**
-     * Show password reset confirmation page
-     */
+    // Show password reset confirmation page
     public function passwordResetConfirm(Request $request, $userId)
     {
         $user = User::find($userId);
@@ -439,9 +388,7 @@ class AdminUserController extends Controller
         ]);
     }
 
-    /**
-     * Get users as JSON
-     */
+    // Get users as JSON
     public function getUsersJson()
     {
         $users = $this->userService->getAllUsersFromDb();
@@ -457,9 +404,7 @@ class AdminUserController extends Controller
         return response()->json(['users' => $mappedUsers]);
     }
 
-    /**
-     * Batch ban/unban users
-     */
+    // Batch ban/unban users
     public function batchBan(Request $request)
     {
         $userIds = $request->input('userIds');
@@ -522,9 +467,7 @@ class AdminUserController extends Controller
         return redirect()->route('admin.user.index')->with('success', $message);
     }
 
-    /**
-     * Display user statistics dashboard
-     */
+    // Display user statistics dashboard
     public function statistics()
     {
         $allUsers = $this->userService->getAllUsersFromDb();
