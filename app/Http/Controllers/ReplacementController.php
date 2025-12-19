@@ -570,23 +570,24 @@ class ReplacementController extends Controller
     public function getUserReplacements($userId)
     {
         try {
-            $appeals = ReplacementAppeal::with([
-                'originalClass.subject',
-                'requestedClass.subject',
-                'replacement'
-            ])
-                ->where('userId', $userId)
-                ->where('status', 'Approved')
-                ->whereHas('replacement')
-                ->orderBy('decisionDate', 'desc')
+            $startDate = request('start_date');
+            $endDate = request('end_date');
+
+            $query = Replacement::where('userId', $userId);
+
+            if ($startDate && $endDate) {
+                $query->whereBetween('requestedDate', [$startDate, $endDate]);
+            }
+
+            $replacements = $query->orderBy('requestedDate', 'asc')
+                ->orderBy('startTime', 'asc')
                 ->get();
 
             return response()->json([
                 'success' => true,
-                'data' => $appeals
+                'data' => $replacements
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to fetch user replacements', ['userId' => $userId, 'error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Unable to retrieve replacements. Please try again later.'
