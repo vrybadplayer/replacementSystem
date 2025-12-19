@@ -108,17 +108,19 @@ class TimetableMediator implements TimetableMediatorInterface
         return $transitiveMap;
     }
 
+    // Call API
     public function getReplacementsByDateRange($userId, $startDate, $endDate)
-{
-    $replacements = $this->replacementApi->getReplacementsByDateRange($userId, $startDate, $endDate);
+    {
+        $replacements = $this->replacementApi->getReplacementsByDateRange($userId, $startDate, $endDate);
 
-    if (is_array($replacements)) {
-        return $replacements;
+        if (is_array($replacements)) {
+            return $replacements;
+        }
+
+        return [];
     }
 
-    return [];
-}
-
+    // Call API
     public function findTimetableForReplacement($requestedDate, $startTime, $endTime, $requestedClassGroupId)
     {
         $timetableClass = $this->timetableApi->findTimetableForReplacement(
@@ -137,7 +139,7 @@ class TimetableMediator implements TimetableMediatorInterface
 
 
     // ===========================================================================================================
-    // ================================ For Admin Timetable Assignment ===========================================
+    // =================================== For Admin Timetable Assignment ========================================
     // ===========================================================================================================
 
     public function getAllCourses()
@@ -329,7 +331,6 @@ class TimetableMediator implements TimetableMediatorInterface
         $courses = [];
 
         foreach ($rawCourses as $course) {
-            // Convert object to array if JSON returns objects
             if (is_object($course)) {
                 $course = (array) $course;
             }
@@ -428,7 +429,7 @@ class TimetableMediator implements TimetableMediatorInterface
     }
 
     // ======================================================================================================
-    // ====================================== Select Timeslot ===============================================
+    // ======================================== Select Timeslot =============================================
     // ======================================================================================================
 
     public function getValidReplacementOptions($userId, $originalClassId)

@@ -51,12 +51,12 @@ class Timetable extends Model
     public function subject()
     {
         return $this->hasOneThrough(
-            Subject::class,         // Final Destination Model
-            CourseSubject::class,   // Intermediate Model
-            'courseSubjectId',      // Foreign key on course_subject table
-            'subjectId',            // Foreign key on subject table
-            'courseSubjectId',      // Local key on timetable table
-            'subjectId'             // Local key on course_subject table
+            Subject::class,
+            CourseSubject::class,
+            'courseSubjectId',
+            'subjectId',
+            'courseSubjectId',
+            'subjectId'
         );
     }
 

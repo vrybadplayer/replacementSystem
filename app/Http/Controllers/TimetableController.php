@@ -7,8 +7,6 @@ use App\Models\Timetable;
 use Illuminate\Http\Request;
 use App\Services\TimetableService;
 use App\Services\UserService;
-use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 class TimetableController extends Controller
 {
@@ -22,14 +20,12 @@ class TimetableController extends Controller
         $this->userService = $userService;
     }
 
-    // GET /api/timetable
     public function getAllTimetableRecords()
     {
         $timetable = Timetable::all();
         return response()->json(['data' => $timetable]);
     }
 
-    // GET /api/timetable/{id}
     public function getTimetableById($id)
     {
         $record = Timetable::find($id);
@@ -39,7 +35,6 @@ class TimetableController extends Controller
         return response()->json(['data' => $record]);
     }
 
-    // GET /api/occupiedSlots
     public function getOccupiedSlots(Request $request)
     {
         $day = $request->query('day');
@@ -51,7 +46,6 @@ class TimetableController extends Controller
             ->get();
     }
 
-    // GET /api/check-venue-occupancy
     public function claskCheck(Request $request)
     {
 
@@ -60,7 +54,6 @@ class TimetableController extends Controller
         $startTime = $request->query('startTime');
         $endTime = $request->query('endTime');
 
-        // Direct database query in controller
         $isOccupied = Timetable::where('dayOfWeek', $day)
             ->where('venueId', $venueId)
             ->where('startTime', '<', $endTime)
@@ -74,7 +67,6 @@ class TimetableController extends Controller
         ]);
     }
 
-    // POST /timetable/create
     public function createTimetable(Request $request)
     {
         $timetable = Timetable::create($request->all());

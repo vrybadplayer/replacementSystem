@@ -18,53 +18,47 @@ class StudentTimetableController extends Controller
     }
 
 
-    // -------------------- For Timetable Page --------------------
+    // ==================================================================================================================================
+    // ================================================== For Timetable Page ============================================================
+    // ==================================================================================================================================
     public function index(Request $request)
     {
         // Get user id
         $user = Auth::user();
         $userId = $user->userId;
 
-        // Get the weeks for dropdown (from start of semester, monday)
+        // For Weeks Dropdown
         $weeks = [];
         $semesterSession = Carbon::create(2025, 11, 3);
         for ($i = 1; $i < 8; $i++) {
-            // Short sem
             $week = $semesterSession->addWeek();
             $label = "Week " . $i;
-
-            // Populate the list
             $weeks[$week->format('Y-m-d')] = $label;
         }
 
-        // get the date from URL (if any)
         $selectedDate = $request->input('date') ? $request->input('date') : "2025-11-10";
 
-        // Get all the ORIGINAL classes the user has (in the selected week)
+        // get all original classes
         $weeklyClasses = $this->mediator->getCurrentWeekSchedule($userId, $selectedDate);
 
-        // Get REPLACEMENT records for this user in this week using ReplacementService
+        // get replacement classes
         $date = Carbon::parse($selectedDate);
         $startOfWeek = $date->copy()->startOfWeek();
         $endOfWeek = $date->copy()->endOfWeek();
-
-        // Use ReplacementService to get replacements WITH DATE FILTER
         $replacements = $this->mediator->getReplacementsByDateRange(
             $userId,
             $startOfWeek->format('Y-m-d'),
             $endOfWeek->format('Y-m-d')
         );
 
-        // Process replacements
+        // Use replacement classes to get timetable record
         $replacementClasses = [];
         $replacedOriginalIds = [];
 
         foreach ($replacements as $replacement) {
-            // Check if replacement date is within the selected week
             $replacementDate = Carbon::parse($replacement['requestedDate']);
             if ($replacementDate->between($startOfWeek, $endOfWeek)) {
 
-                // Use TimetableService to find the actual timetable entry for the replacement class
                 $timetableClass = $this->mediator->findTimetableForReplacement(
                     $replacement['requestedDate'],
                     $replacement['startTime'],
@@ -72,6 +66,7 @@ class StudentTimetableController extends Controller
                     $replacement['requestedClassGroupId']
                 );
 
+                // Map the result
                 if ($timetableClass) {
                     $replacementClasses[] = [
                         'timetableId' => $timetableClass['timetableId'],
@@ -98,10 +93,10 @@ class StudentTimetableController extends Controller
             }
         }
 
-        // Merge: Remove originals that have replacements, add replacement classes
+        // Final result = original classes - appealed class + approved class
         $finalClasses = [];
 
-        // Add original classes that DON'T have replacements
+        // Class w/o replacement
         foreach ($weeklyClasses as $class) {
             if (!in_array($class['timetableId'], $replacedOriginalIds)) {
                 $finalClasses[] = $class;
@@ -113,7 +108,6 @@ class StudentTimetableController extends Controller
             $finalClasses[] = $class;
         }
 
-        // Sort by date and time
         usort($finalClasses, function ($a, $b) {
             if ($a['classDate'] == $b['classDate']) {
                 return strtotime($a['startTime']) <=> strtotime($b['startTime']);
@@ -121,7 +115,6 @@ class StudentTimetableController extends Controller
             return strtotime($a['classDate']) <=> strtotime($b['classDate']);
         });
 
-        // check if public holiday, then type the timeslot (hardcoded)
         $holidays = [
             '2025-12-25' => 'Christmas Day',
             '2025-01-01' => 'New Year',
@@ -148,7 +141,6 @@ class StudentTimetableController extends Controller
 
         // Column 1 for UI
         $days = [];
-        // Make into easily manipulated Laravel Carbon date object
         $movingWeek = Carbon::parse($selectedDate);
 
         for ($i = 0; $i < 7; $i++) {
@@ -159,30 +151,27 @@ class StudentTimetableController extends Controller
             $days[] = ['name' => $movingWeek->format('D'), 'date' => $movingWeek->format('Y-m-d')];
         }
 
-        // Check if Replacement Reminder is needed
         $timetableData = [];
-        $hasReplacement = false;
+        $hasReplacement = false; // reminder flag
         $replacementClassList = [];
 
+        // check replacement & holiday
         foreach ($finalClasses as $class) {
-            // Check if there is replacement classes
             if ($class['classType'] === 'replacement') {
                 $hasReplacement = true;
                 $replacementClassList[] = $class;
-                $type = "replacement"; // SET TYPE TO REPLACEMENT
+                $type = "replacement";
                 $note = null;
             } else {
-                // Check for holiday (only for non-replacement classes)
                 $type = "normal";
                 $note = null;
-
                 if (array_key_exists($class['classDate'], $holidays)) {
                     $type = "canceled";
                     $note = $holidays[$class['classDate']];
                 }
             }
 
-            // After filtering normal/replacement/canceled, add the class to the list
+            // compact & formatting
             $day = substr($class['dayOfWeek'], 0, 3);
             $startTime = Carbon::parse($class['startTime']);
             $endTime = Carbon::parse($class['endTime']);
@@ -196,7 +185,7 @@ class StudentTimetableController extends Controller
                 'subject' => $transitiveSubjectList[$class['courseSubjectId']] ?? 'Unknown Subject',
                 'venueId' => $class['venueId'],
                 'duration' => $duration,
-                'type' => $type, // This should now be "replacement" for replacement classes
+                'type' => $type,
                 'time_str' => $startTime->format('g:i A') . ' - ' . $endTime->format('g:i A'),
                 'note' => $note
             ];
@@ -231,12 +220,10 @@ class StudentTimetableController extends Controller
             }
         }
 
-        // Create time slots based on actual data + standard slots
         $uniqueTimes = array_unique($allTimes);
         sort($uniqueTimes);
         $timeSlots = $uniqueTimes ?: ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
 
-        // If we have standard 2-hour slots, add them for better grid
         if (!in_array('09:00', $timeSlots) && !in_array('11:00', $timeSlots)) {
             $timeSlots = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
         }
@@ -275,9 +262,8 @@ class StudentTimetableController extends Controller
         $originalShortDay = substr($originalDay, 0, 3);
         $originalTime = Carbon::parse($selectedClass['startTime'])->format('H:i');
 
-        // Set original class - FORCE it to be set
+        // Dont allow original class to be selected
         if (isset($scheduleData[$originalShortDay])) {
-            // Find the closest time slot
             $closestTime = null;
             $minDiff = PHP_INT_MAX;
 
@@ -300,7 +286,7 @@ class StudentTimetableController extends Controller
             }
         }
 
-        // Mark valid replacement slots as candidates
+        // Valid Options
         if ($validSlots && is_iterable($validSlots)) {
             foreach ($validSlots as $slot) {
                 if (isset($slot['classDate']) && isset($slot['startTime'])) {
@@ -310,7 +296,6 @@ class StudentTimetableController extends Controller
                     $slotTime = Carbon::parse($slot['startTime'])->format('H:i');
 
                     if (isset($scheduleData[$shortSlotDay])) {
-                        // Find closest time slot
                         $closestTime = null;
                         $minDiff = PHP_INT_MAX;
 
@@ -337,7 +322,6 @@ class StudentTimetableController extends Controller
             }
         }
 
-        // Final debug
         $filledSlots = 0;
         foreach ($scheduleData as $day => $times) {
             foreach ($times as $time => $data) {
