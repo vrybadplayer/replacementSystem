@@ -19,26 +19,20 @@ class UserController extends Controller
         $this->userService = $userService;
     }
 
-    /**
-     * Display a listing of users
-     */
+    // Display a listing of users
     public function index()
     {
         $users = $this->userService->getUsersForView();
         return view('user.listUsers', compact('users'));
     }
 
-    /**
-     * Show the form for creating a new user
-     */
+    // Show the form for creating a new user
     public function create()
     {
         return view('user.addUser');
     }
 
-    /**
-     * Store a newly created user in database
-     */
+    // Store a newly created user in database
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -52,9 +46,7 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success', 'User created successfully');
     }
 
-    /**
-     * Display the specified user
-     */
+    // Display the specified user
     public function show($userId)
     {
         $user = $this->userService->getUserProfileForView($userId);
@@ -66,9 +58,7 @@ class UserController extends Controller
         return view('user.showUser', compact('user'));
     }
 
-    /**
-     * Show the form for editing the specified user
-     */
+    // Show the form for editing the specified user
     public function edit($userId)
     {
         $user = $this->userService->getUserById($userId);
@@ -80,9 +70,7 @@ class UserController extends Controller
         return view('user.editUser', compact('user'));
     }
 
-    /**
-     * Update the specified user in database
-     */
+    // Update the specified user in database
     public function update(Request $request, $userId)
     {
         $validated = $request->validate([
@@ -97,9 +85,7 @@ class UserController extends Controller
 
     // ---------- AUTHENTICATED USER METHODS ----------
 
-    /**
-     * Get user profile for authenticated user
-     */
+    // Get user profile for authenticated user
     public function showProfile()
     {
         $user = Auth::user();
@@ -185,9 +171,7 @@ class UserController extends Controller
         return view('student.userModule.profile', ['user' => $user, 'enrolledCourses' => $enrolledCourses, 'subjects' => $subjects]);
     }
 
-    /**
-     * Get profile data with enrollments
-     */
+    // Get profile data with enrollments
     public function getProfileData()
     {
         $user = Auth::user();
@@ -197,9 +181,7 @@ class UserController extends Controller
         return response()->json($profileData ?? []);
     }
 
-    /**
-     * Get enrolled courses for authenticated user
-     */
+    // Get enrolled courses for authenticated user
     public function getEnrolledCourses()
     {
         $user = Auth::user();
@@ -209,9 +191,7 @@ class UserController extends Controller
         return response()->json(['courses' => $courses ?? []]);
     }
 
-    /**
-     * Update profile for authenticated user
-     */
+    // Update profile for authenticated user
     public function updateProfile(Request $request)
     {
         $user = Auth::user();
@@ -242,18 +222,14 @@ class UserController extends Controller
 
     // ---------- API ENDPOINTS ----------
 
-    /**
-     * API: Get all users
-     */
+    // API: Get all users
     public function apiIndex()
     {
         $users = $this->userService->getAllUsers();
         return response()->json($users);
     }
 
-    /**
-     * API: Get single user by ID
-     */
+    // API: Get single user by ID
     public function apiShow($id)
     {
         $user = User::find($id);
@@ -265,9 +241,7 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    /**
-     * API: Get user by ID from database
-     */
+    // API: Get user by ID from database
     public function apiShowDb($id)
     {
         $user = $this->userService->getUserById($id);
@@ -279,9 +253,7 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    /**
-     * API: Create a new user
-     */
+    // API: Create a new user
     public function apiStore(Request $request)
     {
         $validated = $request->validate([
@@ -295,9 +267,7 @@ class UserController extends Controller
         return response()->json($user, 201);
     }
 
-    /**
-     * API: Update a user
-     */
+    // API: Update a user
     public function apiUpdate(Request $request, $id)
     {
         $validated = $request->validate([
@@ -310,9 +280,7 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    /**
-     * API: Delete a user
-     */
+    // API: Delete a user
     public function apiDestroy($id)
     {
         $deleted = $this->userService->deleteUser($id);
@@ -324,9 +292,7 @@ class UserController extends Controller
         return response()->json(['error' => 'Failed to delete user'], 400);
     }
 
-    /**
-     * API: Get user profile with enrollments
-     */
+    // API: Get user profile with enrollments
     public function apiGetProfileData($userId)
     {
         $profileData = $this->userService->getProfileData($userId);
@@ -338,9 +304,7 @@ class UserController extends Controller
         return response()->json($profileData);
     }
 
-    /**
-     * Change password for authenticated user
-     */
+    // Change password for authenticated user
     public function changePassword(Request $request)
     {
         $validated = $request->validate([
