@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>Without CSRF Protection</h2>
+<form action="http://127.0.0.1:8000/demo/unprotected" method="POST">
+    <input type="hidden" name="action" value="malicious">
+    <button>Submit Attack</button>
+</form>
+<p><strong>Result:</strong> Would succeed (if endpoint had no CSRF)</p>
+</body>
+</html>

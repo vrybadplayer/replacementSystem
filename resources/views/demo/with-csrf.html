@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>With CSRF Protection</h2>
+<form action="http://127.0.0.1:8000/admin/timeslot/update" method="POST">
+    <input type="hidden" name="timetableId" value="T014">
+    <input type="hidden" name="_token" value="MISSING_ATTACKER_DOESNT_KNOW">
+    <button>Submit Attack</button>
+</form>
+<p><strong>Result:</strong> 419 Error - Blocked!</p>
+</body>
+</html>
