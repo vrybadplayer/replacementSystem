@@ -37,22 +37,95 @@ class StudentTimetableController extends Controller
             $weeks[$week->format('Y-m-d')] = $label;
         }
 
-
         // get the date from URL (if any)
         $selectedDate = $request->input('date') ? $request->input('date') : "2025-11-10";
 
-
-        // Get all the classes the user has (in the selected week)
+        // Get all the ORIGINAL classes the user has (in the selected week)
         $weeklyClasses = $this->mediator->getCurrentWeekSchedule($userId, $selectedDate);
 
-        //dd($weeklyClasses);
+        // Get REPLACEMENT records for this user in this week using ReplacementService
+        $date = Carbon::parse($selectedDate);
+        $startOfWeek = $date->copy()->startOfWeek();
+        $endOfWeek = $date->copy()->endOfWeek();
+
+        // Use ReplacementService to get replacements WITH DATE FILTER
+        $replacements = $this->mediator->getReplacementsByDateRange(
+            $userId,
+            $startOfWeek->format('Y-m-d'),
+            $endOfWeek->format('Y-m-d')
+        );
+
+        // Process replacements
+        $replacementClasses = [];
+        $replacedOriginalIds = [];
+
+        foreach ($replacements as $replacement) {
+            // Check if replacement date is within the selected week
+            $replacementDate = Carbon::parse($replacement['requestedDate']);
+            if ($replacementDate->between($startOfWeek, $endOfWeek)) {
+
+                // Use TimetableService to find the actual timetable entry for the replacement class
+                $timetableClass = $this->mediator->findTimetableForReplacement(
+                    $replacement['requestedDate'],
+                    $replacement['startTime'],
+                    $replacement['endTime'],
+                    $replacement['requestedClassGroupId']
+                );
+
+                if ($timetableClass) {
+                    $replacementClasses[] = [
+                        'timetableId' => $timetableClass['timetableId'],
+                        'courseSubjectId' => $timetableClass['courseSubjectId'],
+                        'classType' => 'replacement',
+                        'venueId' => $timetableClass['venueId'],
+                        'dayOfWeek' => $timetableClass['dayOfWeek'],
+                        'startTime' => $timetableClass['startTime'],
+                        'endTime' => $timetableClass['endTime'],
+                        'classDate' => $timetableClass['classDate'],
+                        'classMode' => $timetableClass['classMode'],
+                        'classGroupId' => $timetableClass['classGroupId'],
+                        'venue' => isset($timetableClass['venue']) ? ['venueId' => $timetableClass['venue']['venueId']] : null,
+                        'courseSubject' => $timetableClass['courseSubject'] ?? null,
+                        'is_replacement' => true,
+                        'replacement_id' => $replacement['replacementId'],
+                        'original_timetable_id' => $replacement['originalTimetableId'],
+                        'original_date' => $replacement['originalDate'],
+                        'original_start_time' => $replacement['originalStartTime'],
+                    ];
+
+                    $replacedOriginalIds[] = $replacement['originalTimetableId'];
+                }
+            }
+        }
+
+        // Merge: Remove originals that have replacements, add replacement classes
+        $finalClasses = [];
+
+        // Add original classes that DON'T have replacements
+        foreach ($weeklyClasses as $class) {
+            if (!in_array($class['timetableId'], $replacedOriginalIds)) {
+                $finalClasses[] = $class;
+            }
+        }
+
+        // Add replacement classes
+        foreach ($replacementClasses as $class) {
+            $finalClasses[] = $class;
+        }
+
+        // Sort by date and time
+        usort($finalClasses, function ($a, $b) {
+            if ($a['classDate'] == $b['classDate']) {
+                return strtotime($a['startTime']) <=> strtotime($b['startTime']);
+            }
+            return strtotime($a['classDate']) <=> strtotime($b['classDate']);
+        });
 
         // check if public holiday, then type the timeslot (hardcoded)
         $holidays = [
             '2025-12-25' => 'Christmas Day',
             '2025-01-01' => 'New Year',
         ];
-
 
         // TH for UI
         $timeSlots = [
@@ -86,27 +159,27 @@ class StudentTimetableController extends Controller
             $days[] = ['name' => $movingWeek->format('D'), 'date' => $movingWeek->format('Y-m-d')];
         }
 
-
         // Check if Replacement Reminder is needed
         $timetableData = [];
         $hasReplacement = false;
         $replacementClassList = [];
 
-        foreach ($weeklyClasses as $class) {
+        foreach ($finalClasses as $class) {
             // Check if there is replacement classes
             if ($class['classType'] === 'replacement') {
                 $hasReplacement = true;
                 $replacementClassList[] = $class;
-            }
+                $type = "replacement"; // SET TYPE TO REPLACEMENT
+                $note = null;
+            } else {
+                // Check for holiday (only for non-replacement classes)
+                $type = "normal";
+                $note = null;
 
-            // Check for holiday
-            $type = "normal";
-            $note = null;
-
-            // If there is a holiday, what holiday is it?
-            if (array_key_exists($class['classDate'], $holidays)) {
-                $type = "canceled";
-                $event = $holidays[$class['classDate']];
+                if (array_key_exists($class['classDate'], $holidays)) {
+                    $type = "canceled";
+                    $note = $holidays[$class['classDate']];
+                }
             }
 
             // After filtering normal/replacement/canceled, add the class to the list
@@ -120,10 +193,10 @@ class StudentTimetableController extends Controller
             // [Mon][08:00]
             $timetableData[$day][$startTime->format('H:i')] = [
                 'timetableId' => $class['timetableId'],
-                'subject' => $transitiveSubjectList[$class['courseSubjectId']],
+                'subject' => $transitiveSubjectList[$class['courseSubjectId']] ?? 'Unknown Subject',
                 'venueId' => $class['venueId'],
                 'duration' => $duration,
-                'type' => $type,
+                'type' => $type, // This should now be "replacement" for replacement classes
                 'time_str' => $startTime->format('g:i A') . ' - ' . $endTime->format('g:i A'),
                 'note' => $note
             ];
@@ -136,153 +209,153 @@ class StudentTimetableController extends Controller
     // ----------------------------------- SELECT TIMESLOT PAGE -----------------------------------
     // --------------------------------------------------------------------------------------------
     public function viewSelectTimeslot(Request $request)
-{
-    $userId = Auth::user()->userId;
-    $selectedClass = session('replacement_selected_class');
+    {
+        $userId = Auth::user()->userId;
+        $selectedClass = session('replacement_selected_class');
 
-    if (!$selectedClass) {
-        return redirect()->route('replacement.appeal')->with('error', 'No class was selected for replacement.');
-    }
+        if (!$selectedClass) {
+            return redirect()->route('replacement.appeal')->with('error', 'No class was selected for replacement.');
+        }
 
-    $originalClassId = $selectedClass['timetableId'];
-    $validSlots = $this->mediator->getValidReplacementOptions($userId, $originalClassId);
+        $originalClassId = $selectedClass['timetableId'];
+        $validSlots = $this->mediator->getValidReplacementOptions($userId, $originalClassId);
 
-    // Debug the valid slots times
-    $allTimes = [];
-    if ($validSlots && is_iterable($validSlots)) {
-        foreach ($validSlots as $slot) {
-            if (isset($slot['startTime'])) {
-                $time = Carbon::parse($slot['startTime'])->format('H:i');
-                $allTimes[] = $time;
+        // Debug the valid slots times
+        $allTimes = [];
+        if ($validSlots && is_iterable($validSlots)) {
+            foreach ($validSlots as $slot) {
+                if (isset($slot['startTime'])) {
+                    $time = Carbon::parse($slot['startTime'])->format('H:i');
+                    $allTimes[] = $time;
+                }
             }
         }
-    }
-    
-    // Create time slots based on actual data + standard slots
-    $uniqueTimes = array_unique($allTimes);
-    sort($uniqueTimes);
-    $timeSlots = $uniqueTimes ?: ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
-    
-    // If we have standard 2-hour slots, add them for better grid
-    if (!in_array('09:00', $timeSlots) && !in_array('11:00', $timeSlots)) {
-        $timeSlots = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
-    }
 
-    // Start from the original class date's week
-    $originalDate = Carbon::parse($selectedClass['classDate']);
-    $startDate = $originalDate->copy()->startOfWeek();
-    
-    $days = [];
-    for ($i = 0; $i < 7; $i++) {
-        $date = $startDate->copy()->addDays($i);
-        $days[] = [
-            'name' => $date->format('D'),
-            'date' => $date->format('Y-m-d')
-        ];
-    }
+        // Create time slots based on actual data + standard slots
+        $uniqueTimes = array_unique($allTimes);
+        sort($uniqueTimes);
+        $timeSlots = $uniqueTimes ?: ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
 
-    $originalClass = (object) $selectedClass;
-    $selectedSubject = $originalClass->subjectName ?? null;
-    $selectedDay = $originalDate->format('l');
-
-    $scheduleData = [];
-    // Initialize empty schedule for the week
-    for ($i = 0; $i < 7; $i++) {
-        $date = $startDate->copy()->addDays($i);
-        $dayName = $date->format('D');
-        $shortDayName = substr($dayName, 0, 3);
-
-        foreach ($timeSlots as $time) {
-            $scheduleData[$shortDayName][$time] = null;
+        // If we have standard 2-hour slots, add them for better grid
+        if (!in_array('09:00', $timeSlots) && !in_array('11:00', $timeSlots)) {
+            $timeSlots = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
         }
-    }
 
-    // Mark the original class
-    $originalDay = $originalDate->format('D');
-    $originalShortDay = substr($originalDay, 0, 3);
-    $originalTime = Carbon::parse($selectedClass['startTime'])->format('H:i');
+        // Start from the original class date's week
+        $originalDate = Carbon::parse($selectedClass['classDate']);
+        $startDate = $originalDate->copy()->startOfWeek();
 
-    // Set original class - FORCE it to be set
-    if (isset($scheduleData[$originalShortDay])) {
-        // Find the closest time slot
-        $closestTime = null;
-        $minDiff = PHP_INT_MAX;
-        
-        foreach (array_keys($scheduleData[$originalShortDay]) as $slotTime) {
-            $diff = abs(strtotime($slotTime) - strtotime($originalTime));
-            if ($diff < $minDiff) {
-                $minDiff = $diff;
-                $closestTime = $slotTime;
-            }
-        }
-        
-        if ($closestTime) {
-            $scheduleData[$originalShortDay][$closestTime] = [
-                'subject' => $originalClass->subjectName,
-                'venue' => $originalClass->venueId ?? 'N/A',
-                'duration' => 1,
-                'type' => 'existing',
-                'id' => $originalClass->timetableId
+        $days = [];
+        for ($i = 0; $i < 7; $i++) {
+            $date = $startDate->copy()->addDays($i);
+            $days[] = [
+                'name' => $date->format('D'),
+                'date' => $date->format('Y-m-d')
             ];
         }
-    }
 
-    // Mark valid replacement slots as candidates
-    if ($validSlots && is_iterable($validSlots)) {
-        foreach ($validSlots as $slot) {
-            if (isset($slot['classDate']) && isset($slot['startTime'])) {
-                $slotDate = Carbon::parse($slot['classDate']);
-                $slotDay = $slotDate->format('D');
-                $shortSlotDay = substr($slotDay, 0, 3);
-                $slotTime = Carbon::parse($slot['startTime'])->format('H:i');
-                
-                if (isset($scheduleData[$shortSlotDay])) {
-                    // Find closest time slot
-                    $closestTime = null;
-                    $minDiff = PHP_INT_MAX;
-                    
-                    foreach (array_keys($scheduleData[$shortSlotDay]) as $gridTime) {
-                        $diff = abs(strtotime($gridTime) - strtotime($slotTime));
-                        if ($diff < $minDiff) {
-                            $minDiff = $diff;
-                            $closestTime = $gridTime;
+        $originalClass = (object) $selectedClass;
+        $selectedSubject = $originalClass->subjectName ?? null;
+        $selectedDay = $originalDate->format('l');
+
+        $scheduleData = [];
+        // Initialize empty schedule for the week
+        for ($i = 0; $i < 7; $i++) {
+            $date = $startDate->copy()->addDays($i);
+            $dayName = $date->format('D');
+            $shortDayName = substr($dayName, 0, 3);
+
+            foreach ($timeSlots as $time) {
+                $scheduleData[$shortDayName][$time] = null;
+            }
+        }
+
+        // Mark the original class
+        $originalDay = $originalDate->format('D');
+        $originalShortDay = substr($originalDay, 0, 3);
+        $originalTime = Carbon::parse($selectedClass['startTime'])->format('H:i');
+
+        // Set original class - FORCE it to be set
+        if (isset($scheduleData[$originalShortDay])) {
+            // Find the closest time slot
+            $closestTime = null;
+            $minDiff = PHP_INT_MAX;
+
+            foreach (array_keys($scheduleData[$originalShortDay]) as $slotTime) {
+                $diff = abs(strtotime($slotTime) - strtotime($originalTime));
+                if ($diff < $minDiff) {
+                    $minDiff = $diff;
+                    $closestTime = $slotTime;
+                }
+            }
+
+            if ($closestTime) {
+                $scheduleData[$originalShortDay][$closestTime] = [
+                    'subject' => $originalClass->subjectName,
+                    'venue' => $originalClass->venueId ?? 'N/A',
+                    'duration' => 1,
+                    'type' => 'existing',
+                    'id' => $originalClass->timetableId
+                ];
+            }
+        }
+
+        // Mark valid replacement slots as candidates
+        if ($validSlots && is_iterable($validSlots)) {
+            foreach ($validSlots as $slot) {
+                if (isset($slot['classDate']) && isset($slot['startTime'])) {
+                    $slotDate = Carbon::parse($slot['classDate']);
+                    $slotDay = $slotDate->format('D');
+                    $shortSlotDay = substr($slotDay, 0, 3);
+                    $slotTime = Carbon::parse($slot['startTime'])->format('H:i');
+
+                    if (isset($scheduleData[$shortSlotDay])) {
+                        // Find closest time slot
+                        $closestTime = null;
+                        $minDiff = PHP_INT_MAX;
+
+                        foreach (array_keys($scheduleData[$shortSlotDay]) as $gridTime) {
+                            $diff = abs(strtotime($gridTime) - strtotime($slotTime));
+                            if ($diff < $minDiff) {
+                                $minDiff = $diff;
+                                $closestTime = $gridTime;
+                            }
                         }
-                    }
-                    
-                    if ($closestTime && $scheduleData[$shortSlotDay][$closestTime] === null) {
-                        $scheduleData[$shortSlotDay][$closestTime] = [
-                            'subject' => $slot['subjectCode'] ?? $originalClass->subjectName,
-                            'venue' => $slot['venueId'] ?? 'N/A',
-                            'duration' => 1,
-                            'type' => 'candidate',
-                            'id' => $slot['timetableId'] ?? null,
-                            'lecturer' => $slot['lecturerName'] ?? null
-                        ];
+
+                        if ($closestTime && $scheduleData[$shortSlotDay][$closestTime] === null) {
+                            $scheduleData[$shortSlotDay][$closestTime] = [
+                                'subject' => $slot['subjectCode'] ?? $originalClass->subjectName,
+                                'venue' => $slot['venueId'] ?? 'N/A',
+                                'duration' => 1,
+                                'type' => 'candidate',
+                                'id' => $slot['timetableId'] ?? null,
+                                'lecturer' => $slot['lecturerName'] ?? null
+                            ];
+                        }
                     }
                 }
             }
         }
-    }
 
-    // Final debug
-    $filledSlots = 0;
-    foreach ($scheduleData as $day => $times) {
-        foreach ($times as $time => $data) {
-            if ($data !== null) $filledSlots++;
+        // Final debug
+        $filledSlots = 0;
+        foreach ($scheduleData as $day => $times) {
+            foreach ($times as $time => $data) {
+                if ($data !== null) $filledSlots++;
+            }
         }
+
+
+        return view('student.timetableModule.select_timeslot', compact(
+            'validSlots',
+            'timeSlots',
+            'days',
+            'originalClass',
+            'selectedSubject',
+            'selectedDay',
+            'scheduleData'
+        ));
     }
-
-
-    return view('student.timetableModule.select_timeslot', compact(
-        'validSlots',   
-        'timeSlots',
-        'days',
-        'originalClass',
-        'selectedSubject',
-        'selectedDay',
-        'scheduleData'
-    ));
-}
 
     // POST: Store selected class data in session
     public function storeSelectedClass(Request $request)
