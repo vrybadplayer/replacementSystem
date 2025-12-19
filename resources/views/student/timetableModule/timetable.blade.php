@@ -91,7 +91,7 @@
                                             $typeClass = match($event['type']) {
                                                 'normal' => 'slot-normal',
                                                 'replacement' => 'slot-replace',
-                                                'canceled' => 'slot-clash', // You used 'canceled' in controller
+                                                'canceled' => 'slot-clash',
                                                 'clash' => 'slot-clash',
                                                 default => ''
                                             };
@@ -99,11 +99,11 @@
 
                                         <td colspan="{{ $event['duration'] }}">
                                             @if($event['type'] === 'normal')
-                                                <!-- Link to Appeal -->
+                                                <!-- Link to Appeal for normal classes -->
                                                 <a href="{{ route('replacement.appeal', ['class_id' => $event['timetableId']]) }}" 
                                                    class="class-slot {{ $typeClass }}">
                                             @else
-                                                <!-- Static Div -->
+                                                <!-- Static Div for replacement/canceled classes -->
                                                 <div class="class-slot {{ $typeClass }}">
                                             @endif
 
@@ -111,7 +111,9 @@
                                                 <div class="slot-info">{{ $event['venueId'] }}</div>
                                                 <div class="slot-info">{{ $event['time_str'] }}</div>
                                                 
-                                                @if(!empty($event['note']))
+                                                @if($event['type'] === 'replacement')
+                                                    <div class="slot-info slot-note">Replacement Class</div>
+                                                @elseif(!empty($event['note']))
                                                     <div class="slot-info slot-note">{{ $event['note'] }}</div>
                                                 @endif
 

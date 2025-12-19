@@ -1,7 +1,7 @@
 :root {
-    --slot-normal: #15803d;
-    --slot-replace: #ca8a04;
-    --slot-clash: #b91c1c;
+    --slot-normal: #15803d;      /* Green */
+    --slot-replace: #f97316;     /* Orange (changed from #ca8a04) */
+    --slot-clash: #b91c1c;       /* Red */
 }
 
 .reminder-box {
@@ -71,15 +71,16 @@
     text-decoration: none;
     border-radius: 4px;
 }
-.slot-normal { background-color: 
-    var(--slot-normal); 
+.slot-normal { 
+    background-color: var(--slot-normal); 
     cursor: pointer; 
 }
 
 .slot-replace { 
-    background-color: var(--slot-replace); 
+    background-color: #f97316 !important; 
     cursor: not-allowed; 
 }
+
 
 .slot-clash { 
     background-color: var(--slot-clash); 
@@ -125,7 +126,7 @@
 }
 
 .bg-replace { 
-    background-color: var(--slot-replace); 
+    background-color: #f97316 !important; 
 }
 
 .bg-clash { 
