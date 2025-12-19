@@ -8,10 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ApiAuth
 {
-    /**
-     * Handle authentication for API requests
-     * Only allows Bearer token authentication (for internal services)
-     */
+
     public function handle(Request $request, Closure $next): Response
     {
         $token = str_replace('Bearer ', '', $request->header('Authorization', ''));
@@ -25,10 +22,7 @@ class ApiAuth
             'message' => 'Unauthenticated. Please provide valid Bearer token.',
         ], 401);
     }
-    
-    /**
-     * Validate the internal API token
-     */
+
     private function validateToken(string $token): bool
     {
         $decoded = base64_decode($token, true);
@@ -42,7 +36,7 @@ class ApiAuth
         }
         
         [$secret, $timestamp, $type] = $parts;
-        $validSecret = env('INTERNAL_API_SECRET', 'your-secret-key-change-this');
+        $validSecret = env('INTERNAL_API_SECRET', 'Abc0123456789');
         
         return $secret === $validSecret 
             && $type === 'internal' 

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use App\Facades\CourseSubjectManagementFacade;
 use App\Models\Subject;
 use App\Models\CourseSubject;
@@ -106,9 +105,6 @@ class SubjectController extends Controller
     }
 
 
-    /**
-     * REST API
-     */
     public function apiGetAllSubjects()
     {
         try {
@@ -120,21 +116,12 @@ class SubjectController extends Controller
                 'count' => $data->count(),
             ], 200);
         } finally {
-            // Close database connection as soon as possible
             DB::disconnect();
         }
     }
 
     public function apiCreateSubject(Request $request)
     {
-        // Authorization check - only admins can create subjects
-        if (!$request->user() || $request->user()->role !== 'admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Only administrators can create subjects.',
-            ], 403);
-        }
-
         $validated = $request->validate([
             'subjectId' => 'nullable|string|unique:subject,subjectId',
             'subjectCode' => 'required|string|unique:subject,subjectCode',
@@ -152,7 +139,6 @@ class SubjectController extends Controller
                 'data' => $subject,
             ], 201);
         } finally {
-            // Close database connection as soon as possible
             DB::disconnect();
         }
     }
@@ -178,7 +164,6 @@ class SubjectController extends Controller
         ], 200);
     }
 
-    // GET /api/subject/byCourseSubject/{courseSubjectId}
     public function getSubjectByCourseSubject($courseSubjectId)
     {
         $courseSubject = CourseSubject::where('courseSubjectId', $courseSubjectId)->first();

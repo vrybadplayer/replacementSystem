@@ -3,31 +3,18 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Http\Client\ConnectionException;
 
 class CourseService
 {
     protected $baseUrl = 'http://127.0.0.1:8001/api';
 
-    /**
-     * Create a token for internal API calls
-     */
     private function getInternalApiToken(): string
     {
-        // Generate token with secret, timestamp, and type
-        $secret = env('INTERNAL_API_SECRET', 'your-secret-key-change-this');
+        $secret = env('INTERNAL_API_SECRET', 'Abc0123456789');
         $timestamp = time();
-        $payload = [
-            'type' => 'internal',
-            'timestamp' => $timestamp,
-        ];
-        
-        // Create token: base64(secret|timestamp|type)
         return base64_encode($secret . '|' . $timestamp . '|internal');
     }
 
-    
     public function fetchCoursesFromApi()
     {
         $response = Http::withHeaders([

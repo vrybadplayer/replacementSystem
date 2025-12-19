@@ -81,7 +81,6 @@ class CourseSubjectController extends Controller
             'subjectId' => 'required|string|exists:subject,subjectId',
         ]);
 
-        // Check if course and subject are active
         $course = CourseSubjectManagementFacade::getCourseByIdFromApi($validated['courseId']);
         $subject = CourseSubjectManagementFacade::getSubjectByIdFromApi($validated['subjectId']);
         
@@ -97,7 +96,6 @@ class CourseSubjectController extends Controller
                 ->withErrors(['subjectId' => 'The selected subject is not active.']);
         }
 
-        // Ensure courseId and subjectId combination is unique
         $courseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi() ?? [];
         $existing = null;
         foreach ($courseSubjects as $courseSubject) {
@@ -156,7 +154,6 @@ class CourseSubjectController extends Controller
             'subjectId' => 'required|string|exists:subject,subjectId',
         ]);
 
-        // Check if course and subject are active
         $course = CourseSubjectManagementFacade::getCourseByIdFromApi($validated['courseId']);
         $subject = CourseSubjectManagementFacade::getSubjectByIdFromApi($validated['subjectId']);
         
@@ -172,7 +169,6 @@ class CourseSubjectController extends Controller
                 ->withErrors(['subjectId' => 'The selected subject is not active.']);
         }
 
-        // Ensure courseId and subjectId combination is unique (excluding current record)
         $courseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi() ?? [];
         $existing = null;
         foreach ($courseSubjects as $courseSubject) {
@@ -203,9 +199,7 @@ class CourseSubjectController extends Controller
             ->withErrors(['error' => $errorMessage]);
     }
 
-    /**
-     * REST API
-     */
+
     public function apiGetAllCourseSubjects()
     {
         try {
@@ -217,21 +211,12 @@ class CourseSubjectController extends Controller
                 'count' => $data->count(),
             ], 200);
         } finally {
-            // Close database connection as soon as possible
             DB::disconnect();
         }
     }
 
     public function apiCreateCourseSubject(Request $request)
     {
-        // Authorization check - only admins can create course subjects
-        if (!$request->user() || $request->user()->role !== 'admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Only administrators can create course subjects.',
-            ], 403);
-        }
-
         try {
             $courseSubject = CourseSubject::create($request->all());
 
@@ -240,21 +225,12 @@ class CourseSubjectController extends Controller
                 'data' => $courseSubject,
             ], 201);
         } finally {
-            // Close database connection as soon as possible
             DB::disconnect();
         }
     }
 
     public function apiUpdateCourseSubject(Request $request, string $id)
     {
-        // Authorization check - only admins can update course subjects
-        if (!$request->user() || $request->user()->role !== 'admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Only administrators can update course subjects.',
-            ], 403);
-        }
-
         try {
             $courseSubject = CourseSubject::findOrFail($id);
             $courseSubject->update($request->all());
@@ -264,7 +240,6 @@ class CourseSubjectController extends Controller
                 'data' => $courseSubject,
             ], 200);
         } finally {
-            // Close database connection as soon as possible
             DB::disconnect();
         }
     }
@@ -286,10 +261,8 @@ class CourseSubjectController extends Controller
         return response()->json($courseSubject, 200);
     }
 
-    // GET /api/courseSubjects/byCourse/{courseId}
     public function getCourseSubjectsByCourse($courseId)
     {
-        // Direct database query in controller
         $courseSubjectIds = CourseSubject::where('courseId', $courseId)
             ->pluck('courseSubjectId')
             ->toArray();
@@ -301,7 +274,6 @@ class CourseSubjectController extends Controller
         ]);
     }
 
-    // GET /api/courseSubject/{courseSubjectId}
     public function getCourseSubject($courseSubjectId)
     {
         $courseSubject = CourseSubject::with(['course', 'subject'])

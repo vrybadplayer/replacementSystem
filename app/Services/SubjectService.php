@@ -2,20 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\Subject;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class SubjectService
 {
     protected $baseUrl = 'http://127.0.0.1:8001/api';
 
-    /**
-     * Create a token for internal API calls
-     */
     private function getInternalApiToken(): string
     {
-        $secret = env('INTERNAL_API_SECRET', 'your-secret-key-change-this');
+        $secret = env('INTERNAL_API_SECRET', 'Abc0123456789');
         $timestamp = time();
         return base64_encode($secret . '|' . $timestamp . '|internal');
     }

@@ -101,11 +101,6 @@ class CourseController extends Controller
     }
 
 
-
-    /**
-     * REST API
-     */
-
     public function apiGetAllCourses()
     {
         try {
@@ -117,21 +112,12 @@ class CourseController extends Controller
                 'count' => $data->count(),
             ], 200);
         } finally {
-            // Close database connection as soon as possible
             DB::disconnect();
         }
     }
 
     public function apiCreateCourse(Request $request)
     {
-        // Authorization check - only admins can create courses
-        if (!$request->user() || $request->user()->role !== 'admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Only administrators can create courses.',
-            ], 403);
-        }
-
         try {
             $course = Course::create($request->all());
 
@@ -140,7 +126,6 @@ class CourseController extends Controller
                 'data' => $course,
             ], 201);
         } finally {
-            // Close database connection as soon as possible
             DB::disconnect();
         }
     }
@@ -157,14 +142,6 @@ class CourseController extends Controller
 
     public function apiUpdateCourse(Request $request, string $courseId)
     {
-        // Authorization check - only admins can update courses
-        if (!$request->user() || $request->user()->role !== 'admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Only administrators can update courses.',
-            ], 403);
-        }
-
         try {
             $course = Course::findOrFail($courseId);
             $course->update($request->all());
@@ -174,7 +151,6 @@ class CourseController extends Controller
                 'data' => $course,
             ], 200);
         } finally {
-            // Close database connection as soon as possible
             DB::disconnect();
         }
     }
