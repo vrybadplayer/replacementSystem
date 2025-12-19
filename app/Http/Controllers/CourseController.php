@@ -7,12 +7,27 @@ use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CourseController extends Controller
 {
     public function courseListView(Request $request)
     {
+        $search = $request->query('search');
         $allCourses = CourseSubjectManagementFacade::getCoursesForViewFromApi();
+
+        if ($search) {
+            $allCourses = collect($allCourses)->filter(function ($course) use ($search) {
+                $searchLower = Str::lower($search);
+                $courseId = $course['courseId'];
+                $courseCode = $course['courseCode'];
+                $courseName = $course['courseName'];
+                
+                return Str::contains(Str::lower($courseId), $searchLower) ||
+                       Str::contains(Str::lower($courseCode), $searchLower) ||
+                       Str::contains(Str::lower($courseName), $searchLower);
+            })->values()->all();
+        }
 
         $perPage = 10;
         $currentPage = $request->get('page', 1);
@@ -27,7 +42,7 @@ class CourseController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return view('admin.courseModule.listCourse', compact('courses'));
+        return view('admin.courseModule.listCourse', compact('courses', 'search'));
     }
 
     public function create()
@@ -46,10 +61,10 @@ class CourseController extends Controller
         ]);
 
         if (empty($validated['courseId'])) {
-            $courses = CourseSubjectManagementFacade::fetchCoursesFromApi() ?? [];
+            $courses = CourseSubjectManagementFacade::fetchCoursesFromApi();
             $courseNumbers = [];
             foreach ($courses as $course) {
-                $courseId = $course['courseId'] ?? '';
+                $courseId = $course['courseId'];
                 if (strpos($courseId, 'C') === 0 && is_numeric(substr($courseId, 1))) {
                     $courseNumbers[] = (int) substr($courseId, 1);
                 }
@@ -66,7 +81,7 @@ class CourseController extends Controller
                 ->with('success', 'Course created successfully!');
         }
         
-        $errorMessage = $response->json()['message'] ?? 'Failed to create course';
+        $errorMessage = $response->json()['message'];
         return redirect()->back()
             ->withInput()
             ->withErrors(['error' => $errorMessage]);
@@ -94,7 +109,7 @@ class CourseController extends Controller
                 ->with('success', 'Course updated successfully!');
         }
         
-        $errorMessage = $response->json()['message'] ?? 'Failed to update course';
+        $errorMessage = $response->json()['message'];
         return redirect()->back()
             ->withInput()
             ->withErrors(['error' => $errorMessage]);

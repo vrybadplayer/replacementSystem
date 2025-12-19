@@ -8,13 +8,30 @@ use App\Models\Subject;
 use App\Models\CourseSubject;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class SubjectController extends Controller
 {
 
     public function subjectListView(Request $request)
     {
+        $search = $request->query('search');
         $allSubjects = CourseSubjectManagementFacade::getSubjectsForViewFromApi();
+
+        if ($search) {
+            $allSubjects = collect($allSubjects)->filter(function ($subject) use ($search) {
+                $searchLower = Str::lower($search);
+                $subjectId = $subject['subjectId'];
+                $subjectCode = $subject['subjectCode'];
+                $subjectName = $subject['subjectName'] ;
+                $courseCodes = $subject['course'];
+                
+                return Str::contains(Str::lower($subjectId), $searchLower) ||
+                       Str::contains(Str::lower($subjectCode), $searchLower) ||
+                       Str::contains(Str::lower($subjectName), $searchLower) ||
+                       Str::contains(Str::lower($courseCodes), $searchLower);
+            })->values()->all();
+        }
 
         $perPage = 10;
         $currentPage = $request->get('page', 1);
@@ -29,7 +46,7 @@ class SubjectController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return view('admin.courseModule.listSubject', compact('subjects'));
+        return view('admin.courseModule.listSubject', compact('subjects', 'search'));
     }
 
     public function create()
@@ -49,10 +66,10 @@ class SubjectController extends Controller
         ]);
 
         if (empty($validated['subjectId'])) {
-            $subjects = CourseSubjectManagementFacade::fetchSubjectsFromApi() ?? [];
+            $subjects = CourseSubjectManagementFacade::fetchSubjectsFromApi();
             $subjectNumbers = [];
             foreach ($subjects as $subject) {
-                $subjectId = $subject['subjectId'] ?? '';
+                $subjectId = $subject['subjectId'];
                 if (strpos($subjectId, 'S') === 0 && is_numeric(substr($subjectId, 1))) {
                     $subjectNumbers[] = (int) substr($subjectId, 1);
                 }
@@ -69,7 +86,7 @@ class SubjectController extends Controller
                 ->with('success', 'Subject created successfully!');
         }
         
-        $errorMessage = $response->json()['message'] ?? 'Failed to create subject';
+        $errorMessage = $response->json()['message'];
         return redirect()->back()
             ->withInput()
             ->withErrors(['error' => $errorMessage]);
@@ -98,7 +115,7 @@ class SubjectController extends Controller
                 ->with('success', 'Subject updated successfully!');
         }
         
-        $errorMessage = $response->json()['message'] ?? 'Failed to update subject';
+        $errorMessage = $response->json()['message'];
         return redirect()->back()
             ->withInput()
             ->withErrors(['error' => $errorMessage]);

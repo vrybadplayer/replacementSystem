@@ -28,17 +28,20 @@
                 @endif
 
                 <div class="search-container">
-                    <div class="search-box">
-                        <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        <input type="text" class="search-input" placeholder="Search subjects by code, name, or course...">
-                    </div>
+                    <form method="GET" action="{{ route('admin.subjects') }}" class="search-form">
+                        <div class="search-box">
+                            <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input type="text" name="search" class="search-input" placeholder="Search by Subject ID, Subject Code, Subject Name, or Course Code..." value="{{ $search ?? '' }}">
+                        </div>
+                    </form>
                 </div>
 
                 <table>
                     <thead>
                         <tr>
+                            <th>Subject ID</th>
                             <th>Subject Code</th>
                             <th>Subject Name</th>
                             <th>Credits</th>
@@ -51,6 +54,7 @@
                     <tbody>
                         @forelse($subjects as $subject)
                         <tr>
+                            <td><strong>{{ $subject['subjectId'] ?? '' }}</strong></td>
                             <td><strong>{{ $subject['subjectCode'] ?? '' }}</strong></td>
                             <td>{{ $subject['subjectName'] ?? '' }}</td>
                             <td>{{ $subject['creditHours'] ?? 0 }}</td>
@@ -71,7 +75,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">
+                            <td colspan="8" style="text-align: center; padding: 2rem; color: #6b7280;">
                                 @if(isset($error))
                                     <div style="color: #dc2626; font-weight: bold;">
                                         {{ $error }}

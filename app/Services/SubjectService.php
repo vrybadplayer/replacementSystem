@@ -24,7 +24,7 @@ class SubjectService
         
         if ($response->successful()) {
             $data = $response->json();
-            return $data['data'] ?? null;
+            return $data['data'];
         }
         return null;
     }
@@ -49,11 +49,11 @@ class SubjectService
 
         $subjectCoursesMap = [];
         foreach ($courseSubjects as $cs) {
-            $subjectId = $cs['subjectId'] ?? null;
-            $courseSubjectId = $cs['courseSubjectId'] ?? null;
+            $subjectId = $cs['subjectId'];
+            $courseSubjectId = $cs['courseSubjectId'];
             if ($subjectId && $courseSubjectId) {
                 $codes = $this->getCourseSubjectCodes($courseSubjectId);
-                $courseCode = $codes['courseCode'] ?? null;
+                $courseCode = $codes['courseCode'];
                 if ($courseCode) {
                     $subjectCoursesMap[$subjectId] = array_unique(array_merge($subjectCoursesMap[$subjectId] ?? [], [$courseCode]));
                 }
@@ -78,7 +78,7 @@ class SubjectService
         
         if ($response->successful()) {
             $data = $response->json();
-            return $data['data'] ?? null;
+            return $data['data'];
         }
         return null;
     }
@@ -112,7 +112,7 @@ class SubjectService
 
         if ($response->successful()) {
             $data = $response->json();
-            return $data['data'] ?? null;
+            return $data['data'];
         }
 
         return null;
@@ -127,7 +127,7 @@ class SubjectService
         
         if ($response->successful()) {
             $data = $response->json();
-            return $data['data'] ?? null;
+            return $data['data'];
         }
         return null;
     }

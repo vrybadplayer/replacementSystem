@@ -25,7 +25,7 @@ class CourseSubjectService
         
         if ($response->successful()) {
             $data = $response->json();
-            return $data['data'] ?? null;
+            return $data['data'];
         }
         return null;
     }
@@ -45,7 +45,7 @@ class CourseSubjectService
 
         if ($response->successful()) {
             $data = $response->json();
-            return $data['data'] ?? null;
+            return $data['data'];
         }
 
         return null;
@@ -60,7 +60,7 @@ class CourseSubjectService
         
         if ($response->successful()) {
             $data = $response->json();
-            return $data['data'] ?? null;
+            return $data['data'];
         }
         return null;
     }

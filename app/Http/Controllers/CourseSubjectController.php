@@ -8,6 +8,7 @@ use App\Facades\CourseSubjectManagementFacade;
 use App\Models\CourseSubject;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CourseSubjectController extends Controller
 {
@@ -16,12 +17,13 @@ class CourseSubjectController extends Controller
 
     public function courseSubjectListView(Request $request)
     {
+        $search = $request->query('search');
         $allCourseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
 
         $enrichedCourseSubjects = [];
         foreach ($allCourseSubjects as $courseSubject) {
             try {
-                $courseSubjectId = $courseSubject['courseSubjectId'] ?? null;
+                $courseSubjectId = $courseSubject['courseSubjectId'];
 
                 if (!$courseSubjectId) {
                     continue;
@@ -33,19 +35,38 @@ class CourseSubjectController extends Controller
                     $courseSubject['course'] = [
                         'courseId' => $codes['courseId'],
                         'courseCode' => $codes['courseCode'],
+                        'courseName' => $codes['courseName'],
                     ];
 
                     $courseSubject['subject'] = [
                         'subjectId' => $codes['subjectId'],
                         'subjectCode' => $codes['subjectCode'],
+                        'subjectName' => $codes['subjectName'] ,
                     ];
                 }
 
                 $enrichedCourseSubjects[] = $courseSubject;
             } catch (\Exception $e) {
-                $csId = $courseSubject['courseSubjectId'] ?? 'unknown';
+                $csId = $courseSubject['courseSubjectId'];
                 Log::warning("Failed to enrich course subject {$csId}: " . $e->getMessage());
             }
+        }
+
+        // Filter by search term if provided
+        if ($search) {
+            $enrichedCourseSubjects = collect($enrichedCourseSubjects)->filter(function ($cs) use ($search) {
+                $searchLower = Str::lower($search);
+                $courseId = $cs['courseId'];
+                $subjectId = $cs['subjectId'];
+                $courseCode = isset($cs['course']) ? ($cs['course']['courseCode']) : '';
+                $subjectCode = isset($cs['subject']) ? ($cs['subject']['subjectCode']) : '';
+                
+                return Str::contains(Str::lower($cs['courseSubjectId']), $searchLower) ||
+                       Str::contains(Str::lower($courseId), $searchLower) ||
+                       Str::contains(Str::lower($subjectId), $searchLower) ||
+                       Str::contains(Str::lower($courseCode), $searchLower) ||
+                       Str::contains(Str::lower($subjectCode), $searchLower);
+            })->values()->all();
         }
 
         $allCourseSubjects = $enrichedCourseSubjects;
@@ -63,7 +84,7 @@ class CourseSubjectController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return view('admin.courseModule.listCourseSubject', compact('courseSubjects'));
+        return view('admin.courseModule.listCourseSubject', compact('courseSubjects', 'search'));
     }
 
     public function create()
@@ -84,23 +105,23 @@ class CourseSubjectController extends Controller
         $course = CourseSubjectManagementFacade::getCourseByIdFromApi($validated['courseId']);
         $subject = CourseSubjectManagementFacade::getSubjectByIdFromApi($validated['subjectId']);
         
-        if (!$course || ($course['status'] ?? '') !== 'active') {
+        if (!$course || ($course['status']) !== 'active') {
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['courseId' => 'The selected course is not active.']);
         }
         
-        if (!$subject || ($subject['status'] ?? '') !== 'active') {
+        if (!$subject || ($subject['status']) !== 'active') {
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['subjectId' => 'The selected subject is not active.']);
         }
 
-        $courseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi() ?? [];
+        $courseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
         $existing = null;
         foreach ($courseSubjects as $courseSubject) {
-            if (($courseSubject['courseId'] ?? '') === $validated['courseId'] && 
-                ($courseSubject['subjectId'] ?? '') === $validated['subjectId']) {
+            if (($courseSubject['courseId']) === $validated['courseId'] && 
+                ($courseSubject['subjectId']) === $validated['subjectId']) {
                 $existing = $courseSubject;
                 break;
             }
@@ -113,10 +134,10 @@ class CourseSubjectController extends Controller
         }
 
         if (empty($validated['courseSubjectId'])) {
-            $courseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi() ?? [];
+            $courseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
             $courseSubjectNumbers = [];
             foreach ($courseSubjects as $courseSubject) {
-                $courseSubjectId = $courseSubject['courseSubjectId'] ?? '';
+                $courseSubjectId = $courseSubject['courseSubjectId'];
                 if (strpos($courseSubjectId, 'CS') === 0 && is_numeric(substr($courseSubjectId, 2))) {
                     $courseSubjectNumbers[] = (int) substr($courseSubjectId, 2);
                 }
@@ -133,7 +154,7 @@ class CourseSubjectController extends Controller
                 ->with('success', 'Course Subject created successfully!');
         }
         
-        $errorMessage = $response->json()['message'] ?? 'Failed to create course subject';
+        $errorMessage = $response->json()['message'];
         return redirect()->back()
             ->withInput()
             ->withErrors(['error' => $errorMessage]);
@@ -157,24 +178,24 @@ class CourseSubjectController extends Controller
         $course = CourseSubjectManagementFacade::getCourseByIdFromApi($validated['courseId']);
         $subject = CourseSubjectManagementFacade::getSubjectByIdFromApi($validated['subjectId']);
         
-        if (!$course || ($course['status'] ?? '') !== 'active') {
+        if (!$course || ($course['status']) !== 'active') {
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['courseId' => 'The selected course is not active.']);
         }
         
-        if (!$subject || ($subject['status'] ?? '') !== 'active') {
+        if (!$subject || ($subject['status']) !== 'active') {
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['subjectId' => 'The selected subject is not active.']);
         }
 
-        $courseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi() ?? [];
+        $courseSubjects = CourseSubjectManagementFacade::fetchCourseSubjectsFromApi();
         $existing = null;
         foreach ($courseSubjects as $courseSubject) {
-            if (($courseSubject['courseId'] ?? '') === $validated['courseId'] && 
-                ($courseSubject['subjectId'] ?? '') === $validated['subjectId'] &&
-                ($courseSubject['courseSubjectId'] ?? '') !== $courseSubjectId) {
+            if (($courseSubject['courseId']) === $validated['courseId'] && 
+                ($courseSubject['subjectId']) === $validated['subjectId'] &&
+                ($courseSubject['courseSubjectId'] ) !== $courseSubjectId) {
                 $existing = $courseSubject;
                 break;
             }
@@ -193,7 +214,7 @@ class CourseSubjectController extends Controller
                 ->with('success', 'Course Subject updated successfully!');
         }
         
-        $errorMessage = $response->json()['message'] ?? 'Failed to update course subject';
+        $errorMessage = $response->json()['message'];
         return redirect()->back()
             ->withInput()
             ->withErrors(['error' => $errorMessage]);
@@ -292,11 +313,11 @@ class CourseSubjectController extends Controller
             'data' => [
                 'courseSubjectId' => $courseSubject->courseSubjectId,
                 'courseId' => $courseSubject->courseId,
-                'courseCode' => $courseSubject->course->courseCode ?? '',
-                'courseName' => $courseSubject->course->courseName ?? '',
+                'courseCode' => $courseSubject->course->courseCode,
+                'courseName' => $courseSubject->course->courseName,
                 'subjectId' => $courseSubject->subjectId,
-                'subjectCode' => $courseSubject->subject->subjectCode ?? '',
-                'subjectName' => $courseSubject->subject->subjectName ?? '',
+                'subjectCode' => $courseSubject->subject->subjectCode,
+                'subjectName' => $courseSubject->subject->subjectName,
             ],
         ], 200);
     }
