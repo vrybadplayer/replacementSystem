@@ -56,7 +56,7 @@ class ReplacementController extends Controller
         // Get the ORIGINAL class (the class student MISSED) from session
         // This was selected from the timetable calendar view
         $selectedClassData = session('replacement_selected_class');
-        
+
         if (!$selectedClassData) {
             // If no original class selected, redirect to select one
             return redirect()->route('replacement.appeal')->with('error', 'Please select your original missed class first.');
@@ -144,10 +144,10 @@ class ReplacementController extends Controller
         // Get the classes to extract timeslots and class group IDs
         $originalClass = Timetable::find($validated['original_class_id']);
         $requestedClass = Timetable::find($validated['requested_class_id']);
-        
+
         // Get student's actual classGroupId
         $studentClassGroupId = Auth::user()->classGroupId;
-        
+
         // Extract the appropriate classGroupId from the timetable records
         // If the timetable has multiple groups (comma-separated), check if student's group is in it
         $originalClassGroupId = $this->extractStudentClassGroup($originalClass->classGroupId, $studentClassGroupId);
@@ -180,14 +180,14 @@ class ReplacementController extends Controller
         if (strpos($classGroupIds, ',') === false) {
             return $classGroupIds;
         }
-        
+
         // If multiple groups, check if student's group is in the list
         $groups = array_map('trim', explode(',', $classGroupIds));
-        
+
         if (in_array($studentClassGroupId, $groups)) {
             return $studentClassGroupId;
         }
-        
+
         // Otherwise return the first group
         return $groups[0];
     }
@@ -241,78 +241,78 @@ class ReplacementController extends Controller
         // Validation checks
         $validationChecks = [
             // Check if replacement class is in the same week as original
-            'same_week' => function() use ($appeal) {
+            'same_week' => function () use ($appeal) {
                 if (!$appeal->originalClass->date || !$appeal->requestedClass->date) return false;
                 $originalWeek = date('W', strtotime($appeal->originalClass->date));
                 $requestedWeek = date('W', strtotime($appeal->requestedClass->date));
                 return $originalWeek === $requestedWeek;
             },
-            
+
             // Check if requested class is after submission date
-            'after_submission' => function() use ($appeal) {
+            'after_submission' => function () use ($appeal) {
                 if (!$appeal->requestedClass->date) return false;
                 return strtotime($appeal->requestedClass->date) > strtotime($appeal->submissionDate);
             },
-            
+
             // Check for timetable clash - requested class shouldn't clash with student's existing schedule
-            'no_clash' => function() use ($appeal) {
+            'no_clash' => function () use ($appeal) {
                 if (!$appeal->requestedClass->date || !$appeal->requestedClass->startTime || !$appeal->requestedClass->endTime) {
                     return false;
                 }
-                
+
                 // Get student's timetable for that date
-                $studentTimetable = Timetable::where(function($query) use ($appeal) {
-                        $query->where('classGroupId', $appeal->user->classGroupId)
-                              ->orWhereRaw("FIND_IN_SET(?, classGroupId) > 0", [$appeal->user->classGroupId]);
-                    })
+                $studentTimetable = Timetable::where(function ($query) use ($appeal) {
+                    $query->where('classGroupId', $appeal->user->classGroupId)
+                        ->orWhereRaw("FIND_IN_SET(?, classGroupId) > 0", [$appeal->user->classGroupId]);
+                })
                     ->where('classDate', $appeal->requestedClass->date)
                     ->get();
-                
+
                 // Check for time overlaps
                 foreach ($studentTimetable as $class) {
                     $existingStart = strtotime($class->startTime);
                     $existingEnd = strtotime($class->endTime);
                     $requestedStart = strtotime($appeal->requestedClass->startTime);
                     $requestedEnd = strtotime($appeal->requestedClass->endTime);
-                    
+
                     // Check if times overlap
                     if ($requestedStart < $existingEnd && $requestedEnd > $existingStart) {
                         return false; // Clash detected
                     }
                 }
-                
+
                 return true; // No clash
             },
-            
+
             // Check if class has available capacity (< 5 replacement students)
-            'has_capacity' => function() use ($appeal) {
+            'has_capacity' => function () use ($appeal) {
                 if (!isset($appeal->requestedClass)) return false;
-                
+
                 // Get the requested class group ID from the nested structure
                 $requestedGroupId = $appeal->requestedClass->classGroup->classGroupId ?? null;
-                
+
                 if (!$requestedGroupId) return false;
-                
+
                 // Count approved replacements for this class group
                 $replacementCount = Replacement::where('requestedClassGroupId', $requestedGroupId)
-                    ->whereHas('appeal', function($query) {
+                    ->whereHas('appeal', function ($query) {
                         $query->where('status', 'Approved');
                     })
                     ->count();
-                
+
                 return $replacementCount < 5;
             },
-            
+
             // Check if student account is active
             'valid_account' => $appeal->user->role === 'student' && $appeal->user->status === 'active',
-            
+
             // Check if same subject code
             'same_subject' => $appeal->originalClass->subject && $appeal->requestedClass->subject ?
                 $appeal->originalClass->subject->subjectId === $appeal->requestedClass->subject->subjectId : false
         ];
-        
+
         // Execute all validation functions
-        $validationChecks = array_map(function($check) {
+        $validationChecks = array_map(function ($check) {
             return is_callable($check) ? $check() : $check;
         }, $validationChecks);
 
@@ -362,10 +362,10 @@ class ReplacementController extends Controller
                 ->get()
                 ->map(function ($appeal) {
                     // Get the specific timetable records using stored timetableIds
-                    $originalTimetable = $appeal->originalTimetableId 
+                    $originalTimetable = $appeal->originalTimetableId
                         ? Timetable::with(['subject', 'venue'])->find($appeal->originalTimetableId)
                         : null;
-                    
+
                     $requestedTimetable = $appeal->requestedTimetableId
                         ? Timetable::with(['subject', 'venue'])->find($appeal->requestedTimetableId)
                         : null;
@@ -434,10 +434,10 @@ class ReplacementController extends Controller
                 ->get()
                 ->map(function ($appeal) {
                     // Get the specific timetable records using stored timetableIds
-                    $originalTimetable = $appeal->originalTimetableId 
+                    $originalTimetable = $appeal->originalTimetableId
                         ? Timetable::with(['subject', 'venue'])->find($appeal->originalTimetableId)
                         : null;
-                    
+
                     $requestedTimetable = $appeal->requestedTimetableId
                         ? Timetable::with(['subject', 'venue'])->find($appeal->requestedTimetableId)
                         : null;
@@ -504,10 +504,10 @@ class ReplacementController extends Controller
                 ->findOrFail($appealId);
 
             // Get the specific timetable records using stored timetableIds
-            $originalTimetable = $appeal->originalTimetableId 
+            $originalTimetable = $appeal->originalTimetableId
                 ? Timetable::with(['subject', 'venue'])->find($appeal->originalTimetableId)
                 : null;
-            
+
             $requestedTimetable = $appeal->requestedTimetableId
                 ? Timetable::with(['subject', 'venue'])->find($appeal->requestedTimetableId)
                 : null;
@@ -643,23 +643,24 @@ class ReplacementController extends Controller
     public function getUserReplacements($userId)
     {
         try {
-            $appeals = ReplacementAppeal::with([
-                'originalClass.subject',
-                'requestedClass.subject',
-                'replacement'
-            ])
-                ->where('userId', $userId)
-                ->where('status', 'Approved')
-                ->whereHas('replacement')
-                ->orderBy('decisionDate', 'desc')
+            $startDate = request('start_date');
+            $endDate = request('end_date');
+
+            $query = Replacement::where('userId', $userId);
+
+            if ($startDate && $endDate) {
+                $query->whereBetween('requestedDate', [$startDate, $endDate]);
+            }
+
+            $replacements = $query->orderBy('requestedDate', 'asc')
+                ->orderBy('startTime', 'asc')
                 ->get();
 
             return response()->json([
                 'success' => true,
-                'data' => $appeals
+                'data' => $replacements
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to fetch user replacements', ['userId' => $userId, 'error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Unable to retrieve replacements. Please try again later.'

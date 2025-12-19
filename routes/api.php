@@ -46,6 +46,7 @@ Route::get('/venues/{id}', [VenueController::class, 'getVenueById']);
 Route::get('/classgroups', [ClassGroupController::class, 'getAllClassGroups']);
 Route::get('/classgroups/{id}', [ClassGroupController::class, 'getClassGroupById']);
 Route::get('/timetable', [TimetableController::class, 'getAllTimetableRecords']);
+Route::get('/timetable/search', [TimetableController::class, 'searchTimetable']);
 Route::get('/timetable/{id}', [TimetableController::class, 'getTimetableById']);
 Route::get('/occupiedSlots', [TimetableController::class, 'getOccupiedSlots']);
 Route::get('/clashCheck', [TimetableController::class, 'clashCheck']);
@@ -93,11 +94,11 @@ Route::prefix('replacement')->group(function () {
     Route::get('/appeals/{appealId}', [ReplacementController::class, 'getAppeal']);
     Route::post('/appeals', [ReplacementController::class, 'createAppeal']);
     Route::post('/appeals/{appealId}/process', [ReplacementController::class, 'processAppeal']);
-    
+
     // Replacements
     Route::get('/replacements/user/{userId}', [ReplacementController::class, 'getUserReplacements']);
     Route::get('/validOptions', [ReplacementController::class, 'validReplacementOptions']);
-    
+
     // Statistics
     Route::get('/statistics', [ReplacementController::class, 'getStatistics']);
 });

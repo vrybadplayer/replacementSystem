@@ -242,11 +242,31 @@ class ReplacementService
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_write_close();
         }
-        
+
         $response = Http::get("{$this->baseUrl}/replacement/validOptions", $filterData);
-        
+
         if ($response->successful()) {
             return $response->json()['data'] ?? [];
+        }
+
+        return [];
+    }
+
+
+    public function getReplacementsByDateRange($userId, $startDate, $endDate)
+    {
+        $url = "{$this->baseUrl}/replacement/replacements/user/{$userId}";
+
+        $params = [
+            'start_date' => $startDate,
+            'end_date' => $endDate
+        ];
+
+        $response = Http::timeout(5)->get($url, $params);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'] ?? [];
         }
 
         return [];
