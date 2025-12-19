@@ -95,15 +95,6 @@ class UserController extends Controller
         return redirect()->route('users.show', $userId)->with('success', 'User updated successfully');
     }
 
-    /**
-     * Remove the specified user from database
-     */
-    public function destroy($userId)
-    {
-        $this->userService->deleteUser($userId);
-        return redirect()->route('users.index')->with('success', 'User deleted successfully');
-    }
-
     // ---------- AUTHENTICATED USER METHODS ----------
 
     /**
