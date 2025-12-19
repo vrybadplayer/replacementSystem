@@ -108,6 +108,33 @@ class TimetableMediator implements TimetableMediatorInterface
         return $transitiveMap;
     }
 
+    public function getReplacementsByDateRange($userId, $startDate, $endDate)
+{
+    $replacements = $this->replacementApi->getReplacementsByDateRange($userId, $startDate, $endDate);
+
+    if (is_array($replacements)) {
+        return $replacements;
+    }
+
+    return [];
+}
+
+    public function findTimetableForReplacement($requestedDate, $startTime, $endTime, $requestedClassGroupId)
+    {
+        $timetableClass = $this->timetableApi->findTimetableForReplacement(
+            $requestedDate,
+            $startTime,
+            $endTime,
+            $requestedClassGroupId
+        );
+
+        if ($timetableClass) {
+            return $timetableClass;
+        }
+
+        return null;
+    }
+
 
     // ===========================================================================================================
     // ================================ For Admin Timetable Assignment ===========================================
@@ -124,6 +151,7 @@ class TimetableMediator implements TimetableMediatorInterface
 
         return $result;
     }
+
 
 
     public function getAllSubjects()

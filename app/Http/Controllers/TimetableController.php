@@ -103,4 +103,39 @@ class TimetableController extends Controller
         ]);
     }
 
+    public function searchTimetable(Request $request)
+    {
+        try {
+            $query = Timetable::with(['venue', 'courseSubject']);
+
+            if ($request->has('classDate')) {
+                $query->where('classDate', $request->classDate);
+            }
+
+            if ($request->has('startTime') && $request->has('endTime')) {
+                $query->where('startTime', '<=', $request->startTime)
+                    ->where('endTime', '>=', $request->endTime);
+            }
+
+            if ($request->has('classGroupId')) {
+                $classGroupId = $request->classGroupId;
+                $query->where(function ($q) use ($classGroupId) {
+                    $q->where('classGroupId', $classGroupId)
+                        ->orWhereRaw('FIND_IN_SET(?, classGroupId) > 0', [$classGroupId]);
+                });
+            }
+
+            $timetable = $query->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $timetable
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to search timetable.'
+            ], 500);
+        }
+    }
 }

@@ -95,4 +95,25 @@ class TimetableService
 
         return collect([]);
     }
+
+    public function findTimetableForReplacement($requestedDate, $startTime, $endTime, $requestedClassGroupId)
+    {
+        $url = "{$this->baseUrl}/timetable/search";
+
+        $params = [
+            'classDate' => $requestedDate,
+            'startTime' => $startTime,
+            'endTime' => $endTime,
+            'classGroupId' => $requestedClassGroupId
+        ];
+
+        $response = Http::timeout(5)->get($url, $params);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'][0] ?? null;
+        }
+
+        return null;
+    }
 }

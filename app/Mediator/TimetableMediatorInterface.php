@@ -6,8 +6,9 @@ interface TimetableMediatorInterface {
 
     // For Students
     public function getCurrentWeekSchedule($studentId, $selectedDate);
-    //public function getValidReplacementTimeslots($studentId, $subjectId);
     public function getTransitiveSubjectList();
+    public function getReplacementsByDateRange($userId, $startOfWeek, $endOfWeek);
+    public function findTimetableForReplacement($requestedDate, $startTime, $endTime, $requestedClassGroupId);
 
     // For Admin Subject Assignment
     public function getAllCourses();
