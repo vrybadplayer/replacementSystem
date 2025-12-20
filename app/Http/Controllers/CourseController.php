@@ -147,12 +147,16 @@ class CourseController extends Controller
 
     public function apiGetCourse(string $courseId)
     {
-        $course = Course::findOrFail($courseId);
+        try {
+            $course = Course::findOrFail($courseId);
 
-        return response()->json([
-            'success' => true,
-            'data' => $course,
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'data' => $course,
+            ], 200);
+        } finally {
+            DB::disconnect();
+        }
     }
 
     public function apiUpdateCourse(Request $request, string $courseId)

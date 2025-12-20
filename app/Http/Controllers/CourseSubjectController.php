@@ -13,8 +13,6 @@ use Illuminate\Support\Str;
 class CourseSubjectController extends Controller
 {
 
-    protected $courseSubjectService;
-
     public function courseSubjectListView(Request $request)
     {
         $search = $request->query('search');
@@ -52,7 +50,6 @@ class CourseSubjectController extends Controller
             }
         }
 
-        // Filter by search term if provided
         if ($search) {
             $enrichedCourseSubjects = collect($enrichedCourseSubjects)->filter(function ($cs) use ($search) {
                 $searchLower = Str::lower($search);
@@ -267,58 +264,70 @@ class CourseSubjectController extends Controller
 
     public function fetchCourseSubjectWithForeignKeys(Request $request)
     {
-        $subjectId = $request->query('subjectId');
-        $courseId = $request->query('courseId');
+        try {
+            $subjectId = $request->query('subjectId');
+            $courseId = $request->query('courseId');
 
-        $courseSubject = CourseSubjectManagementFacade::fetchCourseSubjectWithForeignKeys(
-            $subjectId,
-            $courseId
-        );
+            $courseSubject = CourseSubjectManagementFacade::fetchCourseSubjectWithForeignKeys(
+                $subjectId,
+                $courseId
+            );
 
-        if (!$courseSubject) {
-            return response()->json(null, 404);
+            if (!$courseSubject) {
+                return response()->json(null, 404);
+            }
+
+            return response()->json($courseSubject, 200);
+        } finally {
+            DB::disconnect();
         }
-
-        return response()->json($courseSubject, 200);
     }
 
     public function getCourseSubjectsByCourse($courseId)
     {
-        $courseSubjectIds = CourseSubject::where('courseId', $courseId)
-            ->pluck('courseSubjectId')
-            ->toArray();
+        try {
+            $courseSubjectIds = CourseSubject::where('courseId', $courseId)
+                ->pluck('courseSubjectId')
+                ->toArray();
 
-        return response()->json([
-            'success' => true,
-            'data' => $courseSubjectIds,
-            'count' => count($courseSubjectIds)
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => $courseSubjectIds,
+                'count' => count($courseSubjectIds)
+            ]);
+        } finally {
+            DB::disconnect();
+        }
     }
 
     public function getCourseSubject($courseSubjectId)
     {
-        $courseSubject = CourseSubject::with(['course', 'subject'])
-            ->where('courseSubjectId', $courseSubjectId)
-            ->first();
+        try {
+            $courseSubject = CourseSubject::with(['course', 'subject'])
+                ->where('courseSubjectId', $courseSubjectId)
+                ->first();
 
-        if (!$courseSubject) {
+            if (!$courseSubject) {
+                return response()->json([
+                    'success' => false,
+                    'data' => null,
+                ], 404);
+            }
+
             return response()->json([
-                'success' => false,
-                'data' => null,
-            ], 404);
+                'success' => true,
+                'data' => [
+                    'courseSubjectId' => $courseSubject->courseSubjectId,
+                    'courseId' => $courseSubject->courseId,
+                    'courseCode' => $courseSubject->course->courseCode,
+                    'courseName' => $courseSubject->course->courseName,
+                    'subjectId' => $courseSubject->subjectId,
+                    'subjectCode' => $courseSubject->subject->subjectCode,
+                    'subjectName' => $courseSubject->subject->subjectName,
+                ],
+            ], 200);
+        } finally {
+            DB::disconnect();
         }
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'courseSubjectId' => $courseSubject->courseSubjectId,
-                'courseId' => $courseSubject->courseId,
-                'courseCode' => $courseSubject->course->courseCode,
-                'courseName' => $courseSubject->course->courseName,
-                'subjectId' => $courseSubject->subjectId,
-                'subjectCode' => $courseSubject->subject->subjectCode,
-                'subjectName' => $courseSubject->subject->subjectName,
-            ],
-        ], 200);
     }
 }

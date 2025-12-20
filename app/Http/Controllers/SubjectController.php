@@ -139,17 +139,8 @@ class SubjectController extends Controller
 
     public function apiCreateSubject(Request $request)
     {
-        $validated = $request->validate([
-            'subjectId' => 'nullable|string|unique:subject,subjectId',
-            'subjectCode' => 'required|string|unique:subject,subjectCode',
-            'subjectName' => 'required|string|unique:subject,subjectName|different:subjectCode',
-            'creditHours' => 'required|integer',
-            'category' => 'required|string|in:core,general,elective',
-            'status' => 'required|string|in:active,inactive',
-        ]);
-
         try {
-            $subject = Subject::create($validated);
+            $subject = Subject::create($request->all());
 
             return response()->json([
                 'success' => true,
@@ -162,44 +153,56 @@ class SubjectController extends Controller
 
     public function apiGetSubject(string $subjectId)
     {
-        $subject = Subject::findOrFail($subjectId);
+        try {
+            $subject = Subject::findOrFail($subjectId);
 
-        return response()->json([
-            'success' => true,
-            'data' => $subject,
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'data' => $subject,
+            ], 200);
+        } finally {
+            DB::disconnect();
+        }
     }
 
     public function apiUpdateSubject(Request $request, string $id)
     {
-        $subject = Subject::findOrFail($id);
-        $subject->update($request->all());
+        try {
+            $subject = Subject::findOrFail($id);
+            $subject->update($request->all());
 
-        return response()->json([
-            'success' => true,
-            'data' => $subject,
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'data' => $subject,
+            ], 200);
+        } finally {
+            DB::disconnect();
+        }
     }
 
     public function getSubjectByCourseSubject($courseSubjectId)
     {
-        $courseSubject = CourseSubject::where('courseSubjectId', $courseSubjectId)->first();
+        try {
+            $courseSubject = CourseSubject::where('courseSubjectId', $courseSubjectId)->first();
 
-        $subject = Subject::where('subjectId', $courseSubject->subjectId)
-            ->select('subjectCode', 'subjectName')
-            ->first();
+            $subject = Subject::where('subjectId', $courseSubject->subjectId)
+                ->select('subjectCode', 'subjectName')
+                ->first();
 
-        if (!$subject) {
+            if (!$subject) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Subject not found',
+                    'data' => null
+                ], 404);
+            }
+
             return response()->json([
-                'success' => false,
-                'message' => 'Subject not found',
-                'data' => null
-            ], 404);
+                'success' => true,
+                'data' => $subject
+            ]);
+        } finally {
+            DB::disconnect();
         }
-
-        return response()->json([
-            'success' => true,
-            'data' => $subject
-        ]);
     }
 }
